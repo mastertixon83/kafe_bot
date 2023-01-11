@@ -223,7 +223,9 @@ async def table_reservation_check_data(call, state: FSMContext):
     if call.data == "approve_order_user":
         data = await state.get_data()
 
-        await call.message.edit_text("Если всё правильно, подтвердите", reply_markup="")
+        await bot.delete_message(chat_id=data['chat_id'], message_id=data['message_id1'])
+        await bot.delete_message(chat_id=data['chat_id'], message_id=data['message_id2'])
+        # await call.message.edit_text("Если всё правильно, подтвердите", reply_markup="")
 
         if call.message.from_user.id == admins[0]:
             ##TODO: Изменить меню
