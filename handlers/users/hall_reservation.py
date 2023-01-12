@@ -88,11 +88,10 @@ async def table_reservation(message: types.Message, state: FSMContext):
     date = datetime.now().strftime('%d.%m.%Y').split('.')
     text = f"<b>Шаг [1/4]</b>\n\n Введите дату в формате ДД.ММ.ГГГГ (07.10.1985) Сегодня {date[0]} {MONTHS[int(date[1]) - 1]} {date[2]} года"
     await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
-    user_name = message.from_user.username
 
     async with state.proxy() as data:
         data["chat_id"] = message.chat.id
-        data["user_name"] = user_name
+        data["user_name"] = message.from_user.username
         data["user_id"] = message.from_user.id
         data['full_name'] = message.from_user.full_name
 

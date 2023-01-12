@@ -219,11 +219,11 @@ async def reg_loyal_card_phone(message: types.Message, state: FSMContext):
 
 
 # Картиа лояльности подтверждение изменение данных
-@dp.callback_query_handler(text=["approve_staff_user", "cancel_staff_user"], state=CardLoyalReg.approve)
+@dp.callback_query_handler(text=["approve_order_user", "cancel_order_user"], state=CardLoyalReg.approve)
 async def reg_loyal_card_approve(call, state: FSMContext):
     await call.answer(cache_time=60)
 
-    if call.data == "approve_staff_user":
+    if call.data == "approve_order_user":
 
         data = await state.get_data()
         info = await db.get_user_info(data["user_id"])
@@ -255,7 +255,7 @@ async def reg_loyal_card_approve(call, state: FSMContext):
                 await bot.send_photo(chat_id=info[0]['user_id'], photo=card, caption=text,
                                      reply_markup=menuUser)
 
-    elif call.data == "edit_staff_user":
+    elif call.data == "cancel_order_user":
         await state.finish()
         await call.message.edit_text("Исправьте данные", reply_markup="")
         text = "<b>Шаг [1/3]</b>\n\n Введите Ваши имя и фамилию. Два слова."
