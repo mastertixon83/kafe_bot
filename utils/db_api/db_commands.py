@@ -26,10 +26,10 @@ class DBCommands:
     ### Добавление заявки на бронирование столика
     ADD_NEW_ORDER_HALL = "INSERT INTO orders_hall(admin_id, order_status, chat_id, user_id, username, full_name, " \
                     "data_reservation, time_reservation, number_person, phone)" \
-                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING order_id"
+                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id"
 
-    GET_ORDER_HALL_DATA = "SELECT * FROM orders_hall WHERE order_id = $1"
-    UPDATE_ORDER_HALL_STATUS = "UPDATE orders_hall SET order_status = $2, admin_answer = $3, updated_at = $4, admin_id = $5, adminname = $6 WHERE order_id = $1"
+    GET_ORDER_HALL_DATA = "SELECT * FROM orders_hall WHERE id = $1"
+    UPDATE_ORDER_HALL_STATUS = "UPDATE orders_hall SET order_status = $2, admin_answer = $3, updated_at = $4, admin_id = $5, admin_name = $6 WHERE id = $1"
 
     ###  Добавление нового пользователя с рефералом и без ###
     async def add_new_user(self, referral=None):
@@ -110,13 +110,13 @@ class DBCommands:
         except UniqueViolationError:
             pass
 
-    async def get_order_hall_data(self, order_id):
+    async def get_order_hall_data(self, id):
         command = self.GET_ORDER_HALL_DATA
-        data = await self.pool.fetch(command, order_id)
+        data = await self.pool.fetch(command, id)
         return data
 
-    async def update_order_hall_status(self, order_id, order_status, admin_answer, updated_at, admin_id, adminname):
+    async def update_order_hall_status(self, id, order_status, admin_answer, updated_at, admin_id, admin_name):
         command = self.UPDATE_ORDER_HALL_STATUS
-        await self.pool.fetch(command, int(order_id), order_status, admin_answer, updated_at, int(admin_id), adminname)
+        await self.pool.fetch(command, int(id), order_status, admin_answer, updated_at, int(admin_id), admin_name)
 
 

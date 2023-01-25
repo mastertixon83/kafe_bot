@@ -41,7 +41,7 @@ MONTHS = [
 ### Резервирование столика обработка данных
 async def table_reservation_admin_butons(call, call_data, adminUsername, admin_id):
     # Выбрать из БД заявку
-    result = await db.get_order_data(order_id=int(call_data[2]))
+    result = await db.get_order_hall_data(id=int(call_data[2]))
 
     res = datetime.now(timezone.utc) - result[0]['updated_at']
     user_wait = "Гость ждал: "
@@ -74,10 +74,10 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
     elif call_data[1] == 'approved':
         await bot.send_message(chat_id=call_data[0], text="Ваша запись подтвердждена администрацией. Ждем вас :)")
 
-    # Обновит статус заявки в БД
-    await db.update_order_status(order_id=int(call_data[2]), order_status=True, admin_answer=call_data[1],
+    # Обновить статус заявки в БД
+    await db.update_order_hall_status(id=int(call_data[2]), order_status=True, admin_answer=call_data[1],
                                  updated_at=datetime.now(timezone.utc), admin_id=admin_id,
-                                 adminname=f'@{adminUsername}')
+                                 admin_name=f'@{adminUsername}')
 
 
 ### Первый шаг
@@ -112,10 +112,10 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
 
                     text = "<b>Шаг [2/4]</b>\n\n Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
                     await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
-            else:
-                raise Exception("Error input")
+        else:
+            raise Exception("input error")
     except Exception as _ex:
-        if str(_ex) == 'Error input':
+        if str(_ex) == 'input error':
             text = "Я Вас не понимаю! Введите дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
 
         elif str(_ex) == 'data error':
@@ -129,20 +129,21 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
 # Ловим ответ от пользователя время
 @dp.message_handler(content_types=["text"], state=TableReservation.time)
 async def table_reservation_time(message: types.Message, state: FSMContext):
-    str = message.text
+    msg = message.text
+    text = ''
     data = await state.get_data()
     try:
-        if len(str) == 5:
-            if " " in str:
-                str = str.replace(" ", ":")
-            elif "." in str:
-                str = str.replace(".", ":")
-            elif "-" in str:
-                str = str.replace("-", ":")
+        if len(msg) == 5:
+            if " " in msg:
+                msg = msg.replace(" ", ":")
+            elif "." in msg:
+                msg = msg.replace(".", ":")
+            elif "-" in msg:
+                msg = msg.replace("-", ":")
 
-            str = str + ":00"
+            msg = msg + ":00"
 
-            time = datetime.strptime(str, '%H:%M:%S').time()
+            time = datetime.strptime(msg, '%H:%M:%S').time()
             if data['data'] == datetime.now() and time < datetime.now().time():
                 raise Exception('time error')
             else:
@@ -153,15 +154,12 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
 
                 await message.answer("<b>ШАГ [3/4]</b> Введите количество человек", reply_markup=cancel_btn,
                                      parse_mode=types.ParseMode.HTML)
-        else:
-            raise Exception("input error")
-
     except Exception as _ex:
-        if str(_ex) == 'input error':
-            text = "Я вас, к сожалению, не понимаю. Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
-        elif str(_ex) == 'time error':
+        if str(_ex) == 'time error':
             text = "Вы путешественник во времени? Невозможно записаться на время указанное вами. Введите время заново в " \
                    "формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+        else:
+            text = "Я вас, к сожалению, не понимаю. Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
 
         await message.answer(text=text)
         return
@@ -218,13 +216,10 @@ async def table_reservation_user_phone(message: types.Message, state: FSMContext
                            state=TableReservation.check)
 async def table_reservation_check_data(call, state: FSMContext):
     await call.answer(cache_time=60)
-
     if call.data == "approve_order_user":
         data = await state.get_data()
 
-        await bot.delete_message(chat_id=data['chat_id'], message_id=data['message_id1'])
-        await bot.delete_message(chat_id=data['chat_id'], message_id=data['message_id2'])
-        # await call.message.edit_text("Если всё правильно, подтвердите", reply_markup="")
+        await call.message.edit_text("Если всё правильно, подтвердите", reply_markup="")
 
         if call.message.from_user.id == admins[0]:
             ##TODO: Изменить меню
@@ -242,7 +237,7 @@ async def table_reservation_check_data(call, state: FSMContext):
         text += f"Телефон: {data['phone_number']}"
 
         # Сохранить заявку в БД
-        order_id = await db.add_new_order(admin_id=None, order_status=False, chat_id=data['chat_id'],
+        order_id = await db.add_new_order_hall(admin_id=None, order_status=False, chat_id=data['chat_id'],
                                           user_id=data['user_id'],
                                           username=data['user_name'], full_name=data['full_name'],
                                           data_reservation=data['data'], time_reservation=data['time'][:-3],

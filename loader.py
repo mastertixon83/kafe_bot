@@ -16,3 +16,4 @@ dp = Dispatcher(bot, storage=storage)
 db = dp.loop.run_until_complete(create_pool())
 
 
+
