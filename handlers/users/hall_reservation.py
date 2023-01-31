@@ -364,9 +364,7 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
 
                         result = await db.get_approved_orders_on_data(
                             dataReservation=datetime.strptime(message.text.replace(".", "-"), "%d-%m-%Y").date())
-                        # [ < Record data_reservation = datetime.date(2023, 4, 7) table_number = 5 >, < Record data_reservation = datetime.date(2023, 4, 7) table_number = 6 >]
 
-                        admin_inline_staff = await build_tables_ikb_on_data(data=data, order_id=order_id)
                         await state.finish()
         else:
             raise Exception("input error")
