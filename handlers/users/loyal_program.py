@@ -125,7 +125,6 @@ async def get_active_codes(message: Message):
 @dp.message_handler(Text("Получить карту"), state=None)
 async def reg_loyal_card(message: Message, state: FSMContext):
     info = await db.get_user_info(message.from_user.id)
-
     if info[0]["card_status"] != True:
         # Введите Ваши имя и фамилию. Два слова.
         # Введите дату Вашего рождения в формате ДД.ММ.ГГГГ

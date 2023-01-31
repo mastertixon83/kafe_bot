@@ -7,3 +7,7 @@ class TableReservation(StatesGroup):
     count_men = State()
     phone = State()
     check = State()
+
+
+class TableReservationAdmin(StatesGroup):
+    data = State()

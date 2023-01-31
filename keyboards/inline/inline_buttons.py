@@ -16,8 +16,18 @@ admin_card_approve = InlineKeyboardMarkup(
 admin_inline_staff = InlineKeyboardMarkup(
     inline_keyboard=[
         [
+            InlineKeyboardButton("Стол N1", callback_data="user_id-approved-1-free"),
+            InlineKeyboardButton("Стол N2", callback_data="user_id-approved-2-free"),
+            InlineKeyboardButton("Стол N3", callback_data="user_id-approved-3-free")
+        ],
+        [
+            InlineKeyboardButton("Стол N4", callback_data="user_id-approved-4-free"),
+            InlineKeyboardButton("Стол N5", callback_data="user_id-approved-5-free"),
+            InlineKeyboardButton("Стол N6", callback_data="user_id-approved-6-free")
+        ],
+        [
             InlineKeyboardButton("Отклонить", callback_data="user_id-rejected"),
-            InlineKeyboardButton("Подтвердить", callback_data="user_id-approved")
+            # InlineKeyboardButton("Подтвердить", callback_data="user_id-approved")
         ],
         [
             InlineKeyboardButton("Зал заполнен", callback_data="user_id-foolrest")

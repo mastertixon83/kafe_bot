@@ -34,7 +34,7 @@ menuAdmin = ReplyKeyboardMarkup(
             KeyboardButton(text="Ты гребаный Администратор")
         ],
         [
-            KeyboardButton(text="Забронировать стол")
+            KeyboardButton(text="Бронь столиков")
         ],
         [
             KeyboardButton(text="Программа лояльности")

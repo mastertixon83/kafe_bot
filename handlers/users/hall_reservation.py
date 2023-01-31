@@ -7,9 +7,10 @@ from aiogram import types
 from aiogram.types import ReplyKeyboardRemove
 from keyboards.inline.inline_buttons import admin_inline_staff, admin_inline_send_ls, \
     user_inline_approve
+
 from keyboards.default.menu import menuUser, menuAdmin, \
     send_phone_cancel, cancel_btn
-from states.restoran import TableReservation
+from states.restoran import TableReservation, TableReservationAdmin
 from utils.db_api.db_commands import DBCommands
 
 from aiogram.dispatcher.filters import Text
@@ -38,9 +39,40 @@ MONTHS = [
 
 
 ### Бронирование столика
+### Составление клавиатуры столиков
+async def build_tables_ikb_on_data(data, order_id):
+    result = await db.get_approved_orders_on_data(dataReservation=data["data"])
+    tList = []
+    for item in result:
+        tList.append({'table_number': item["table_number"], 'time_reservation': item['time_reservation']})
+
+    tableNumber = 1
+    for i in range(2):
+        for j in range(3):
+            key = "table_number"
+            val = tableNumber
+
+            d = next(filter(lambda d: d.get(key) == val, tList), None)
+            if d == None:
+                admin_inline_staff.inline_keyboard[i][j][
+                    "callback_data"] = f"{data['chat_id']}-{tableNumber}-{order_id}-approved-free"
+
+            else:
+                admin_inline_staff.inline_keyboard[i][j][
+                    "callback_data"] = f"{data['chat_id']}-{tableNumber}-{order_id}-busy"
+                admin_inline_staff.inline_keyboard[i][j]['text'] = f"Стол N{tableNumber} - {d['time_reservation']}"
+
+            tableNumber += 1
+
+    admin_inline_staff.inline_keyboard[4][0]["url"] = f"https://t.me/{data['user_name']}"
+    admin_inline_staff.inline_keyboard[2][0]["callback_data"] = f"{data['chat_id']}-rejected-{order_id}"
+    admin_inline_staff.inline_keyboard[3][0]["callback_data"] = f"{data['chat_id']}-foolrest-{order_id}"
+    return admin_inline_staff
+
 ### Резервирование столика обработка данных
-async def table_reservation_admin_butons(call, call_data, adminUsername, admin_id):
+async def table_reservation_admin_butons(call, call_data, adminUsername, admin_id, tableNumber):
     # Выбрать из БД заявку
+    print(f"Выборка из БД - {call_data}")
     result = await db.get_order_hall_data(id=int(call_data[2]))
 
     res = datetime.now(timezone.utc) - result[0]['updated_at']
@@ -63,8 +95,10 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
     text += f"(Администратор: @{adminUsername})\n\n"
     text += user_wait + "\n"
     text += f"Комментарий: Дата/Время {result[0]['data_reservation'].strftime('%Y-%m-%d')} " \
-            f"{result[0]['time_reservation']}\nКол-во человек {result[0]['number_person']}\n"
+            f"{result[0]['time_reservation']}\nКол-во человек: {result[0]['number_person']}\n"
     text += f"<b>Телефон:</b> {result[0]['phone']}\n"
+    text += f"Ваш столик: {tableNumber}"
+
     admin_inline_send_ls.inline_keyboard[0][0]["url"] = f"https://t.me/{result[0]['username']}"
     await call.message.edit_text(text, reply_markup=admin_inline_send_ls, parse_mode=types.ParseMode.HTML)
 
@@ -76,8 +110,8 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
 
     # Обновить статус заявки в БД
     await db.update_order_hall_status(id=int(call_data[2]), order_status=True, admin_answer=call_data[1],
-                                 updated_at=datetime.now(timezone.utc), admin_id=admin_id,
-                                 admin_name=f'@{adminUsername}')
+                                      updated_at=datetime.now(timezone.utc), admin_id=admin_id,
+                                      admin_name=f'@{adminUsername}', table_number=tableNumber)
 
 
 ### Первый шаг
@@ -108,6 +142,7 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
                 else:
                     async with state.proxy() as data:
                         data["data"] = datetime.strptime(message.text.replace(".", "-"), "%d-%m-%Y").date()
+
                     await TableReservation.next()
 
                     text = "<b>Шаг [2/4]</b>\n\n Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
@@ -224,7 +259,7 @@ async def table_reservation_check_data(call, state: FSMContext):
         if call.message.from_user.id == admins[0]:
             ##TODO: Изменить меню
             await call.message.answer("⏳Один момент сейчас с Вами свяжется наш сотрудник",
-                                      reply_markup=menuUser)
+                                      reply_markup=menuAdmin)
         else:
             await call.message.answer("⏳Один момент сейчас с Вами свяжется наш сотрудник",
                                       reply_markup=menuUser)
@@ -238,15 +273,13 @@ async def table_reservation_check_data(call, state: FSMContext):
 
         # Сохранить заявку в БД
         order_id = await db.add_new_order_hall(admin_id=None, order_status=False, chat_id=data['chat_id'],
-                                          user_id=data['user_id'],
-                                          username=data['user_name'], full_name=data['full_name'],
-                                          data_reservation=data['data'], time_reservation=data['time'][:-3],
-                                          number_person=data['count_mans'], phone=data['phone_number'])
+                                               user_id=data['user_id'],
+                                               username=data['user_name'], full_name=data['full_name'],
+                                               data_reservation=data['data'], time_reservation=data['time'][:-3],
+                                               number_person=data['count_mans'], phone=data['phone_number'])
 
-        admin_inline_staff.inline_keyboard[2][0]["url"] = f"https://t.me/{data['user_name']}"
-        admin_inline_staff.inline_keyboard[0][0]["callback_data"] = f"{data['chat_id']}-rejected-{order_id}"
-        admin_inline_staff.inline_keyboard[0][1]["callback_data"] = f"{data['chat_id']}-approved-{order_id}"
-        admin_inline_staff.inline_keyboard[1][0]["callback_data"] = f"{data['chat_id']}-foolrest-{order_id}"
+
+        admin_inline_staff = await build_tables_ikb_on_data(data=data, order_id=order_id)
 
         await bot.send_message(chat_id=admins[0], text=text, reply_markup=admin_inline_staff)
         await state.finish()
@@ -261,14 +294,16 @@ async def table_reservation_check_data(call, state: FSMContext):
 
 
 # Подтверждение заявки админом
-@dp.callback_query_handler(text_contains="approved")
+@dp.callback_query_handler(text_contains="approved-free")
 async def table_reservation_admin(call):
     await call.answer(cache_time=60)
 
     call_data = call.data.split("-")
     adminUsername = call.from_user.username
     admin_id = call.from_user.id
-    await table_reservation_admin_butons(call=call, call_data=call_data, adminUsername=adminUsername, admin_id=admin_id)
+
+    await table_reservation_admin_butons(call=call, call_data=call_data, adminUsername=adminUsername, admin_id=admin_id,
+                                         tableNumber=int(call_data[1]))
 
 
 # Полная посадка Адмни
@@ -279,7 +314,8 @@ async def table_reservation_admin_fool_rest(call):
     call_data = call.data.split("-")
     adminUsername = call.from_user.username
     admin_id = call.from_user.id
-    await table_reservation_admin_butons(call=call, call_data=call_data, adminUsername=adminUsername, admin_id=admin_id)
+    await table_reservation_admin_butons(call=call, call_data=call_data, adminUsername=adminUsername, admin_id=admin_id,
+                                         tableNumber=0)
 
 
 # Отклонение заявки админом
@@ -290,4 +326,57 @@ async def table_reservation_admin_reject(call):
     call_data = call.data.split("-")
     adminUsername = call.from_user.username
     admin_id = call.from_user.id
-    await table_reservation_admin_butons(call=call, call_data=call_data, adminUsername=adminUsername, admin_id=admin_id)
+
+    await table_reservation_admin_butons(call=call, call_data=call_data, adminUsername=adminUsername, admin_id=admin_id,
+                                         tableNumber=0)
+
+
+""" Админская часть """
+
+
+@dp.message_handler(Text("Бронь столиков"), state=None)
+async def table_reservation_admin(message: types.Message, state: FSMContext):
+    await TableReservationAdmin.data.set()
+
+    date = datetime.now().strftime('%d.%m.%Y').split('.')
+    text = f"Введите дату в формате ДД.ММ.ГГГГ (07.10.1985) Сегодня {date[0]} {MONTHS[int(date[1]) - 1]} {date[2]} года"
+    await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
+
+    async with state.proxy() as data:
+        data["chat_id"] = message.chat.id
+        data["user_name"] = message.from_user.username
+        data["user_id"] = message.from_user.id
+        data['full_name'] = message.from_user.full_name
+
+
+# Ловим ответ от администратора дата
+@dp.message_handler(content_types=["text"], state=TableReservationAdmin.data)
+async def table_reservation_time(message: types.Message, state: FSMContext):
+    try:
+        date = message.text
+        if len(date.split('.')) == 3:
+            if (len(date.split('.')[0]) == 2) and (len(date.split('.')[1]) == 2) and (len(date.split('.')[2]) == 4):
+                if datetime.strptime(date, "%d.%m.%Y") < datetime.now():
+                    raise Exception('data error')
+                else:
+                    async with state.proxy() as data:
+                        data["data"] = datetime.strptime(message.text.replace(".", "-"), "%d-%m-%Y").date()
+
+                        result = await db.get_approved_orders_on_data(
+                            dataReservation=datetime.strptime(message.text.replace(".", "-"), "%d-%m-%Y").date())
+                        # [ < Record data_reservation = datetime.date(2023, 4, 7) table_number = 5 >, < Record data_reservation = datetime.date(2023, 4, 7) table_number = 6 >]
+
+                        build_tables_ikb_on_data(data=data["data"], order_id=order_id)
+                        await state.finish()
+        else:
+            raise Exception("input error")
+    except Exception as _ex:
+        if str(_ex) == 'input error':
+            text = "Я Вас не понимаю! Введите дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
+
+        elif str(_ex) == 'data error':
+            text = "Вы путешественник во времени? Нельзя забронировать столик на прошлое.\n" \
+                   "Введите правильную дату в формате ДД.ММ.ГГГГ (07.10.1985)"
+
+        await message.answer(text=text)
+        return

@@ -1,26 +1,12 @@
-from datetime import datetime, timezone
+tList = [
+    {'table_number': 1, 'time_reservation': '12:00'},
+    {'table_number': 2, 'time_reservation': '12:00'}
+]
 
-msg = '13 10'
-try:
-    if len(msg) == 5:
-        if " " in msg:
-            msg = msg.replace(" ", ":")
-        elif "." in msg:
-            msg = msg.replace(".", ":")
-        elif "-" in msg:
-            msg = msg.replace("-", ":")
+key = "table_number"
+val = 3
 
-        msg = msg + ":00"
+d = next(filter(lambda d: d.get(key) == val, tList), None)
+if d == None: print(d)
+else: print(d['time_reservation'])
 
-        time = datetime.strptime(msg, '%H:%M:%S').time()
-        if time < datetime.now().time():
-            raise Exception('time error')
-        print(time)
-    # else:
-    #     raise ValueError('input error')
-
-except Exception as _ex:
-    print("Я вас, к сожалению, не понимаю. Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ")
-    print(_ex)
-else:
-    print('Vse OK')

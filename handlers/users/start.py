@@ -1,21 +1,19 @@
-import time
-from aiogram.dispatcher import FSMContext
+from loader import dp, bot, db
 
-from keyboards.default import menuUser, menuAdmin
+from aiogram.types import Message, ReplyKeyboardRemove
 from aiogram import types
+from keyboards.default import menuUser, menuAdmin
 from aiogram.dispatcher.filters.builtin import CommandStart
 from data.config import admins
-from asyncpg import Connection, Record
-from asyncpg.exceptions import UniqueViolationError
+from aiogram.dispatcher import FSMContext
 
-from loader import dp, bot, db
-from aiogram.types import ReplyKeyboardRemove
 from utils.db_api.db_commands import DBCommands
 
-db=DBCommands()
+db = DBCommands()
 
 
-@dp.message_handler(CommandStart(), state='*')
+@dp.message_handler(commands=['start'])
+# @dp.message_handler(commands=['send_article'], state='*')
 async def bot_start(message: types.Message, state: FSMContext):
 
     if message.from_user.username == None:
@@ -34,20 +32,22 @@ async def bot_start(message: types.Message, state: FSMContext):
 
     text = "👋👋👋Мы рады приветствовать тебя в нашем чат-боте! \
             По этому хотим подарить тебе пиццу 4 сыра абсолютно БЕСПЛАТНО при первом посещении !\n\n"
-    text +="Важно! Заполни карту лояльности находясь в заведении в присутствии официанта и пицца твоя! 😉\n\n"
-    text +="Еще одна прекрасная новость для тебя! За каждые 5 рекомендаций нас через бота своим друзьям и знакомым "
+    text += "Важно! Заполни карту лояльности находясь в заведении в присутствии официанта и пицца твоя! 😉\n\n"
+    text += "Еще одна прекрасная новость для тебя! За каждые 5 рекомендаций нас через бота своим друзьям и знакомым "
     text += "ты получишь кальян в ПОДАРОК 🎁"
 
-    id = message.from_user.id
-
+    id = str(message.from_user.id)
     if id in admins:
-        await message.answer(text, reply_markup=ReplyKeyboardRemove())
+        await message.answer(text, reply_markup=menuAdmin)
     else:
         await message.answer(text, reply_markup=menuUser)
 
-    if message.get_args():
+    try:
         id_user = await db.add_new_user(referral=message.get_args())
-    else:
+    except:
         id_user = await db.add_new_user()
 
-
+    # if message.get_args():
+    #     id_user = await db.add_new_user(referral=message.get_args())
+    # else:
+    #     id_user = await db.add_new_user()

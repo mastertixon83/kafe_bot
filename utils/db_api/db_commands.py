@@ -25,11 +25,12 @@ class DBCommands:
 
     ### Добавление заявки на бронирование столика
     ADD_NEW_ORDER_HALL = "INSERT INTO orders_hall(admin_id, order_status, chat_id, user_id, username, full_name, " \
-                    "data_reservation, time_reservation, number_person, phone)" \
-                    "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id"
+                         "data_reservation, time_reservation, number_person, phone)" \
+                         "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id"
 
     GET_ORDER_HALL_DATA = "SELECT * FROM orders_hall WHERE id = $1"
-    UPDATE_ORDER_HALL_STATUS = "UPDATE orders_hall SET order_status = $2, admin_answer = $3, updated_at = $4, admin_id = $5, admin_name = $6 WHERE id = $1"
+    UPDATE_ORDER_HALL_STATUS = "UPDATE orders_hall SET order_status = $2, admin_answer = $3, updated_at = $4, admin_id = $5, admin_name = $6, table_number = $7 WHERE id = $1"
+    GET_APPROVED_ORDERS_ON_DATA = "SELECT data_reservation, time_reservation, table_number FROM orders_hall WHERE data_reservation = $1 AND (order_status=true AND admin_answer = 'approved') ORDER BY table_number"
 
     ###  Добавление нового пользователя с рефералом и без ###
     async def add_new_user(self, referral=None):
@@ -100,7 +101,7 @@ class DBCommands:
 
     ### Бронирование столика
     async def add_new_order_hall(self, admin_id, order_status, chat_id, user_id, username, full_name, data_reservation,
-                            time_reservation, number_person, phone):
+                                 time_reservation, number_person, phone):
 
         args = admin_id, order_status, chat_id, user_id, username, full_name, data_reservation, time_reservation, number_person, phone
         command = self.ADD_NEW_ORDER_HALL
@@ -115,8 +116,13 @@ class DBCommands:
         data = await self.pool.fetch(command, id)
         return data
 
-    async def update_order_hall_status(self, id, order_status, admin_answer, updated_at, admin_id, admin_name):
+    async def get_approved_orders_on_data(self, dataReservation):
+        command = self.GET_APPROVED_ORDERS_ON_DATA
+        data = await self.pool.fetch(command, dataReservation)
+        return data
+
+    async def update_order_hall_status(self, id, order_status, admin_answer, updated_at, admin_id, admin_name,
+                                       table_number):
         command = self.UPDATE_ORDER_HALL_STATUS
-        await self.pool.fetch(command, int(id), order_status, admin_answer, updated_at, int(admin_id), admin_name)
-
-
+        await self.pool.fetch(command, int(id), order_status, admin_answer, updated_at, int(admin_id), admin_name,
+                              table_number)
