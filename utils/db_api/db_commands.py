@@ -18,15 +18,16 @@ class DBCommands:
     UPDATE_USER_DATA_CARD = "UPDATE users SET card_fio = $2, card_phone = $3, birthday = $4 " \
                             " WHERE user_id = $1"
     APPROVE_USER_CARD_ADMIN = "UPDATE users SET card_status = TRUE WHERE user_id = $1"
-    GENERATE_PRIZE_CODE = "INSERT INTO codes(user_id, code_description) VALUES ($1, $2) RETURNING id"
+
+    GENERATE_PRIZE_CODE = "INSERT INTO prize_codes(user_id, code_description) VALUES ($1, $2) RETURNING id"
     UPDATE_COUNT_PRIZE = "UPDATE users SET prize = $1 WHERE user_id = $2"
-    GET_CODE_PRIZE = "SELECT * FROM codes WHERE id = $1"
-    GET_ACTIVE_CODES_USER = "SELECT * FROM codes WHERE user_id = $1 and code_status = TRUE"
+    GET_CODE_PRIZE = "SELECT * FROM prize_codes WHERE id = $1"
+    GET_ACTIVE_CODES_USER = "SELECT * FROM prize_codes WHERE user_id = $1 and code_status = TRUE"
 
     ### Добавление заявки на бронирование столика
     ADD_NEW_ORDER_HALL = "INSERT INTO orders_hall(admin_id, order_status, chat_id, user_id, username, full_name, " \
-                         "data_reservation, time_reservation, number_person, phone)" \
-                         "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id"
+                         "data_reservation, time_reservation, number_person, phone, comment)" \
+                         "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id"
 
     GET_ORDER_HALL_DATA = "SELECT * FROM orders_hall WHERE id = $1"
     UPDATE_ORDER_HALL_STATUS = "UPDATE orders_hall SET order_status = $2, admin_answer = $3, updated_at = $4, admin_id = $5, admin_name = $6, table_number = $7 WHERE id = $1"
@@ -71,39 +72,38 @@ class DBCommands:
         command = self.APPROVE_USER_CARD_ADMIN
         await self.pool.fetch(command, int(user_id))
 
-    # async def generate_prize_code(self, user_id):
-    #     user = types.User.get_current()
-    #     chat_id = user.id
-    #     description = "Бесплатное занятие"
-    #
-    #     args = chat_id, description
-    #     command = self.GENERATE_PRIZE_CODE
-    #     try:
-    #         record_id = await self.pool.fetchval(command, *args)
-    #         return record_id
-    #     except UniqueViolationError:
-    #         pass
+    async def generate_prize_code(self, user_id):
+        user = types.User.get_current()
+        description = "Бесплатная пицца"
 
-    # async def get_code_prize(self, code_id):
-    #     command = self.GET_CODE_PRIZE
-    #     code_info = await self.pool.fetch(command, code_id)
-    #     return code_info
+        args = user_id, description
+        command = self.GENERATE_PRIZE_CODE
+        try:
+            record_id = await self.pool.fetchval(command, *args)
+            return record_id
+        except UniqueViolationError:
+            pass
 
-    # async def update_count_prize(self, user_id, prize_count):
-    #     command = self.UPDATE_COUNT_PRIZE
-    #     await self.pool.fetch(command, prize_count, user_id)
+    async def get_code_prize(self, code_id):
+        command = self.GET_CODE_PRIZE
+        code_info = await self.pool.fetch(command, code_id)
+        return code_info
 
-    # async def get_active_codes_user(self, user_id):
-    #     command = self.GET_ACTIVE_CODES_USER
-    #     codes = []
-    #     codes = await self.pool.fetch(command, user_id)
-    #     return codes
+    async def update_count_prize(self, user_id, prize_count):
+        command = self.UPDATE_COUNT_PRIZE
+        await self.pool.fetch(command, prize_count, user_id)
+
+    async def get_active_codes_user(self, user_id):
+        command = self.GET_ACTIVE_CODES_USER
+        codes = []
+        codes = await self.pool.fetch(command, user_id)
+        return codes
 
     ### Бронирование столика
     async def add_new_order_hall(self, admin_id, order_status, chat_id, user_id, username, full_name, data_reservation,
-                                 time_reservation, number_person, phone):
+                                 time_reservation, number_person, phone, comment):
 
-        args = admin_id, order_status, chat_id, user_id, username, full_name, data_reservation, time_reservation, number_person, phone
+        args = admin_id, order_status, chat_id, user_id, username, full_name, data_reservation, time_reservation, number_person, phone, comment
         command = self.ADD_NEW_ORDER_HALL
         try:
             record_id = await self.pool.fetchval(command, *args)

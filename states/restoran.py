@@ -6,6 +6,7 @@ class TableReservation(StatesGroup):
     time = State()
     count_men = State()
     phone = State()
+    comment = State()
     check = State()
 
 

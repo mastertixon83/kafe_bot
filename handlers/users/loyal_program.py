@@ -8,12 +8,12 @@ from PIL import ImageFont
 from aiogram import types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 
 from utils.db_api.db_commands import DBCommands
 
 from keyboards.default.menu import *
-from keyboards.inline.inline_buttons import admin_card_approve, user_inline_approve, get_prize_inline
+from keyboards.inline.inline_buttons import admin_card_approve, user_inline_approve, get_prize_inline, user_inline_codes
 
 from loader import dp, bot
 
@@ -82,7 +82,7 @@ async def invite_friend(message: Message):
         else:
             users_activated_card.append("@" + user['username'] + " - Не подтвержден")
 
-    text = "✅ Используйте любую из ссылок ниже, чтобы пригласить друзей в бота. Чтобы приглашение было вам засчитано, " \
+    text = "Получи любую пиццу на выбор бесплатно в нашем ресторане \n\n Для этого нужно пригласить всего лишь 5 друзей \n\n✅ Используйте любую из ссылок ниже, чтобы пригласить друзей в бота. Чтобы приглашение было вам засчитано, " \
            "приглашенный вами пользователь должен оформить карту лояльности находясь в заведении "
 
     await message.answer(text, reply_markup=cancel_btn)
@@ -113,46 +113,58 @@ async def get_active_codes(message: Message):
     if codes:
         text = "Ваши коды\n\n " \
                "Используйте их при записи на занятие, указав код в комментарии\n\n"
+
+        markup = InlineKeyboardMarkup()  # создаём клавиатуру
+        markup.row_width = 1  # кол-во кнопок в строке
+
         for code in codes:
-            text += str(code['code']) + " - " + code['code_description'] + "\n"
+            markup.add(InlineKeyboardButton(f"{str(code['code'])} - {code['code_description']}", callback_data=f"prize_code-{str(code['code'])}"))
     else:
         text = "К сожалению у Вас нет призовых кодов"
 
-    await message.answer(text=text, reply_markup=menuUser)
+    await message.answer(text=text, reply_markup=markup)
 
 
-# Начало регистрации карты лояльности
+# Программа лояльности
+@dp.message_handler(Text("Программа лояльности"), state=None)
+async def reg_loyal_card(message: Message, state: FSMContext):
+    text = "<b>Шаг [1/4]</b>\n\n Введите Ваши имя и фамилию. Два слова."
+    await message.answer(text, reply_markup=menuLoyality, parse_mode=types.ParseMode.HTML)
+
+
+# 1 шаг Фамилия Имя
 @dp.message_handler(Text("Получить карту"), state=None)
 async def reg_loyal_card(message: Message, state: FSMContext):
     info = await db.get_user_info(message.from_user.id)
+    await CardLoyalReg.fio.set()
     if info[0]["card_status"] != True:
         # Введите Ваши имя и фамилию. Два слова.
         # Введите дату Вашего рождения в формате ДД.ММ.ГГГГ
         # Отправьте номер Вашего телефона нажав на кнопку ниже
-        text = "<b>Шаг [1/3]</b>\n\n Введите Ваши имя и фамилию. Два слова."
+        text = "<b>Шаг [1/4]</b>\n\n Введите Ваши имя и фамилию. Два слова."
         await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
-
-        await CardLoyalReg.fio.set()
     else:
+        await state.finish()
         text = "Вот ваша карточка. Используйте её для получения скидок и участия в акциях."
         card = card_generate(info[0]["user_id"], info[0]["card_fio"], info[0]["card_number"])
         await bot.send_photo(chat_id=info[0]['user_id'], photo=card, caption=text, reply_markup=menuUser)
 
 
-# Карта лояльности Фамилия и имя
+# Программа лояльности
+# 2 шаг Дата рождения
 @dp.message_handler(content_types=["text"], state=CardLoyalReg.fio)
 async def reg_loyal_card_fio(message: types.Message, state: FSMContext):
+    await CardLoyalReg.birthday.set()
     async with state.proxy() as data:
         data["user_id"] = message.from_user.id
         data["card_fio"] = message.text
 
-    text = "<b>Шаг [2/3]</b>\n\n Введите дату Вашего рождения в формате ДД.ММ.ГГГГ (07.10.1985)"
+    text = "<b>Шаг [2/4]</b>\n\n Введите дату Вашего рождения в формате ДД.ММ.ГГГГ (07.10.1985)"
     await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
 
-    await CardLoyalReg.birthday.set()
 
-
-# Карта лояльности дата рождения
+# Программа лояльности
+# 3 шаг Номер телефона
 @dp.message_handler(content_types=["text"], state=CardLoyalReg.birthday)
 async def reg_loyal_card_birthday(message: types.Message, state: FSMContext):
     try:
@@ -168,13 +180,14 @@ async def reg_loyal_card_birthday(message: types.Message, state: FSMContext):
             if len(data) == 3:
                 if (len(data[0]) == 2) and (len(data[1]) == 2) and (len(data[2]) == 4):
                     data = await state.get_data()
+                    await CardLoyalReg.phone.set()
+
                     async with state.proxy() as data:
                         data["birthday"] = datetime.strptime(message.text.replace(".", "-"), "%d-%m-%Y").date()
-                    text = "<b>Шаг [3/3]</b>\n\n Отправьте номер Вашего телефона нажав на кнопку ниже \n\n " \
+                    text = "<b>Шаг [3/4]</b>\n\n Отправьте номер Вашего телефона нажав на кнопку ниже \n\n " \
                            "или введите в формате +77777777777\n\nНажмите кнопку ниже⬇"
                     await message.answer(text, reply_markup=send_phone_cancel, parse_mode=types.ParseMode.HTML)
 
-                    await CardLoyalReg.phone.set()
                 else:
                     text = "Я Вас не понимаю! Введите дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
                     await message.answer(text=text)
@@ -185,8 +198,8 @@ async def reg_loyal_card_birthday(message: types.Message, state: FSMContext):
         text = "Я Вас не понимаю! Введите дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
         await message.answer(text=text)
 
-
-# Карта лояльности отправка контакта
+# Программа лояльности
+# Проверка данных
 @dp.message_handler(content_types=["contact", "text"], state=CardLoyalReg.phone)
 async def reg_loyal_card_phone(message: types.Message, state: FSMContext):
     data = await state.get_data()
@@ -327,10 +340,11 @@ async def get_user_prize(call):
     id_code = await db.generate_prize_code(int(user_id))
 
     count_prize = info[0]["prize"] + 1
-
     code_info = await db.get_code_prize(id_code)
     await db.update_count_prize(int(user_id), count_prize)
-
+    user_inline_codes.inline_keyboard[0].clear()
+    user_inline_codes.inline_keyboard[0].append(InlineKeyboardButton("Подарочный код1", callback_data="prize_code-1"))
+    user_inline_codes.inline_keyboard[0].append(InlineKeyboardButton("Подарочный код2", callback_data="prize_code-2"))
     text = f"Вот ваш код - {code_info[0]['code']} - {code_info[0]['code_description']} \n\n " \
            f"Используйте его при записи на занятие (Укажите в комментарии)"
-    await call.message.answer(text=text, reply_markup=menuUser)
+    await call.message.answer(text=text, reply_markup=user_inline_codes)
