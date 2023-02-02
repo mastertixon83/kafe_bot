@@ -7,7 +7,8 @@ from utils.notify_admins import on_startup_notify, on_shutdown_notify
 from utils.set_bot_commands import set_default_commands
 from utils.db_api.sql import create_db
 
-
+# https://www.youtube.com/watch?v=ke7LP4LDXSg
+# https://www.youtube.com/watch?v=rQ-6SdpdYys
 async def on_shutdown(dp):
     await on_shutdown_notify(dp)
 

@@ -157,6 +157,13 @@ admin_config = ReplyKeyboardMarkup(
             KeyboardButton("Заблокировать")
         ],
         [KeyboardButton("Разблокировать пользователя")],
+        [KeyboardButton("Меню")],
         [KeyboardButton("Назад")]
+    ]
+)
+
+admin_config_menu = ReplyKeyboardMarkup(
+    keyboard=[
+
     ]
 )

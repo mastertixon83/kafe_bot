@@ -13,11 +13,11 @@ from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 from utils.db_api.db_commands import DBCommands
 
 from keyboards.default.menu import *
-from keyboards.inline.inline_buttons import admin_card_approve, user_inline_approve, get_prize_inline, user_inline_codes
+from keyboards.inline.inline_buttons import admin_card_approve, user_inline_approve, get_prize_inline
 
 from loader import dp, bot
 
-from states.card_loyality import CardLoyalReg
+from states.card_loyality import CardLoyalReg, UsePrizeCode
 
 from data.config import admins
 
@@ -65,12 +65,10 @@ def card_generate(user_id, user_fio, card_number):
 
 # Нажатие на кнопку Пригласить друга
 # Генерация реферальных ссылок
-@dp.message_handler(Text("Пригласить друга"))
-async def invite_friend(message: Message):
-    user_id = message.from_user.id
+# async def sum_approved_users(user_id):
+async def sum_approved_users(user_id):
     info = await db.get_user_info(user_id)
     referral_id = info[0]['referral_id']
-
     all_invited_users = await db.get_all_invited_users(referral_id)
 
     users_activated_card = []
@@ -82,13 +80,22 @@ async def invite_friend(message: Message):
         else:
             users_activated_card.append("@" + user['username'] + " - Не подтвержден")
 
+    return info, referral_id, approved_users, all_invited_users
+
+
+@dp.message_handler(Text("Пригласить друга"))
+async def invite_friend(message: Message):
+    user_id = message.from_user.id
+
+    info, referral_id, approved_users, all_invited_users = await sum_approved_users(user_id=user_id)
+
     text = "Получи любую пиццу на выбор бесплатно в нашем ресторане \n\n Для этого нужно пригласить всего лишь 5 друзей \n\n✅ Используйте любую из ссылок ниже, чтобы пригласить друзей в бота. Чтобы приглашение было вам засчитано, " \
-           "приглашенный вами пользователь должен оформить карту лояльности находясь в заведении "
+           "приглашенный вами пользователь должен оформить карту лояльности находясь в заведении!"
 
     await message.answer(text, reply_markup=cancel_btn)
     prizes = approved_users // 5 - info[0]["prize"]
 
-    text = f"Получено подарков за приглашения: {info[0]['prize']}\n\n" \
+    text = f"Получено подарков за приглашения: {info[0]['prize']}/{prizes + info[0]['prize']}\n\n" \
            f"Вы пригласили {str(len(all_invited_users))} человека в бота\n" \
            f"Подтверждённых приглашений (Оформили карту лояльности): {str(approved_users)}\n\n" \
            "Внутренняя ссылка: эту ссылку вы можете скидывать своим друзьям или выкладывать в чаты внутри экосистемы " \
@@ -110,25 +117,91 @@ async def invite_friend(message: Message):
 async def get_active_codes(message: Message):
     user_id = message.from_user.id
     codes = await db.get_active_codes_user(user_id)
-    if codes:
-        text = "Ваши коды\n\n " \
-               "Используйте их при записи на занятие, указав код в комментарии\n\n"
 
-        markup = InlineKeyboardMarkup()  # создаём клавиатуру
-        markup.row_width = 1  # кол-во кнопок в строке
+    markup = InlineKeyboardMarkup()  # создаём клавиатуру
+    markup.row_width = 1  # кол-во кнопок в строке
+
+    if codes:
+        text = "Ваши коды\n\n"
+        text += "Для их использования Вы должны находиться в заведении\n"
 
         for code in codes:
-            markup.add(InlineKeyboardButton(f"{str(code['code'])} - {code['code_description']}", callback_data=f"prize_code-{str(code['code'])}"))
+            markup.add(InlineKeyboardButton(f"{str(code['code'])} - {code['code_description']}",
+                                            callback_data=f"prize_code-{str(code['code'])}"))
     else:
         text = "К сожалению у Вас нет призовых кодов"
 
     await message.answer(text=text, reply_markup=markup)
 
 
+# Использовать призовые коды
+@dp.callback_query_handler(text_contains=["prize_code"], state=None)
+async def use_prize_code(call, state: FSMContext):
+    await UsePrizeCode.use_prize.set()
+    pc_info = await db.get_code_prize_info(int(call.data.split('-')[1]))
+
+    async with state.proxy() as data:
+        data["prize_code"] = int(call.data.split('-')[1])
+        data["prize_desc"] = pc_info[0]["code_description"]
+
+    text = 'Введите номер столика и официант принисет Ваш приз.\n\n'
+
+    await bot.delete_message(chat_id=call.from_user.id, message_id=call.message.message_id)
+    await call.message.answer(text=text, reply_markup=cancel_btn)
+
+
+# Использовать коды, ловим номер столика для вызова официантв
+@dp.message_handler(content_types=["text"], state=UsePrizeCode.use_prize)
+async def use_prize_code_waiter_call(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    await state.finish()
+
+    text = f'Столик {message.text} (@{message.from_user.username}) заказал свой приз \n{data["prize_desc"]} - Код {data["prize_code"]}\n\n'
+    await bot.send_message(chat_id=admins[0], text=text)
+    await db.update_prize_code_status(data["prize_code"])
+
+    text = "Официант уже на пути к Вам"
+    await message.answer(text=text, reply_markup=menuUser, parse_mode=types.ParseMode.HTML)
+
+
+# Нажатие на кнопку получить приз
+@dp.callback_query_handler(text_contains=["get_prize"])
+async def get_user_prize(call):
+    await call.answer(cache_time=60)
+    cb_data = call.data.split('-')
+    user_id = int(cb_data[1])
+
+    info, referral_id, approved_users, all_invited_users = await sum_approved_users(user_id=user_id)
+    prizes = approved_users // 5 - info[0]["prize"]
+
+    await bot.edit_message_reply_markup(call.message.chat.id, message_id=call.message.message_id, reply_markup="")
+
+    text = "Вот ваши коды\n"
+    while prizes != 0:
+        id_code = await db.generate_prize_code(int(user_id))
+        info = await db.get_user_info(int(user_id))
+        print(info[0]['prize'])
+        count_prize = info[0]['prize'] + 1
+        await db.update_count_prize(int(user_id), count_prize)
+        code_info = await db.get_code_prize(id_code)
+        text += f"{code_info[0]['code']} - {code_info[0]['code_description']} \n\n "
+        prizes -= 1
+
+    text += f"Используйте его при из меню Программа лояльности - Мои Коды"
+
+    await call.message.answer(text=text, reply_markup=menuUser)
+
+
 # Программа лояльности
 @dp.message_handler(Text("Программа лояльности"), state=None)
 async def reg_loyal_card(message: Message, state: FSMContext):
-    text = "<b>Шаг [1/4]</b>\n\n Введите Ваши имя и фамилию. Два слова."
+    info = await db.get_user_info(message.from_user.id)
+
+    if info[0]['card_status'] != True:
+        text = "<b>Шаг [1/4]</b>\n\n Введите Ваши имя и фамилию. Два слова."
+    else:
+        text = "Меню программы лояльности"
+    await message.delete()
     await message.answer(text, reply_markup=menuLoyality, parse_mode=types.ParseMode.HTML)
 
 
@@ -137,6 +210,7 @@ async def reg_loyal_card(message: Message, state: FSMContext):
 async def reg_loyal_card(message: Message, state: FSMContext):
     info = await db.get_user_info(message.from_user.id)
     await CardLoyalReg.fio.set()
+
     if info[0]["card_status"] != True:
         # Введите Ваши имя и фамилию. Два слова.
         # Введите дату Вашего рождения в формате ДД.ММ.ГГГГ
@@ -197,6 +271,7 @@ async def reg_loyal_card_birthday(message: types.Message, state: FSMContext):
     except:
         text = "Я Вас не понимаю! Введите дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
         await message.answer(text=text)
+
 
 # Программа лояльности
 # Проверка данных
@@ -277,7 +352,6 @@ async def reg_loyal_card_approve(call, state: FSMContext):
 
 
 # Картиа лояльности подверждение админом
-# @dp.callback_query_handler(text=["admin_card_reject", "admin_card_approve"], state=CardLoyalReg.approve)
 @dp.callback_query_handler(text_contains=["admin_card_approve"])
 async def reg_loyal_card_admin_approve(call, state: FSMContext):
     await call.answer(cache_time=60)
@@ -325,26 +399,3 @@ async def reg_loyal_card_admin_reject(call):
     await call.message.edit_text(text=text, reply_markup="")
 
     await bot.send_message(chat_id=cb_data[1], text="Ваша заявка на карту отклонена администрацией.")
-
-
-# Нажатие на кнопку получить приз
-@dp.callback_query_handler(text_contains=["get_prize"])
-async def get_user_prize(call):
-    await call.answer(cache_time=60)
-    cb_data = call.data.split('-')
-    user_id = cb_data[1]
-
-    await bot.edit_message_reply_markup(call.message.chat.id, message_id=call.message.message_id, reply_markup="")
-
-    info = await db.get_user_info(int(user_id))
-    id_code = await db.generate_prize_code(int(user_id))
-
-    count_prize = info[0]["prize"] + 1
-    code_info = await db.get_code_prize(id_code)
-    await db.update_count_prize(int(user_id), count_prize)
-    user_inline_codes.inline_keyboard[0].clear()
-    user_inline_codes.inline_keyboard[0].append(InlineKeyboardButton("Подарочный код1", callback_data="prize_code-1"))
-    user_inline_codes.inline_keyboard[0].append(InlineKeyboardButton("Подарочный код2", callback_data="prize_code-2"))
-    text = f"Вот ваш код - {code_info[0]['code']} - {code_info[0]['code_description']} \n\n " \
-           f"Используйте его при записи на занятие (Укажите в комментарии)"
-    await call.message.answer(text=text, reply_markup=user_inline_codes)

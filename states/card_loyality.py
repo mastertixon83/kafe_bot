@@ -6,3 +6,7 @@ class CardLoyalReg(StatesGroup):
     birthday = State()
     phone = State()
     approve = State()
+
+
+class UsePrizeCode(StatesGroup):
+    use_prize = State()

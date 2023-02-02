@@ -6,7 +6,7 @@ from loader import dp, bot, db
 from aiogram import types
 from aiogram.types import ReplyKeyboardRemove
 from keyboards.inline.inline_buttons import admin_inline_staff, admin_inline_send_ls, \
-    user_inline_approve, admin_inline_hall_edit, hall_reservation_inline_count_mans
+    user_inline_approve
 
 from keyboards.default.menu import menuUser, menuAdmin, \
     send_phone_cancel, cancel_btn, menuAdminOrders
@@ -73,7 +73,6 @@ async def build_tables_ikb_on_data(data, order_id):
 ### Резервирование столика обработка данных
 async def table_reservation_admin_butons(call, call_data, adminUsername, admin_id, tableNumber):
     # Выбрать из БД заявку
-    print(call_data)
     result = await db.get_order_hall_data(id=int(call_data[1]))
 
     res = datetime.now(timezone.utc) - result[0]['updated_at']
@@ -188,7 +187,7 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
                 async with state.proxy() as data:
                     data["time"] = time.strftime("%H:%M:%S")
 
-                await message.answer("<b>ШАГ [3/5]</b> Укажите на какое количество человек приложить приборов", reply_markup=hall_reservation_inline_count_mans,
+                await message.answer("<b>ШАГ [3/5]</b> Укажите на какое количество человек хотите сделать бронь",
                                      parse_mode=types.ParseMode.HTML)
     except Exception as _ex:
         if str(_ex) == 'time error':
@@ -202,14 +201,24 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
 
 
 # Ловим ответ от пользователя количество человек
-@dp.callback_query_handler(text_contains="person", state=TableReservation.count_men)
-async def table_reservation_count_man(call, state: FSMContext):
+# @dp.callback_query_handler(text_contains="person", state=TableReservation.count_men)
+@dp.message_handler(content_types=["text"], state=TableReservation.count_men)
+async def table_reservation_count_man(message: types.Message, state: FSMContext):
     await TableReservation.phone.set()
-    async with state.proxy() as data:
-        data["count_mans"] = call.data.split("-")[1]
+    if message.text.isdigit():
+        count_mans = int(message.text)
+        async with state.proxy() as data:
+            data["count_mans"] = count_mans
 
-    await bot.send_message(chat_id=call.from_user.id, text="<b>ШАГ [4/5]</b> ⬇️ Отправьте номер телефона", reply_markup=send_phone_cancel,
-                             parse_mode=types.ParseMode.HTML)
+        await bot.send_message(chat_id=message.from_user.id, text="<b>ШАГ [4/5]</b> ⬇️ Отправьте номер телефона", reply_markup=send_phone_cancel,
+                                 parse_mode=types.ParseMode.HTML)
+    else:
+        await TableReservation.count_men.set()
+        text = "Я вас, к сожалению, не понимаю.\n"
+        text +="<b>ШАГ [3/5]</b> Укажите на какое количество человек хотите сделать бронь"
+        await bot.send_message(chat_id=message.from_user.id, text=text,
+                               reply_markup=cancel_btn,
+                               parse_mode=types.ParseMode.HTML)
 
 
 # Ловим ответ от пользователя отправка номера телефона
@@ -307,7 +316,6 @@ async def table_reservation_admin(call):
     await call.answer(cache_time=60)
 
     call_data = call.data.split("-")
-    print(call_data)
     adminUsername = call.from_user.username
     admin_id = call.from_user.id
 

@@ -63,6 +63,6 @@ create table if not exists items_menu
     photo text,
     price numeric(6, 2),
     category_id int,
-    foreign key (category_id) references category_menu(id)
+    foreign key (category_id) references category_menu(id) ON DELETE CASCADE
 );
 

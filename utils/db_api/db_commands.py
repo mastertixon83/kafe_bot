@@ -21,8 +21,13 @@ class DBCommands:
 
     GENERATE_PRIZE_CODE = "INSERT INTO prize_codes(user_id, code_description) VALUES ($1, $2) RETURNING id"
     UPDATE_COUNT_PRIZE = "UPDATE users SET prize = $1 WHERE user_id = $2"
+
     GET_CODE_PRIZE = "SELECT * FROM prize_codes WHERE id = $1"
+    GET_CODE_PRIZE_INFO = "SELECT * FROM prize_codes WHERE code = $1"
     GET_ACTIVE_CODES_USER = "SELECT * FROM prize_codes WHERE user_id = $1 and code_status = TRUE"
+
+    UPDATE_PRIZE_CODE_STATUS = "UPDATE prize_codes set code_status = FALSE WHERE code = $1"
+
 
     ### Добавление заявки на бронирование столика
     ADD_NEW_ORDER_HALL = "INSERT INTO orders_hall(admin_id, order_status, chat_id, user_id, username, full_name, " \
@@ -84,8 +89,13 @@ class DBCommands:
         except UniqueViolationError:
             pass
 
-    async def get_code_prize(self, code_id):
+    async def get_code_prize(self, id):
         command = self.GET_CODE_PRIZE
+        code_info = await self.pool.fetch(command, id)
+        return code_info
+
+    async def get_code_prize_info(self, code_id):
+        command = self.GET_CODE_PRIZE_INFO
         code_info = await self.pool.fetch(command, code_id)
         return code_info
 
@@ -98,6 +108,10 @@ class DBCommands:
         codes = []
         codes = await self.pool.fetch(command, user_id)
         return codes
+
+    async def update_prize_code_status(self, code_number):
+        command = self.UPDATE_PRIZE_CODE_STATUS
+        await self.pool.fetch(command, code_number)
 
     ### Бронирование столика
     async def add_new_order_hall(self, admin_id, order_status, chat_id, user_id, username, full_name, data_reservation,
