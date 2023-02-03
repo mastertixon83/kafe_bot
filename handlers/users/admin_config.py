@@ -33,3 +33,17 @@ async def admin_edit_categories(message: Message):
         markup.add().row(*row)
         await message.answer(text=f"{str(category['title'])}", reply_markup=markup)
 
+### Редактирование категории или блюда
+@dp.callback_query_handler(text_contains=["edit"])
+async def admin_edit_category_item(call, state: FSMContext):
+    await call.answer(cache_time=10)
+    call_data = call.data.split("-")
+    print(call_data)
+
+
+### Удалеие категории или блюда
+@dp.callback_query_handler(text_contains=["delete"])
+async def admin_delete_category_item(call, state: FSMContext):
+    await call.answer(cache_time=10)
+    call_data = call.data.split("-")
+    print(call_data)
