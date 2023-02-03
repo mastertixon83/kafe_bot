@@ -29,7 +29,7 @@ class DBCommands:
     UPDATE_PRIZE_CODE_STATUS = "UPDATE prize_codes set code_status = FALSE WHERE code = $1"
 
 
-    ### Добавление заявки на бронирование столика
+    ### Заявки на бронирование столика
     ADD_NEW_ORDER_HALL = "INSERT INTO orders_hall(admin_id, order_status, chat_id, user_id, username, full_name, " \
                          "data_reservation, time_reservation, number_person, phone, comment)" \
                          "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id"
@@ -37,6 +37,11 @@ class DBCommands:
     GET_ORDER_HALL_DATA = "SELECT * FROM orders_hall WHERE id = $1"
     UPDATE_ORDER_HALL_STATUS = "UPDATE orders_hall SET order_status = $2, admin_answer = $3, updated_at = $4, admin_id = $5, admin_name = $6, table_number = $7 WHERE id = $1"
     GET_APPROVED_ORDERS_ON_DATA = "SELECT data_reservation, time_reservation, table_number FROM orders_hall WHERE data_reservation = $1 AND (order_status=true AND admin_answer = 'approved') ORDER BY table_number"
+
+    ### Административная часть
+    ### Редактирование меню
+    GET_ALL_CATEGORIES = "SELECT * FROM category_menu"
+
 
     ###  Добавление нового пользователя с рефералом и без ###
     async def add_new_user(self, referral=None):
@@ -140,3 +145,10 @@ class DBCommands:
         command = self.UPDATE_ORDER_HALL_STATUS
         await self.pool.fetch(command, int(id), order_status, admin_answer, updated_at, int(admin_id), admin_name,
                               table_number)
+
+### Административная часть
+### Выборка всех категорий
+    async def get_all_categories(self):
+        command = self.GET_ALL_CATEGORIES
+        categories = await self.pool.fetch(command)
+        return categories

@@ -149,7 +149,7 @@ send_phone_cancel = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-admin_config = ReplyKeyboardMarkup(
+menu_admin_config = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton("Администраторы бота")],
         [
@@ -157,13 +157,23 @@ admin_config = ReplyKeyboardMarkup(
             KeyboardButton("Заблокировать")
         ],
         [KeyboardButton("Разблокировать пользователя")],
-        [KeyboardButton("Меню")],
+        [KeyboardButton("Редактировать меню")],
         [KeyboardButton("Назад")]
     ]
 )
 
-admin_config_menu = ReplyKeyboardMarkup(
+menu_admin_edit = ReplyKeyboardMarkup(
     keyboard=[
+        [KeyboardButton("Категории")],
+        [KeyboardButton("Блюда")],
+        [KeyboardButton("Назад")]
+    ]
+)
 
+menu_admin_edit2 = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton("Добавить")],
+        [KeyboardButton("Редактировать")],
+        [KeyboardButton("Назад")]
     ]
 )
