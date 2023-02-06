@@ -15,7 +15,6 @@ db = DBCommands()
 @dp.message_handler(commands=['start'])
 # @dp.message_handler(commands=['send_article'], state='*')
 async def bot_start(message: types.Message, state: FSMContext):
-    await message.delete()
     if message.from_user.username == None:
         text = "Мы рады преветствовать Тебя в нашем чат-боте.\n" \
                "В Товем профиле не указано имя пользователя.\n" \

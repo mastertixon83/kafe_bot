@@ -85,7 +85,6 @@ async def sum_approved_users(user_id):
 
 @dp.message_handler(Text("Пригласить друга"))
 async def invite_friend(message: Message):
-    await message.delete()
     user_id = message.from_user.id
 
     info, referral_id, approved_users, all_invited_users = await sum_approved_users(user_id=user_id)
@@ -116,7 +115,6 @@ async def invite_friend(message: Message):
 # Показать активные коды скидок
 @dp.message_handler(Text("Мои коды"))
 async def get_active_codes(message: Message):
-    await message.delete()
     user_id = message.from_user.id
     codes = await db.get_active_codes_user(user_id)
 
@@ -155,7 +153,6 @@ async def use_prize_code(call, state: FSMContext):
 # Использовать коды, ловим номер столика для вызова официантв
 @dp.message_handler(content_types=["text"], state=UsePrizeCode.use_prize)
 async def use_prize_code_waiter_call(message: types.Message, state: FSMContext):
-    await message.delete()
     data = await state.get_data()
     await state.finish()
 
@@ -198,7 +195,6 @@ async def get_user_prize(call):
 # Программа лояльности
 @dp.message_handler(Text("Программа лояльности"), state=None)
 async def reg_loyal_card(message: Message, state: FSMContext):
-    await message.delete()
     info = await db.get_user_info(message.from_user.id)
 
     if info[0]['card_status'] != True:
@@ -212,7 +208,6 @@ async def reg_loyal_card(message: Message, state: FSMContext):
 # 1 шаг Фамилия Имя
 @dp.message_handler(Text("Получить карту"), state=None)
 async def reg_loyal_card(message: Message, state: FSMContext):
-    await message.delete()
     info = await db.get_user_info(message.from_user.id)
     await CardLoyalReg.fio.set()
 
@@ -233,7 +228,6 @@ async def reg_loyal_card(message: Message, state: FSMContext):
 # 2 шаг Дата рождения
 @dp.message_handler(content_types=["text"], state=CardLoyalReg.fio)
 async def reg_loyal_card_fio(message: types.Message, state: FSMContext):
-    await message.delete()
     await CardLoyalReg.birthday.set()
     async with state.proxy() as data:
         data["user_id"] = message.from_user.id
@@ -247,7 +241,6 @@ async def reg_loyal_card_fio(message: types.Message, state: FSMContext):
 # 3 шаг Номер телефона
 @dp.message_handler(content_types=["text"], state=CardLoyalReg.birthday)
 async def reg_loyal_card_birthday(message: types.Message, state: FSMContext):
-    await message.delete()
     try:
         data = message.text.split(".")
         data_cur = datetime.now()
@@ -284,7 +277,6 @@ async def reg_loyal_card_birthday(message: types.Message, state: FSMContext):
 # Проверка данных
 @dp.message_handler(content_types=["contact", "text"], state=CardLoyalReg.phone)
 async def reg_loyal_card_phone(message: types.Message, state: FSMContext):
-    await message.delete()
     data = await state.get_data()
 
     async with state.proxy() as data:

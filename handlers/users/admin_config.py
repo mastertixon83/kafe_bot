@@ -34,12 +34,15 @@ async def keiboard_generator(items, what, message: Message):
 
     return msg_id_list, chat_id
 
+
 async def delete_cat_msg_buttons(state: FSMContext):
-    ### Удаление кнопок с категориями
+    ### Удаление сообщений с кнопками категорий/блюд
     data = await state.get_data()
     for item in data['msg_id_list']:
         await bot.delete_message(chat_id=data['chat_id'], message_id=item['message_id'])
         await state.finish()
+
+
 @dp.message_handler(Text("Добавить"), state="*")
 async def test(message: Message, state: FSMContext):
     pass

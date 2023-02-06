@@ -15,7 +15,6 @@ from utils.db_api.db_commands import DBCommands
 db = DBCommands()
 @dp.message_handler(Text(equals=["Официант", "Кальянный мастер"]), state=None)
 async def waiter(message: Message, state: FSMContext):
-    await message.delete()
     if message.text == 'Официант':
 
         user_id = message.from_user.id
@@ -42,7 +41,6 @@ async def waiter(message: Message, state: FSMContext):
 
 @dp.message_handler(content_types=["text"], state=StaffCall)
 async def waiter_go(message: types.Message, state: FSMContext):
-    await message.delete()
     cur_state = await state.get_state()
     if cur_state == 'StaffCall:waiter':
         text = "Официант уже на пути к Вам"
