@@ -28,7 +28,6 @@ class DBCommands:
 
     UPDATE_PRIZE_CODE_STATUS = "UPDATE prize_codes set code_status = FALSE WHERE code = $1"
 
-
     ### Заявки на бронирование столика
     ADD_NEW_ORDER_HALL = "INSERT INTO orders_hall(admin_id, order_status, chat_id, user_id, username, full_name, " \
                          "data_reservation, time_reservation, number_person, phone, comment)" \
@@ -40,8 +39,16 @@ class DBCommands:
 
     ### Административная часть
     ### Редактирование меню
-    GET_ALL_CATEGORIES = "SELECT * FROM category_menu"
+    GET_ALL_CATEGORIES = "SELECT * FROM category_menu ORDER BY id"
+    GET_ALL_ITEMS_IN_CATEGORY = "SELECT * FROM items_menu WHERE category_id = $1"
 
+    GET_CATEGORY_INFO = "SELECT * FROM category_menu WHERE id = $1"
+    GET_ITEM_INFO = "SELECT * FROM items_menu WHERE id = $1"
+
+    UPDATE_CATEGORY = "UPDATE category_menu SET title = $1 WHERE id = $2"
+
+    DELETE_CATEGORY = "DELETE FROM category_menu WHERE id = $1"
+    DELETE_ITEM = "DELETE FROM items_menu WHERE id = $1"
 
     ###  Добавление нового пользователя с рефералом и без ###
     async def add_new_user(self, referral=None):
@@ -146,9 +153,41 @@ class DBCommands:
         await self.pool.fetch(command, int(id), order_status, admin_answer, updated_at, int(admin_id), admin_name,
                               table_number)
 
-### Административная часть
-### Выборка всех категорий
+    ### Административная часть
+    ### Выборка всех категорий
     async def get_all_categories(self):
         command = self.GET_ALL_CATEGORIES
         categories = await self.pool.fetch(command)
         return categories
+
+    ### Выбрать информацию по категории
+    async def get_category_info(self, id):
+        command = self.GET_CATEGORY_INFO
+        info = await self.pool.fetch(command, id)
+        return info
+
+    ### Выборка информации по блюду
+    async def get_item_info(self, id):
+        command = self.get_item_info(id)
+        info = await self.pool.fetch(command, id)
+        return info
+
+    ### Выборка всех блюд в категории
+    async def get_all_items_in_category(self, category_id):
+        command = self.GET_ALL_ITEMS_IN_CATEGORY
+        items = await self.pool.fetch(command, category_id)
+        return items
+
+    ### Изменение названия категории
+    async def update_category(self, title, id):
+        command = self.UPDATE_CATEGORY
+        await self.pool.fetch(command, title, id)
+    ### Удаление категории
+    async def delete_category(self, id):
+        command = self.DELETE_CATEGORY
+        await self.pool.fetch(command, id)
+
+    ### Удаление блюда
+    async def delete_item(self, id):
+        command = self.DELETE_ITEM
+        await self.pool.fetch(command, id)

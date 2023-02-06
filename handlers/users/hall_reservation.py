@@ -117,6 +117,7 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
 ### Первый шаг
 @dp.message_handler(Text("Забронировать стол"), state=None)
 async def table_reservation(message: types.Message, state: FSMContext):
+    await message.delete()
     await TableReservation.data.set()
 
     date = datetime.now().strftime('%d.%m.%Y').split('.')
@@ -133,6 +134,7 @@ async def table_reservation(message: types.Message, state: FSMContext):
 # Ловим ответ от пользователя дата
 @dp.message_handler(content_types=["text"], state=TableReservation.data)
 async def table_reservation_time(message: types.Message, state: FSMContext):
+    await message.delete()
     try:
         date = message.text
         if len(date.split('.')) == 3:
@@ -164,6 +166,7 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
 # Ловим ответ от пользователя время
 @dp.message_handler(content_types=["text"], state=TableReservation.time)
 async def table_reservation_time(message: types.Message, state: FSMContext):
+    await message.delete()
     msg = message.text
     text = ''
     data = await state.get_data()
@@ -204,6 +207,8 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
 # @dp.callback_query_handler(text_contains="person", state=TableReservation.count_men)
 @dp.message_handler(content_types=["text"], state=TableReservation.count_men)
 async def table_reservation_count_man(message: types.Message, state: FSMContext):
+    await message.delete()
+
     await TableReservation.phone.set()
     if message.text.isdigit():
         count_mans = int(message.text)
@@ -224,6 +229,7 @@ async def table_reservation_count_man(message: types.Message, state: FSMContext)
 # Ловим ответ от пользователя отправка номера телефона
 @dp.message_handler(content_types=["contact", "text"], state=TableReservation.phone)
 async def table_reservation_user_phone(message: types.Message, state: FSMContext):
+    await message.delete()
     data = await state.get_data()
     await TableReservation.comment.set()
     async with state.proxy() as data:
@@ -245,7 +251,9 @@ async def table_reservation_user_phone(message: types.Message, state: FSMContext
 # Ловим ответ от пользователя комментарий
 @dp.message_handler(content_types=["text"], state=TableReservation.comment)
 async def table_reservation_user_comment(message: types.Message, state: FSMContext):
+    await message.delete()
     data = await state.get_data()
+
     await TableReservation.check.set()
     async with state.proxy() as data:
         data['comment'] = message.text
@@ -266,6 +274,7 @@ async def table_reservation_user_comment(message: types.Message, state: FSMConte
 @dp.callback_query_handler(text=["approve_order_user", "cancel_order_user"],
                            state=TableReservation.check)
 async def table_reservation_check_data(call, state: FSMContext):
+
     await call.answer(cache_time=60)
     if call.data == "approve_order_user":
         data = await state.get_data()
@@ -353,6 +362,7 @@ async def table_reservation_admin_reject(call):
 
 @dp.message_handler(Text("Заявки"), state=None)
 async def table_reservation_admin(message: types.Message, state: FSMContext):
+    await message.delete()
     # await TableReservationAdmin.data.set()
     #
     # date = datetime.now().strftime('%d.%m.%Y').split('.')
@@ -370,6 +380,7 @@ async def table_reservation_admin(message: types.Message, state: FSMContext):
 # Ловим ответ от администратора дата
 @dp.message_handler(content_types=["text"], state=TableReservationAdmin.data)
 async def table_reservation_time(message: types.Message, state: FSMContext):
+    await message.delete()
     try:
         date = message.text
         if len(date.split('.')) == 3:

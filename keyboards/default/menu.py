@@ -173,7 +173,6 @@ menu_admin_edit = ReplyKeyboardMarkup(
 menu_admin_edit2 = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton("Добавить")],
-        [KeyboardButton("Редактировать")],
         [KeyboardButton("Назад")]
     ]
 )
