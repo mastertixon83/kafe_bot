@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 .idea/*
 /postgres_data/
+/media/

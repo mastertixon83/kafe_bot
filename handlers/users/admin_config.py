@@ -38,9 +38,8 @@ async def keiboard_generator(items, what, message: Message):
 async def delete_cat_msg_buttons(state: FSMContext):
     ### Удаление сообщений с кнопками категорий/блюд
     data = await state.get_data()
-    for item in data['msg_id_list']:
-        await bot.delete_message(chat_id=data['chat_id'], message_id=item['message_id'])
-        await state.finish()
+    await bot.delete_message(chat_id=int(data['chat_id']), message_id=int(data['message_id']))
+    await state.finish()
 
 
 @dp.message_handler(Text("Добавить"), state="*")
@@ -68,6 +67,9 @@ async def admin_edit_categories(message: Message, state: FSMContext):
         categories = await db.get_all_categories()
 
         markup = InlineKeyboardMarkup()
+        async with state.proxy() as data:
+            data['msg_id_list'] = msg_id_list
+            data['chat_id'] = message.chat.id
 
         for category in categories:
             row = [

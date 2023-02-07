@@ -10,6 +10,8 @@ from aiogram.dispatcher.filters import Text
 from data.config import admins
 from aiogram.dispatcher import FSMContext
 
+from states.navigation import MainMenu
+
 
 # Отмена действия
 @dp.message_handler(Text("Назад"), state="*")
@@ -26,7 +28,7 @@ async def cancel(message: types.Message, state=FSMContext):
     if current_state is None:
         pass
     else:
-        if current_state == "EditCategory:list_categories":
+        if current_state == "MainMenu:main":
             await delete_cat_msg_buttons(state)
         await state.finish()
 
@@ -65,10 +67,16 @@ async def menu(message: Message):
 @dp.message_handler(Text(equals=["Настройки"]))
 async def admin_config(message: Message):
     text = "Меню настроек"
+    # await MainMenu.config.set()
     await message.answer(text=text, reply_markup=menu_admin_config)
 
 
-@dp.message_handler(Text(equals=["Редактировать меню"]))
-async def admin_config_menu_edit(message: Message):
-    text = "Редактирование меню"
-    await message.answer(text=text, reply_markup=menu_admin_edit)
+# @dp.message_handler(Text(equals=["Редактировать меню"]), state='*')
+# async def admin_config_menu_edit(message: Message, state: FSMContext):
+#     print('ok')
+    # text = "Выберите что Вы хотите редактировать"
+    # msg = await message.answer(text=text, reply_markup=admin_edit_menu_category_item)
+    # async with state.proxy() as data:
+    #     data['caht_id'] = message.chat.id
+    #     data['msg_id_list'] = msg['message_id']
+    # print(data)

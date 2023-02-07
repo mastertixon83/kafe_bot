@@ -168,7 +168,7 @@ class DBCommands:
 
     ### Выборка информации по блюду
     async def get_item_info(self, id):
-        command = self.get_item_info(id)
+        command = self.GET_ITEM_INFO
         info = await self.pool.fetch(command, id)
         return info
 
@@ -182,6 +182,7 @@ class DBCommands:
     async def update_category(self, title, id):
         command = self.UPDATE_CATEGORY
         await self.pool.fetch(command, title, id)
+
     ### Удаление категории
     async def delete_category(self, id):
         command = self.DELETE_CATEGORY
