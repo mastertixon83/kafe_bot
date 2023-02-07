@@ -1,4 +1,3 @@
-from handlers.users.admin_config import delete_cat_msg_buttons
 from loader import dp, bot
 
 from aiogram.types import Message
@@ -17,6 +16,7 @@ from states.navigation import MainMenu
 @dp.message_handler(Text("Назад"), state="*")
 async def cancel(message: types.Message, state=FSMContext):
     current_state = await state.get_state()
+    data = await state.get_data()
     await message.delete()
 
     if message.from_user.id == int(admins[0]):
@@ -28,8 +28,9 @@ async def cancel(message: types.Message, state=FSMContext):
     if current_state is None:
         pass
     else:
-        if current_state == "MainMenu:main":
-            await delete_cat_msg_buttons(state)
+        if current_state == "MainMenu":
+            print(data)
+            bot.delete_message(chat_id=data['chat_id'], message_id=data['message_id'])
         await state.finish()
 
 
