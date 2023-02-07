@@ -43,15 +43,28 @@ async def categories_keyboard(what):
             action = "edit_items"
 
         callback_data = make_callback_data(level=CURRENT_LEVEL + 1, action=action, category_id=category['id'])
+        cb_data = make_callback_data(level=13, action="delete_category", category_id=category['id'])
 
-        markup.add(
-            InlineKeyboardButton(text=button_text, callback_data=callback_data)
+        if action == "edit_category":
+            markup.add(
+                InlineKeyboardButton(text=button_text, callback_data=callback_data),
+                InlineKeyboardButton(text="❌", callback_data=cb_data)
+            )
+
+        elif action == "edit_items":
+            markup.add(
+                InlineKeyboardButton(text=button_text, callback_data=callback_data)
+            )
+    if what == "category":
+        markup.row(
+            InlineKeyboardButton(text="Назад", callback_data=make_callback_data(level=CURRENT_LEVEL - 1)),
+            InlineKeyboardButton(text="Добавить", callback_data=make_callback_data(level=12, action="new_category"))
         )
-
-    markup.row(
-        InlineKeyboardButton(text="Назад", callback_data=make_callback_data(level=CURRENT_LEVEL - 1)),
-        InlineKeyboardButton(text="Добавить", callback_data=make_callback_data(level=12, action="new_category"))
-    )
+    elif what == "items":
+        markup.row(
+            InlineKeyboardButton(text="Назад", callback_data=make_callback_data(level=CURRENT_LEVEL - 1, what="items")),
+            InlineKeyboardButton(text="Добавить", callback_data=make_callback_data(level=22, action="new_item"))
+        )
     return markup
 
 
@@ -66,14 +79,16 @@ async def items_in_category_keyboard(category_id):
     for item in items:
         button_text = f"{item['title']}"
         callback_data = make_callback_data(level=CURRENT_LEVEL + 1, action="edit_item", item_id=item['id'])
+        cb_data = make_callback_data(level=23, action="delete_item", category_id=category_id, item_id=item["id"])
 
-        markup.insert(
-            InlineKeyboardButton(text=button_text, callback_data=callback_data)
+        markup.add(
+            InlineKeyboardButton(text=button_text, callback_data=callback_data),
+            InlineKeyboardButton(text="❌", callback_data=cb_data)
         )
 
     markup.row(
-        InlineKeyboardButton(text="Назад", callback_data=make_callback_data(level=CURRENT_LEVEL - 1)),
-        InlineKeyboardButton(text="Добавить", callback_data=make_callback_data(level=22, action="new_item"))
+        InlineKeyboardButton(text="Назад", callback_data=make_callback_data(level=CURRENT_LEVEL - 1, what="items")),
+        InlineKeyboardButton(text="Добавить", callback_data=make_callback_data(level=22, category_id=category_id, action="new_item"))
     )
 
     return markup

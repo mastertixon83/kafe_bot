@@ -45,12 +45,17 @@ class DBCommands:
     GET_CATEGORY_INFO = "SELECT * FROM category_menu WHERE id = $1"
     GET_ITEM_INFO = "SELECT * FROM items_menu WHERE id = $1"
 
+    ADD_NEW_CATEGORY = "INSERT INTO category_menu(title) VALUES ($1) RETURNING id"
     UPDATE_CATEGORY = "UPDATE category_menu SET title = $1 WHERE id = $2"
+
+    ADD_NEW_DISH = "INSERT INTO items_menu(title, description, price, photo, category_id) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+    UPDATE_DISH = "UPDATE items_menu SET title=$1, description=$2, price=$3, photo=$4 WHERE id = $5"
 
     DELETE_CATEGORY = "DELETE FROM category_menu WHERE id = $1"
     DELETE_ITEM = "DELETE FROM items_menu WHERE id = $1"
 
     ###  Добавление нового пользователя с рефералом и без ###
+
     async def add_new_user(self, referral=None):
         user = types.User.get_current()
         chat_id = user.id
@@ -183,10 +188,34 @@ class DBCommands:
         command = self.UPDATE_CATEGORY
         await self.pool.fetch(command, title, id)
 
+    ### Добавление новой категории
+    async def add_new_category(self, title):
+        command = self.ADD_NEW_CATEGORY
+        try:
+            record_id = await self.pool.fetchval(command, title)
+            return record_id
+        except UniqueViolationError:
+            pass
+
     ### Удаление категории
     async def delete_category(self, id):
         command = self.DELETE_CATEGORY
         await self.pool.fetch(command, id)
+
+    ### Добавление нового блюда
+    async def add_new_dish(self, title, description, price, photo, category_id):
+        command = self.ADD_NEW_DISH
+        try:
+            record_id = await self.pool.fetchval(command, title, description, float(price), photo, int(category_id))
+            return record_id
+        except UniqueViolationError:
+            pass
+
+    ### Редактирование блюда
+    async def update_dish(self, title, description, price, photo, item_id):
+        command = self.UPDATE_DISH
+        args = title, description, float(price), photo, int(item_id)
+        await self.pool.fetch(command, args)
 
     ### Удаление блюда
     async def delete_item(self, id):

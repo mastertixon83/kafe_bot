@@ -28,9 +28,8 @@ async def cancel(message: types.Message, state=FSMContext):
     if current_state is None:
         pass
     else:
-        if current_state == "MainMenu":
-            print(data)
-            bot.delete_message(chat_id=data['chat_id'], message_id=data['message_id'])
+        if current_state == "MainMenu:main":
+            await bot.delete_message(chat_id=data['chat_id'], message_id=int(data['message_id']))
         await state.finish()
 
 
