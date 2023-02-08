@@ -2,6 +2,7 @@ from aiogram.utils.callback_data import CallbackData
 from utils.db_api.db_commands import DBCommands
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
+
 menu_cd = CallbackData("show_menu", "level", "category_id", "item_id", "action", "what")
 
 db = DBCommands()
@@ -34,8 +35,15 @@ async def categories_keyboard(what):
 
     categories = await db.get_all_categories()
     action = "None"
+    cbd = make_callback_data(level=55)
+    # markup.add(
+    #     InlineKeyboardButton(text="Позиция", callback_data=cbd),
+    #     InlineKeyboardButton(text="Название", callback_data=cbd),
+    #     InlineKeyboardButton(text="Ссылка", callback_data=cbd)
+    # )
     for category in categories:
         button_text = f"{category['title']}"
+        position_text = f"{category['position']}"
 
         if what == "category":
             action = "edit_category"
@@ -44,11 +52,15 @@ async def categories_keyboard(what):
 
         callback_data = make_callback_data(level=CURRENT_LEVEL + 1, action=action, category_id=category['id'])
         cb_data = make_callback_data(level=13, action="delete_category", category_id=category['id'])
+        cb_data_position = make_callback_data(level=14, action="edit_position", category_id=category['id'])
 
         if action == "edit_category":
             markup.add(
+                InlineKeyboardButton(text=position_text, callback_data=cb_data_position),
                 InlineKeyboardButton(text=button_text, callback_data=callback_data),
+                InlineKeyboardButton(text='🔗', url=category['url']),
                 InlineKeyboardButton(text="❌", callback_data=cb_data)
+
             )
 
         elif action == "edit_items":
@@ -83,7 +95,7 @@ async def items_in_category_keyboard(category_id):
 
     for item in items:
         button_text = f"{item['title']}"
-        callback_data = make_callback_data(level=CURRENT_LEVEL + 1, action="edit_item", item_id=item['id'])
+        callback_data = make_callback_data(level=CURRENT_LEVEL + 1, action="edit_item", item_id=item['id'], category_id=category_id)
         cb_data = make_callback_data(level=23, action="delete_item", category_id=category_id, item_id=item["id"])
 
         markup.add(

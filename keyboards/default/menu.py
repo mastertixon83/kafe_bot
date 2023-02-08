@@ -141,14 +141,6 @@ menu_admin_config = ReplyKeyboardMarkup(
     ]
 )
 
-menu_admin_edit = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton("Категории")],
-        [KeyboardButton("Блюда")],
-        [KeyboardButton("Назад")]
-    ]
-)
-
 menu_admin_edit2 = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton("Добавить")],

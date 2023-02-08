@@ -40,14 +40,15 @@ class DBCommands:
 
     ### Административная часть
     ### Редактирование меню
-    GET_ALL_CATEGORIES = "SELECT * FROM category_menu ORDER BY id"
+    GET_ALL_CATEGORIES = "SELECT * FROM category_menu ORDER BY position"
     GET_ALL_ITEMS_IN_CATEGORY = "SELECT * FROM items_menu WHERE category_id = $1"
 
     GET_CATEGORY_INFO = "SELECT * FROM category_menu WHERE id = $1"
     GET_ITEM_INFO = "SELECT * FROM items_menu WHERE id = $1"
 
-    ADD_NEW_CATEGORY = "INSERT INTO category_menu(title) VALUES ($1) RETURNING id"
-    UPDATE_CATEGORY = "UPDATE category_menu SET title = $1 WHERE id = $2"
+    ADD_NEW_CATEGORY = "INSERT INTO category_menu(title, url) VALUES ($1, $2) RETURNING id"
+    UPDATE_CATEGORY = "UPDATE category_menu SET title = $1, url = $3 WHERE id = $2"
+    UPDATE_CATEGORY_POSITION = "UPDATE category_menu SET position=$2 WHERE id = $1"
 
     ADD_NEW_DISH = "INSERT INTO items_menu(title, description, price, photo, category_id) VALUES ($1, $2, $3, $4, $5) RETURNING id"
     UPDATE_DISH = "UPDATE items_menu SET title=$1, description=$2, price=$3, photo=$4 WHERE id = $5"
@@ -185,15 +186,20 @@ class DBCommands:
         return items
 
     ### Изменение названия категории
-    async def update_category(self, title, id):
+    async def update_category(self, title, id, url):
         command = self.UPDATE_CATEGORY
-        await self.pool.fetch(command, title, id)
+        await self.pool.fetch(command, title, id, url)
+
+    ### Изменение позиции категории
+    async def update_category_position(self,id, position):
+        command = self.UPDATE_CATEGORY_POSITION
+        await self.pool.fetch(command,id, position)
 
     ### Добавление новой категории
-    async def add_new_category(self, title):
+    async def add_new_category(self, title, url):
         command = self.ADD_NEW_CATEGORY
         try:
-            record_id = await self.pool.fetchval(command, title)
+            record_id = await self.pool.fetchval(command, title, url)
             return record_id
         except UniqueViolationError:
             pass

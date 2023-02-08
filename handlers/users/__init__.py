@@ -6,6 +6,6 @@ from .commands import dp
 from .loyal_program import dp
 from .personal import dp
 from .hall_reservation import dp
-from .config_navigation import dp
+from .admin_edit_menu import dp
 
 __all__ = ["dp"]

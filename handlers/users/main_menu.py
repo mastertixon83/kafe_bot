@@ -9,7 +9,7 @@ from aiogram.dispatcher.filters import Text
 from data.config import admins
 from aiogram.dispatcher import FSMContext
 
-from states.navigation import MainMenu
+from states.config import MainMenu
 
 
 # Отмена действия
