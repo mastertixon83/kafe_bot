@@ -3,6 +3,7 @@ from loader import dp, bot
 from aiogram.types import Message
 from aiogram import types
 from keyboards.default import *
+from keyboards.inline import *
 
 from aiogram.dispatcher.filters import Text
 
@@ -41,20 +42,10 @@ async def ansver_menu(message: Message):
 
 @dp.message_handler(Text(equals=["Меню"]))
 async def menu(message: Message):
+    await message.delete()
     text = f"Выберите что Вы хотите"
-    await message.answer(text)
-
-
-@dp.message_handler(Text(equals=["Горячее"]))
-async def menu(message: Message):
-    text = f"https://teletype.in/@andreytikhonov/R_FmFE6nWVn"
-    await message.answer(text)
-
-
-@dp.message_handler(Text(equals=["Завтраки"]))
-async def menu(message: Message):
-    text = f"https://teletype.in/@andreytikhonov/1UFRX0WmR"
-    await message.answer(text)
+    markup = await show_menu_buttons()
+    await message.answer(text=text, reply_markup=markup)
 
 
 @dp.message_handler(Text(equals=["О нас"]))
@@ -67,16 +58,5 @@ async def menu(message: Message):
 @dp.message_handler(Text(equals=["Настройки"]))
 async def admin_config(message: Message):
     text = "Меню настроек"
-    # await MainMenu.config.set()
+    await MainMenu.main.set()
     await message.answer(text=text, reply_markup=menu_admin_config)
-
-
-# @dp.message_handler(Text(equals=["Редактировать меню"]), state='*')
-# async def admin_config_menu_edit(message: Message, state: FSMContext):
-#     print('ok')
-    # text = "Выберите что Вы хотите редактировать"
-    # msg = await message.answer(text=text, reply_markup=admin_edit_menu_category_item)
-    # async with state.proxy() as data:
-    #     data['caht_id'] = message.chat.id
-    #     data['msg_id_list'] = msg['message_id']
-    # print(data)

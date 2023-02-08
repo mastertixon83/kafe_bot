@@ -31,8 +31,7 @@ menuUser = ReplyKeyboardMarkup(
         [
             KeyboardButton(text="Настройки"),
             KeyboardButton(text="Аналитика")
-
-        ],
+        ]
     ],
     resize_keyboard=True
 )
