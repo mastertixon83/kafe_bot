@@ -86,21 +86,31 @@ async def list_categories(message: Union[types.Message, types.CallbackQuery], **
 ### Нажатие на категорию, вывод блюд в данной категории, редактирование категории
 async def list_items_in_category(callback: types.CallbackQuery, category_id, **kwargs):
     info = await db.get_category_info(id=int(category_id))
+    count_items = await db.get_all_items_in_category(category_id=int(category_id))
+
     if kwargs["action"] == "edit_items":
+
         markup = await items_in_category_keyboard(int(category_id))
         if markup == None:
 
             markup = InlineKeyboardMarkup()
             markup.row(
-                InlineKeyboardButton(text="Назад", callback_data=make_callback_data(level=1,
-                                                                                    category_id=category_id,
-                                                                                    what='items'
-                                                                                    )
-                                     )
-            )
-            await callback.message.edit_text(f"В категории {info[0]['title']} еще не добвлено блюд", reply_markup=markup)
+                        InlineKeyboardButton(
+                                            text="Назад",
+                                            callback_data=make_callback_data(level=1,
+                                                                            category_id=category_id,
+                                                                            what='items'
+                                                                            )
+                                            )
+                        )
+            await callback.message.edit_text(f"В категории {info[0]['title']} еще не добвлено блюд",
+                                             reply_markup=markup)
         else:
-            await callback.message.edit_text(f"Вы выбрали категорию {info[0]['title']} \nКакое блюдо Вы хотите отредактировать?", reply_markup=markup)
+            if len(count_items) == 0:
+                text = f"В категории {info[0]['title']} еще не добвлено блюд"
+            else:
+                text = f"Вы выбрали категорию {info[0]['title']} \nКакое блюдо Вы хотите отредактировать?"
+            await callback.message.edit_text(text=text, reply_markup=markup)
 
     elif kwargs["action"] == "edit_category":
         data = await kwargs['state'].get_data()
@@ -151,12 +161,13 @@ async def category_title(message: types.Message, state: FSMContext):
 
 
 ### Ловлю нажатие на кнопку блюда - Редктирование
-async def edit_item(callback: types.CallbackQuery, item_id, action, **kwargs):
+async def edit_item(callback: types.CallbackQuery, item_id, category_id, action, **kwargs):
     await MainMenu.item_title.set()
 
     async with kwargs["state"].proxy() as data:
-        data["item_id"]=item_id
-        data['action']=action
+        data["item_id"] = item_id
+        data["category_id"] = category_id
+        data['action'] = action
 
     item = await db.get_item_info(int(item_id))
     text = f"Редактирование <b>{item[0]['title']}</b>\n\n"
@@ -214,7 +225,6 @@ async def edit_menu_item_description(message: types.Message, state: FSMContext):
 ### Ловлю изображение блюда
 @dp.message_handler(content_types=types.ContentType.PHOTO, state=MainMenu.item_photo)
 async def edit_menu_item_description(message: types.Message, state: FSMContext):
-
     async with state.proxy() as data:
         data['photo'] = message.photo[-1].file_id
 
@@ -229,28 +239,30 @@ async def edit_menu_item_description(message: types.Message, state: FSMContext):
     description = data['desc']
     price = data['price']
     photo = data['photo']
+    category_id = data["category_id"]
 
     if data["action"] == "new_item":
-        category_id = data['category_id']
         record_id = await db.add_new_dish(
-                                        title=title,
-                                        description=description,
-                                        price=float(price),
-                                        photo=photo,
-                                        category_id=category_id
+            title=title,
+            description=description,
+            price=float(price),
+            photo=photo,
+            category_id=category_id
         )
 
-        print("Добавить новое блюдо в БД")
     elif data["action"] == "edit_item":
         item_id = data['item_id']
 
-        await db.edit_dish(title=title, description=description, price=float(price), photo=photo, item_id=item_id)
-        print("Изменить текущее блюдо в БД")
+        await db.update_dish(title=title, description=description, price=float(price), photo=photo,
+                             item_id=int(item_id))
 
     data = await state.get_data()
+    # await list_items_in_category(callback=message, category_id=int(category_id), action='edit_items')
     await MainMenu.main.set()
 
 
 ### Ловлю нажатие на кнопку удалить блюдо
-async def delete_item(callback: types.CallbackQuery, item_id, **kwargs):
+async def delete_item(callback: types.CallbackQuery, item_id, category_id, **kwargs):
+    data = await kwargs['state'].get_data()
     await db.delete_item(id=int(item_id))
+    await list_items_in_category(callback=callback, category_id=int(category_id), action='edit_items')

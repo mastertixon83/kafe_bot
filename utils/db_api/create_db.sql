@@ -61,7 +61,7 @@ create table if not exists items_menu
     title varchar(30),
     description  text,
     photo text,
-    price numeric(6, 2),
+    price numeric(9, 2),
     category_id int,
     foreign key (category_id) references category_menu(id) ON DELETE CASCADE
 );

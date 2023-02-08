@@ -42,7 +42,7 @@ async def ansver_menu(message: Message):
 @dp.message_handler(Text(equals=["Меню"]))
 async def menu(message: Message):
     text = f"Выберите что Вы хотите"
-    await message.answer(text, reply_markup=menuCategories)
+    await message.answer(text)
 
 
 @dp.message_handler(Text(equals=["Горячее"]))

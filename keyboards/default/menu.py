@@ -37,28 +37,7 @@ menuUser = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-menuCategories = ReplyKeyboardMarkup(
-    keyboard=[
-        [
-            KeyboardButton(text="Завтраки")
-        ],
-        [
-            KeyboardButton(text="Горячее")
-        ],
-        [
-            KeyboardButton(text="Горячие напитки")
-        ],
-        [
-            KeyboardButton(text="Холодные напитки")
-        ],
-        [
-            KeyboardButton(text="Десерты")
-        ],
-        [
-            KeyboardButton(text="Назад")
-        ],
-    ]
-)
+
 menuAdmin = ReplyKeyboardMarkup(
     keyboard=[
         [

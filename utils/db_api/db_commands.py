@@ -35,7 +35,8 @@ class DBCommands:
 
     GET_ORDER_HALL_DATA = "SELECT * FROM orders_hall WHERE id = $1"
     UPDATE_ORDER_HALL_STATUS = "UPDATE orders_hall SET order_status = $2, admin_answer = $3, updated_at = $4, admin_id = $5, admin_name = $6, table_number = $7 WHERE id = $1"
-    GET_APPROVED_ORDERS_ON_DATA = "SELECT data_reservation, time_reservation, table_number FROM orders_hall WHERE data_reservation = $1 AND (order_status=true AND admin_answer = 'approved') ORDER BY table_number"
+    # GET_APPROVED_ORDERS_ON_DATA = "SELECT data_reservation, time_reservation, table_number FROM orders_hall WHERE data_reservation = $1 AND (order_status=true AND admin_answer = 'approved') ORDER BY table_number"
+    GET_APPROVED_ORDERS_ON_DATA = "SELECT * FROM orders_hall WHERE (data_reservation = $1 AND order_status=true AND admin_answer = 'approved') ORDER BY table_number"
 
     ### Административная часть
     ### Редактирование меню
@@ -215,7 +216,7 @@ class DBCommands:
     async def update_dish(self, title, description, price, photo, item_id):
         command = self.UPDATE_DISH
         args = title, description, float(price), photo, int(item_id)
-        await self.pool.fetch(command, args)
+        await self.pool.fetch(command, *args)
 
     ### Удаление блюда
     async def delete_item(self, id):

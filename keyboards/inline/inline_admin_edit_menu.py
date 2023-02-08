@@ -62,8 +62,8 @@ async def categories_keyboard(what):
         )
     elif what == "items":
         markup.row(
-            InlineKeyboardButton(text="Назад", callback_data=make_callback_data(level=CURRENT_LEVEL - 1, what="items")),
-            InlineKeyboardButton(text="Добавить", callback_data=make_callback_data(level=22, action="new_item"))
+            InlineKeyboardButton(text="Назад", callback_data=make_callback_data(level=CURRENT_LEVEL - 1, what="items"))
+            # InlineKeyboardButton(text="Добавить", callback_data=make_callback_data(level=22, action="new_item"))
         )
     return markup
 
@@ -74,7 +74,12 @@ async def items_in_category_keyboard(category_id):
     items = await db.get_all_items_in_category(int(category_id))
 
     if len(items) == 0:
-        return
+        markup.row(
+            InlineKeyboardButton(text="Назад", callback_data=make_callback_data(level=CURRENT_LEVEL - 1, what="items")),
+            InlineKeyboardButton(text="Добавить",
+                                 callback_data=make_callback_data(level=22, category_id=category_id, action="new_item"))
+        )
+        return markup
 
     for item in items:
         button_text = f"{item['title']}"

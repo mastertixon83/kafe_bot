@@ -84,12 +84,11 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
         user_wait += f"{res.days} дней {res.seconds // 60} минут"
 
     text = ''
-
-    if call_data[1] == 'foolrest':
+    if call_data[2] == 'foolrest':
         text = f"<b>Бронь пользователя</b> @{result[0]['username']} <b>отменена (Полный зал)</b>\n"
-    elif call_data[1] == 'rejected':
+    elif call_data[2] == 'rejected':
         text = f"<b>Бронь пользователя</b> @{result[0]['username']} <b>отменена</b>\n"
-    elif call_data[1] == 'approved':
+    elif call_data[2] == 'approved':
         text = f"<b>Бронь пользователя</b> @{result[0]['username']} <b>подтверждена</b>\n"
 
     text += f"(Администратор: @{adminUsername})\n\n"
@@ -107,9 +106,8 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
                                text="К сожалению, все столы забронированы.😞 Если что-то измениться, мы свяжемся с Вами позже 🤝")
     elif call_data[2] == 'approved':
         await bot.send_message(chat_id=call_data[0], text="Ваша запись подтвердждена администрацией. Ждем вас :)")
-
     # Обновить статус заявки в БД
-    await db.update_order_hall_status(id=int(call_data[1]), order_status=True, admin_answer=call_data[1],
+    await db.update_order_hall_status(id=int(call_data[1]), order_status=True, admin_answer=call_data[2],
                                       updated_at=datetime.now(timezone.utc), admin_id=admin_id,
                                       admin_name=f'@{adminUsername}', table_number=tableNumber)
 
