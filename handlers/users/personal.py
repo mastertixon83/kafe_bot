@@ -18,14 +18,15 @@ async def waiter(message: Message, state: FSMContext):
     if message.text == 'Официант':
 
         user_id = message.from_user.id
-        codes = await db.get_active_codes_user(user_id)
-
-        markup = InlineKeyboardMarkup()  # создаём клавиатуру
-        markup.row_width = 1  # кол-во кнопок в строке
-
-        for code in codes:
-            markup.add(InlineKeyboardButton(f"{str(code['code'])} - {code['code_description']}",
-                                            callback_data=f"prize_code-{str(code['code'])}"))
+        # codes = await db.get_active_codes_user(user_id)
+        #
+        # markup = InlineKeyboardMarkup()  # создаём клавиатуру
+        # markup.row_width = 1  # кол-во кнопок в строке
+        #
+        # if codes:
+        #     for code in codes:
+        #         markup.add(InlineKeyboardButton(f"{str(code['code'])} - {code['code_description']}",
+        #                                         callback_data=f"prize_code-{str(code['code'])}"))
 
         text = 'Введите номер столика и комментарий для официанта, если Вам что-нибудь нужно.\n\n' \
         '(Например: стол 1, принесите счет)'

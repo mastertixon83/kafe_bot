@@ -60,7 +60,7 @@ class DBCommands:
 
     async def add_new_user(self, referral=None):
         user = types.User.get_current()
-        chat_id = user.id
+        chat_id = str(user.id)
         username = user.username
         full_name = user.full_name
 
@@ -80,7 +80,7 @@ class DBCommands:
     ### Программа лояльности оформление карты и выбор подтвержденных пользователей $$$
     async def get_user_info(self, user_id):
         command = self.GET_USER_INFO
-        info = await self.pool.fetch(command, user_id)
+        info = await self.pool.fetch(command, str(user_id))
         return info
 
     async def get_all_invited_users(self, referral):
@@ -90,17 +90,17 @@ class DBCommands:
 
     async def update_user_data_card(self, user_id, card_fio, phone_number, birthday):
         command = self.UPDATE_USER_DATA_CARD
-        await self.pool.fetch(command, int(user_id), card_fio, phone_number, birthday)
+        await self.pool.fetch(command, str(user_id), card_fio, phone_number, birthday)
 
     async def approve_user_card_admin(self, user_id):
         command = self.APPROVE_USER_CARD_ADMIN
-        await self.pool.fetch(command, int(user_id))
+        await self.pool.fetch(command, str(user_id))
 
     async def generate_prize_code(self, user_id):
         user = types.User.get_current()
         description = "Бесплатная пицца"
 
-        args = user_id, description
+        args = str(user_id), description
         command = self.GENERATE_PRIZE_CODE
         try:
             record_id = await self.pool.fetchval(command, *args)
@@ -120,12 +120,12 @@ class DBCommands:
 
     async def update_count_prize(self, user_id, prize_count):
         command = self.UPDATE_COUNT_PRIZE
-        await self.pool.fetch(command, prize_count, user_id)
+        await self.pool.fetch(command, prize_count, str(user_id))
 
     async def get_active_codes_user(self, user_id):
         command = self.GET_ACTIVE_CODES_USER
         codes = []
-        codes = await self.pool.fetch(command, user_id)
+        codes = await self.pool.fetch(command, str(user_id))
         return codes
 
     async def update_prize_code_status(self, code_number):
@@ -136,7 +136,7 @@ class DBCommands:
     async def add_new_order_hall(self, admin_id, order_status, chat_id, user_id, username, full_name, data_reservation,
                                  time_reservation, number_person, phone, comment):
 
-        args = admin_id, order_status, chat_id, user_id, username, full_name, data_reservation, time_reservation, number_person, phone, comment
+        args = admin_id, order_status, chat_id, str(user_id), username, full_name, data_reservation, time_reservation, number_person, phone, comment
         command = self.ADD_NEW_ORDER_HALL
         try:
             record_id = await self.pool.fetchval(command, *args)

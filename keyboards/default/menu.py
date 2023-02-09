@@ -25,9 +25,9 @@ menuUser = ReplyKeyboardMarkup(
         [
             KeyboardButton(text="Написать владельцу")
         ],
-        [
-            KeyboardButton(text="Сделать рассылку подписчикам")
-        ],
+        # [
+        #     KeyboardButton(text="Сделать рассылку подписчикам")
+        # ],
         [
             KeyboardButton(text="Настройки"),
             KeyboardButton(text="Аналитика")
@@ -40,10 +40,10 @@ menuUser = ReplyKeyboardMarkup(
 menuAdmin = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="Ты гребаный Администратор")
+            KeyboardButton(text="О нас")
         ],
         [
-            KeyboardButton(text="Заявки")
+            KeyboardButton(text="Меню")
         ],
         [
             KeyboardButton(text="Доставка")

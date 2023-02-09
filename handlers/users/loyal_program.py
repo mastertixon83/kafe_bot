@@ -198,7 +198,7 @@ async def reg_loyal_card(message: Message, state: FSMContext):
     info = await db.get_user_info(message.from_user.id)
 
     if info[0]['card_status'] != True:
-        text = "<b>Шаг [1/4]</b>\n\n Введите Ваши имя и фамилию. Два слова."
+        text = "Получите карту скидок!!!"
     else:
         text = "Меню программы лояльности"
     await message.delete()

@@ -26,12 +26,12 @@ async def cancel(message: types.Message, state=FSMContext):
     else:
         await message.answer("Главное меню", reply_markup=menuUser)
 
-    if current_state is None:
-        pass
-    else:
-        if current_state == "MainMenu:main":
-            await bot.delete_message(chat_id=data['chat_id'], message_id=int(data['message_id']))
-        await state.finish()
+    if current_state == "MainMenu:main":
+        if data != {}:
+            await bot.delete_message(chat_id=message.from_user.id, message_id=data['message_id'])
+        else:
+            await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id-1)
+    await state.finish()
 
 
 @dp.message_handler(Text(equals=["Вызов персонала"]))
@@ -42,11 +42,10 @@ async def ansver_menu(message: Message):
 
 @dp.message_handler(Text(equals=["Меню"]))
 async def menu(message: Message):
-    await message.delete()
-    text = f"Выберите что Вы хотите"
-    markup = await show_menu_buttons()
-    await message.answer(text=text, reply_markup=markup)
 
+    text = f"Меню к Вашим услугам"
+    markup = await show_menu_buttons(message_id=message.message_id+1)
+    await bot.send_message(chat_id=message.from_user.id, text=text, reply_markup=markup)
 
 @dp.message_handler(Text(equals=["О нас"]))
 async def menu(message: Message):
@@ -55,7 +54,7 @@ async def menu(message: Message):
 
 
 # Административная часть
-@dp.message_handler(Text(equals=["Настройки"]))
+@dp.message_handler(Text(equals=["Настройки"]), state="*")
 async def admin_config(message: Message):
     text = "Меню настроек"
     await MainMenu.main.set()

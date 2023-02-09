@@ -3,7 +3,7 @@ from utils.db_api.db_commands import DBCommands
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
-menu_cd = CallbackData("show_menu", "level", "category_id", "item_id", "action", "what")
+menu_cd = CallbackData("edit_menu", "level", "category_id", "item_id", "action", "what")
 
 db = DBCommands()
 
@@ -35,7 +35,7 @@ async def categories_keyboard(what):
 
     categories = await db.get_all_categories()
     action = "None"
-    cbd = make_callback_data(level=55)
+    # cbd = make_callback_data(level=55)
     # markup.add(
     #     InlineKeyboardButton(text="Позиция", callback_data=cbd),
     #     InlineKeyboardButton(text="Название", callback_data=cbd),

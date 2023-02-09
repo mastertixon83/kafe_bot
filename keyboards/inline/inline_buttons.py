@@ -101,11 +101,3 @@ admin_inline_send_ls = InlineKeyboardMarkup(
         ]
     ]
 )
-
-# admin_inline_edit_menu_category = InlineKeyboardMarkup(
-#     inline_keyboard=[
-#         [
-#             InlineKeyboardButton()
-#         ]
-#     ]
-# )

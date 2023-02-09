@@ -1,14 +1,10 @@
+import re
 
-def make_callback_data(level, category_id=0, item_id=0, what="0"):
-    return menu_cd.new(level=level, category_id=category_id, item_id=item_id, what=what)
+url_pattern = re.compile(r'(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?')
 
-
-
-
-what = {"Категории": "category", "Блюда": "items"}
+def find_urls(string):
+    return re.findall(url_pattern, string)
 
 
-for key, value in what.items():
-    print(f"{key} - {value}")
-
+print(find_urls('https://www.youtube.com/watch?v=7NtjxiPiJxE'))
 
