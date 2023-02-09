@@ -1,6 +1,5 @@
 from loader import dp, bot
 
-from aiogram.types import Message
 from aiogram import types
 from keyboards.default import *
 from keyboards.inline import *
@@ -11,6 +10,7 @@ from data.config import admins
 from aiogram.dispatcher import FSMContext
 
 from states.config import MainMenu
+from states.shipping import Shipping
 
 
 # Отмена действия
@@ -47,11 +47,29 @@ async def menu(message: Message):
     markup = await show_menu_buttons(message_id=message.message_id+1)
     await bot.send_message(chat_id=message.from_user.id, text=text, reply_markup=markup)
 
+
 @dp.message_handler(Text(equals=["О нас"]))
 async def menu(message: Message):
     text = f"https://teletype.in/@andreytikhonov/uJftR9aBA"
     await message.answer(text)
 
+
+@dp.message_handler(Text("Доставка"), state=None)
+async def shipping_in(message: types.Message, state: FSMContext):
+    await Shipping.title_item.set()
+
+    # text = f""
+    text = f"""\n
+    1️⃣ Название блюда (если оно не одно, то ввести через запятую)\n
+    2️⃣ Количество порций (если блюдо не одно, то ввести через запятую, в том порядке что и названия блюд)\n
+    3️⃣ Количество персон\n
+    4️⃣ Дата доставки\n
+    5️⃣ Время доставки\n
+    6️⃣ Адресс доставки\n
+    7️⃣ Контактный телефон\n\n
+    <b>Шаг [1/7]</b> Введите название блюда
+"""
+    await message.answer(text=text, reply_markup=cancel_btn)
 
 # Административная часть
 @dp.message_handler(Text(equals=["Настройки"]), state="*")
