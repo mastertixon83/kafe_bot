@@ -9,5 +9,7 @@ from .hall_reservation import dp
 from .admin_edit_menu import dp
 from .show_menu import dp
 from .shipping import dp
+from .config import dp
+
 
 __all__ = ["dp"]

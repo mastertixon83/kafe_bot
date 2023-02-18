@@ -58,7 +58,6 @@ async def menu(message: Message):
 async def shipping_in(message: types.Message, state: FSMContext):
     await Shipping.title_item.set()
 
-    # text = f""
     text = f"""\n
     1️⃣ Название блюда (если оно не одно, то ввести через запятую)\n
     2️⃣ Количество порций (если блюдо не одно, то ввести через запятую, в том порядке что и названия блюд)\n
@@ -66,8 +65,9 @@ async def shipping_in(message: types.Message, state: FSMContext):
     4️⃣ Дата доставки\n
     5️⃣ Время доставки\n
     6️⃣ Адресс доставки\n
-    7️⃣ Контактный телефон\n\n
-    <b>Шаг [1/7]</b> Введите название блюда
+    7️⃣ Способ оплаты\n\n
+    8️⃣ Контактный телефон\n\n
+    <b>Шаг [1/8]</b> Введите название блюда
 """
     await message.answer(text=text, reply_markup=cancel_btn)
 

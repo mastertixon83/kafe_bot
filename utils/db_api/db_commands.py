@@ -38,6 +38,15 @@ class DBCommands:
     # GET_APPROVED_ORDERS_ON_DATA = "SELECT data_reservation, time_reservation, table_number FROM orders_hall WHERE data_reservation = $1 AND (order_status=true AND admin_answer = 'approved') ORDER BY table_number"
     GET_APPROVED_ORDERS_ON_DATA = "SELECT * FROM orders_hall WHERE (data_reservation = $1 AND order_status=true AND admin_answer = 'approved') ORDER BY table_number"
 
+    ### Заявка на доставку
+    ### Добавление новой заявки
+    ADD_NEW_SHIPPING_ORDER = "INSERT INTO shipping (title, portion_quantity, number_of_devices, address, phone, " \
+                             "data_reservation, time_reservation, pay_method, user_id, user_name)" \
+                             "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id"
+
+    ### Обновление заявки администратором
+    UPDATE_SHIPPING_ORDER_STATUS = "UPDATE shipping SET order_status = false, admin_name = $2, admin_id = $3, admin_answer = $4 WHERE id = $1"
+
     ### Административная часть
     ### Редактирование меню
     GET_ALL_CATEGORIES = "SELECT * FROM category_menu ORDER BY position"
@@ -55,6 +64,9 @@ class DBCommands:
 
     DELETE_CATEGORY = "DELETE FROM category_menu WHERE id = $1"
     DELETE_ITEM = "DELETE FROM items_menu WHERE id = $1"
+
+    ### Настройки Администраторы
+    GET_ALL_ADMINS = "SELECT * FROM users WHERE administrator = true"
 
     ###  Добавление нового пользователя с рефералом и без ###
 
@@ -136,7 +148,7 @@ class DBCommands:
     async def add_new_order_hall(self, admin_id, order_status, chat_id, user_id, username, full_name, data_reservation,
                                  time_reservation, number_person, phone, comment):
 
-        args = admin_id, order_status, chat_id, str(user_id), username, full_name, data_reservation, time_reservation, number_person, phone, comment
+        args = admin_id, order_status, chat_id, user_id, username, full_name, data_reservation, time_reservation, number_person, phone, comment
         command = self.ADD_NEW_ORDER_HALL
         try:
             record_id = await self.pool.fetchval(command, *args)
@@ -157,8 +169,29 @@ class DBCommands:
     async def update_order_hall_status(self, id, order_status, admin_answer, updated_at, admin_id, admin_name,
                                        table_number):
         command = self.UPDATE_ORDER_HALL_STATUS
-        await self.pool.fetch(command, int(id), order_status, admin_answer, updated_at, int(admin_id), admin_name,
+        await self.pool.fetch(command, int(id), order_status, admin_answer, updated_at, str(admin_id), admin_name,
                               table_number)
+
+    ### Доставка
+    ### Добавление новой заявки
+    async def add_new_shipping_order(self, title, portion_quantity, number_of_devices, address, phone,
+                                     data_reservation, time_reservation, pay_method, user_id, user_name):
+        command = self.ADD_NEW_SHIPPING_ORDER
+        args = title, portion_quantity, number_of_devices, address, phone, data_reservation, time_reservation, pay_method,\
+               user_id, user_name
+
+        try:
+            record_id = await self.pool.fetchval(command, *args)
+            return record_id
+        except UniqueViolationError:
+            pass
+
+    ### Обновление статуса заявки администратором
+    async def update_shipping_order_status(self, id, admin_name, admin_id, admin_answer):
+        command = self.UPDATE_SHIPPING_ORDER_STATUS
+        args = id, admin_name, admin_id, admin_answer
+        await self.pool.fetch(command, *args)
+
 
     ### Административная часть
     ### Выборка всех категорий
@@ -191,9 +224,9 @@ class DBCommands:
         await self.pool.fetch(command, title, id, url)
 
     ### Изменение позиции категории
-    async def update_category_position(self,id, position):
+    async def update_category_position(self, id, position):
         command = self.UPDATE_CATEGORY_POSITION
-        await self.pool.fetch(command,id, position)
+        await self.pool.fetch(command, id, position)
 
     ### Добавление новой категории
     async def add_new_category(self, title, url):
@@ -228,3 +261,10 @@ class DBCommands:
     async def delete_item(self, id):
         command = self.DELETE_ITEM
         await self.pool.fetch(command, id)
+
+    ### Выбор всех администроторов
+    async def get_all_admins(self):
+        command = self.GET_ALL_ADMINS
+        admins = await self.pool.fetch(command)
+        return admins
+

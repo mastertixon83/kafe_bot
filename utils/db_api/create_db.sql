@@ -15,7 +15,9 @@ create table if not exists users
     birthday date,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     prize int default 0,
-    balance int default 0
+    balance int default 0,
+    administrator boolean default FALSE,
+    director boolean default FALSE
 );
 
 create table if not exists prize_codes
@@ -38,8 +40,8 @@ create table if not exists orders_hall
     order_status boolean default FALSE,
     table_number smallint,
     admin_answer varchar(12),
-    chat_id bigint,
-    user_id bigint,
+    chat_id text,
+    user_id text,
     username text,
     full_name text,
     data_reservation DATE NOT NULL,
@@ -78,10 +80,14 @@ create table if not exists shipping
     phone text,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    order_status boolean default FALSE,
+    order_status boolean default TRUE,
     data_reservation DATE NOT NULL,
     time_reservation varchar(5),
+    pay_method varchar(16),
     admin_name text,
-    admin_id text
+    admin_id text,
+    admin_answer text,
+    user_id text,
+    user_name text
 );
 

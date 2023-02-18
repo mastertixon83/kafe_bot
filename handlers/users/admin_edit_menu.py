@@ -232,7 +232,6 @@ async def edit_item(callback: types.CallbackQuery, item_id, category_id, action,
     text += f"{item[0]['description']}\n"
     text += f"Цена: {item[0]['price']}\n\n"
     text += "<b>ШАГ [1/4]</b>Введите название блюда"
-    # await callback.message.edit_text(text=text)
     await bot.edit_message_text(text=text, chat_id=callback.message.from_user.id, message_id=data['message_id'])
 
 

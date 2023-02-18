@@ -9,4 +9,5 @@ class Shipping(StatesGroup):
     time = State()
     address = State()
     phone = State()
+    pay_method = State()
     check = State()

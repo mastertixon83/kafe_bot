@@ -1,3 +1,4 @@
+# TODO: У администратора просмотр не использованных кодов
 import os
 from datetime import datetime
 
@@ -143,11 +144,18 @@ async def use_prize_code(call, state: FSMContext):
     async with state.proxy() as data:
         data["prize_code"] = int(call.data.split('-')[1])
         data["prize_desc"] = pc_info[0]["code_description"]
+        data["prize_id"] = pc_info[0]["id"]
 
-    text = 'Введите номер столика и официант принисет Ваш приз.\n\n'
+    if pc_info[0]['code_status'] == True:
+        text = 'Введите номер столика и официант принисет Ваш приз.\n\n'
+        markup = cancel_btn
+    else:
+        text = 'К сожалению Вы уже использовали этот код!!!'
+        await state.finish()
+        markup = menuUser
 
     await bot.delete_message(chat_id=call.from_user.id, message_id=call.message.message_id)
-    await call.message.answer(text=text, reply_markup=cancel_btn)
+    await call.message.answer(text=text, reply_markup=markup)
 
 
 # Использовать коды, ловим номер столика для вызова официантв

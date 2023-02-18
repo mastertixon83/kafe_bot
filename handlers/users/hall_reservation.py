@@ -122,9 +122,9 @@ async def table_reservation(message: types.Message, state: FSMContext):
     await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
 
     async with state.proxy() as data:
-        data["chat_id"] = message.chat.id
+        data["chat_id"] = str(message.chat.id)
         data["user_name"] = message.from_user.username
-        data["user_id"] = message.from_user.id
+        data["user_id"] = str(message.from_user.id)
         data['full_name'] = message.from_user.full_name
 
 
@@ -288,8 +288,8 @@ async def table_reservation_check_data(call, state: FSMContext):
         text += f"Комментарий: {data['comment']}"
 
         # Сохранить заявку в БД
-        order_id = await db.add_new_order_hall(admin_id=None, order_status=False, chat_id=data['chat_id'],
-                                               user_id=data['user_id'],
+        order_id = await db.add_new_order_hall(admin_id=None, order_status=False, chat_id=str(data['chat_id']),
+                                               user_id=str(data['user_id']),
                                                username=data['user_name'], full_name=data['full_name'],
                                                data_reservation=data['data'], time_reservation=data['time'][:-3],
                                                number_person=int(data['count_mans']), phone=data['phone_number'],
@@ -349,7 +349,7 @@ async def table_reservation_admin_reject(call):
 
 """ Админская часть """
 
-
+#TODO: Админская часть вывод не обработанных заявок по датам
 @dp.message_handler(Text("Заявки"), state=None)
 async def table_reservation_admin(message: types.Message, state: FSMContext):
     await message.delete()

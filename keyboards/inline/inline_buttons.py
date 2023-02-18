@@ -101,3 +101,15 @@ admin_inline_send_ls = InlineKeyboardMarkup(
         ]
     ]
 )
+
+admin_inline_shipping_order = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton("Взять в работу", callback_data="admin_approve_shipping"),
+            InlineKeyboardButton("Отмена", callback_data="admin_cancel_shipping")
+        ],
+        [
+            InlineKeyboardButton("Написать гостю в ЛС", callback_data="write_to_pm", url=f"https://t.me/")
+        ]
+    ]
+)

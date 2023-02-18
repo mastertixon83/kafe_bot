@@ -18,26 +18,18 @@ async def waiter(message: Message, state: FSMContext):
     if message.text == 'Официант':
 
         user_id = message.from_user.id
-        # codes = await db.get_active_codes_user(user_id)
-        #
-        # markup = InlineKeyboardMarkup()  # создаём клавиатуру
-        # markup.row_width = 1  # кол-во кнопок в строке
-        #
-        # if codes:
-        #     for code in codes:
-        #         markup.add(InlineKeyboardButton(f"{str(code['code'])} - {code['code_description']}",
-        #                                         callback_data=f"prize_code-{str(code['code'])}"))
+        codes = await db.get_active_codes_user(user_id)
 
         text = 'Введите номер столика и комментарий для официанта, если Вам что-нибудь нужно.\n\n' \
         '(Например: стол 1, принесите счет)'
         await StaffCall.waiter.set()
+
     elif message.text == 'Кальянный мастер':
         text = 'Введите номер столика и комментарий для кальянного мастера, если Вам что-нибудь нужно.\n\n' \
                '(Например: стол 1, раскурите кальян)'
         await StaffCall.hookah_master.set()
 
     await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
-    await message.edit_text(text=text, reply_markup=markup)
 
 
 @dp.message_handler(content_types=["text"], state=StaffCall)
@@ -53,7 +45,14 @@ async def waiter_go(message: types.Message, state: FSMContext):
     await message.answer(text, reply_markup=menuUser, parse_mode=types.ParseMode.HTML)
     await state.finish()
 
-    table_comment = message.text.split(',')
+    separator = ""
+    if "." in message.text:
+        separator = '.'
+    elif "," in message.text:
+        separator = ","
+    elif " " in message.text:
+        separator = " "
+    table_comment = message.text.split(separator)
     text = f'{table_comment[0]} (@{message.from_user.username}) вызвал {personal} \n\n' \
             f'Комментарий: {table_comment[1]}'
     await bot.send_message(chat_id=admins[0], text=text)

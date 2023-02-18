@@ -11,3 +11,7 @@ class MainMenu(StatesGroup):
     item_desc = State()
     item_price = State()
     item_photo = State()
+
+
+class ConfigAdmins(StatesGroup):
+    config_admins_name = State()
