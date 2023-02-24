@@ -3,17 +3,17 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 menuUser = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="О ресторане"),
+            KeyboardButton(text="🏚 О ресторане"),
         ],
         [
             KeyboardButton(text="📋 Меню")
         ],
         [
             KeyboardButton(text="📢 Вызов персонала"),
-            KeyboardButton(text="📝 Забронировать стол")
+            KeyboardButton(text="📝 Забронировать стол"),
         ],
         [
-            KeyboardButton(text="🚚 Доставка")
+            KeyboardButton(text="🚚 Оформить заказ на доставку")
         ],
         [
             KeyboardButton(text="👍 Программа лояльности"),
@@ -30,25 +30,24 @@ menuUser = ReplyKeyboardMarkup(
 menuAdmin = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="О ресторане")
+            KeyboardButton(text="🏚 О ресторане")
         ],
         [
             KeyboardButton(text="📋 Меню"),
-            KeyboardButton(text="🚚 Доставка")
         ],
         [
             KeyboardButton(text="📢 Вызов персонала"),
             KeyboardButton(text="📝 Забронировать стол")
         ],
         [
-            KeyboardButton(text="Задайте нам вопрос")
+            KeyboardButton(text="🚚 Оформить заказ на доставку")
         ],
         [
             KeyboardButton(text="👍 Программа лояльности"),
             KeyboardButton(text="🚶 Пригласить друга")
         ],
         [
-            KeyboardButton(text="Сделать рассылку подписчикам")
+            KeyboardButton(text="📨 Сделать рассылку подписчикам")
         ],
         [
             KeyboardButton(text="Настройки"),

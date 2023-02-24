@@ -87,9 +87,9 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
 
     if call_data[2] in ['rejected', 'foolrest']:
         await bot.send_message(chat_id=call_data[0],
-                               text="К сожалению, все столы забронированы.😞 Если что-то измениться, мы свяжемся с Вами позже 🤝")
+                               text="К сожалению, все столы забронированы.😞 Если что-то измениться, мы свяжемся с Тобой позже 🤝")
     elif call_data[2] == 'approved':
-        await bot.send_message(chat_id=call_data[0], text=f"Ваша запись подтвердждена администрацией. Ваш столик: {tableNumber}. Ждем вас :)")
+        await bot.send_message(chat_id=call_data[0], text=f"Твоя запись подтвердждена администрацией. Твой столик: {tableNumber}. Ждем вас :)")
     # Обновить статус заявки в БД
     await db.update_order_hall_status(id=int(call_data[1]), order_status=True, admin_answer=call_data[2],
                                       updated_at=datetime.now(timezone.utc), admin_id=admin_id,
@@ -102,7 +102,7 @@ async def table_reservation(message: types.Message, state: FSMContext):
     await TableReservation.data.set()
 
     date = datetime.now().strftime('%d.%m.%Y')
-    text = f"<b>Шаг [1/5]</b>\n\n Введите дату в формате ДД.ММ.ГГГГ, сегодня {date}"
+    text = f"<b>Шаг [1/5]</b>\n\n Введи дату в формате ДД.ММ.ГГГГ, сегодня {date}"
     await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
 
     async with state.proxy() as data:
@@ -127,17 +127,16 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
 
                     await TableReservation.time.set()
 
-                    text = "<b>Шаг [2/5]</b>\n\n Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+                    text = "<b>Шаг [2/5]</b>\n\n Введи время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
                     await message.answer(text, parse_mode=types.ParseMode.HTML)
         else:
             raise Exception("input error")
     except Exception as _ex:
         if (str(_ex) == 'input error') or (str(_ex) == 'day is out of range for month'):
-            text = f"<b>Шаг [1/5]</b>\n\nК сожалению я Тебя не понимаю, введите корректную дату в правильном формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
+            text = f"<b>Шаг [1/5]</b>\n\nК сожалению я Тебя не понимаю, введи корректную дату в правильном формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
         elif str(_ex) == 'data error':
-            text = f"К сожалению время не вернуть назад 😢\n" \
-                   f"Введи правильную дату в формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
+            text = f"К сожалению время не вернуть назад 😢 Введи корректную дату в формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
         await message.answer(text=text)
         return
@@ -169,14 +168,13 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
                 async with state.proxy() as data:
                     data["time"] = time.strftime("%H:%M:%S")
 
-                await message.answer("<b>ШАГ [3/5]</b> Укажите на какое количество человек хотите сделать бронь",
+                await message.answer("<b>ШАГ [3/5]</b> На сколько персон накрыть стол?",
                                      parse_mode=types.ParseMode.HTML)
     except Exception as _ex:
         if str(_ex) == 'time error':
-            text = "Вы путешественник во времени? Невозможно записаться на время указанное вами. Введите время заново в " \
-                   "формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+            text = "К сожалению время не вернуть назад 😢 Введи корректное время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
         else:
-            text = "Я вас, к сожалению, не понимаю. Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+            text = "Я Тебя, к сожалению, не понимаю. Введи время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
 
         await message.answer(text=text)
         return
@@ -192,12 +190,12 @@ async def table_reservation_count_man(message: types.Message, state: FSMContext)
         async with state.proxy() as data:
             data["count_mans"] = count_mans
 
-        await bot.send_message(chat_id=message.from_user.id, text="<b>ШАГ [4/5]</b> ⬇️ Отправьте номер телефона", reply_markup=send_phone_cancel,
+        await bot.send_message(chat_id=message.from_user.id, text="<b>ШАГ [4/5]</b> ⬇️ Отправь номер телефона", reply_markup=send_phone_cancel,
                                  parse_mode=types.ParseMode.HTML)
     else:
         await TableReservation.count_men.set()
-        text = "Я вас, к сожалению, не понимаю.\n"
-        text +="<b>ШАГ [3/5]</b> Укажите на какое количество человек хотите сделать бронь"
+        text = "Я Тебя, к сожалению, не понимаю.\n"
+        text +="<b>ШАГ [3/5]</b> На сколько персон накрыть стол?"
         await bot.send_message(chat_id=message.from_user.id, text=text,
                                reply_markup=cancel_btn,
                                parse_mode=types.ParseMode.HTML)
@@ -219,7 +217,7 @@ async def table_reservation_user_phone(message: types.Message, state: FSMContext
             data["phone_number"] = message.text
             data["name"] = message.from_user.username
 
-    await message.answer("<b>ШАГ [5/5]</b> Напишите свой комментарий или пожелание или просто поставьте точку", reply_markup=cancel_btn,
+    await message.answer("<b>ШАГ [5/5]</b> Напиши свой комментарий или пожелание или же просто отправь точку", reply_markup=cancel_btn,
                          parse_mode=types.ParseMode.HTML)
 
 
@@ -264,8 +262,8 @@ async def table_reservation_check_data(call, state: FSMContext):
                                       reply_markup=menuUser)
 
         text = f"Пользователь @{data['user_name']} забронировал столик\n\n"
-        date = data['data'].strftime('%d.%m.%Y').split('.')
-        text += f"Дата и время: {date[0]} {MONTHS[int(date[1]) - 1]} {date[2]} года на {data['time'][:-3]}\n"
+        date = data['data'].strftime('%d.%m.%Y')
+        text += f"Дата и время: {date} на {data['time'][:-3]}\n"
         text += f"Количество человек: {data['count_mans']}\n\n"
         text += f"Имя: {data['name']}\n"
         text += f"Телефон: {data['phone_number']}\n"

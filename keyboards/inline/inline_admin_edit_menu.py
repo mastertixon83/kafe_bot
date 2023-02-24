@@ -16,11 +16,15 @@ async def what_to_edit_keyboard():
     CURRENT_LEVEL = 0
     markup = InlineKeyboardMarkup()
 
-    what_dict = {"Категории": "category", "Блюда": "items"}
+    what_dict = {"Категории": "category", "Блюда": "items", "Выход": "exit"}
 
     for key, value in what_dict.items():
         button_text = f"{key}"
-        callback_data = make_callback_data(level=CURRENT_LEVEL + 1, what=value)
+        if value == "exit":
+            lvl = -1
+        else:
+            lvl = CURRENT_LEVEL + 1
+        callback_data = make_callback_data(level=lvl, what=value)
 
         markup.add(
             InlineKeyboardButton(text=button_text, callback_data=callback_data)

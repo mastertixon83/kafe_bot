@@ -55,7 +55,7 @@ async def menu(message: Message):
     await message.answer(text)
 
 
-@dp.message_handler(Text(contains="Доставка"), state=None)
+@dp.message_handler(Text(contains="Оформить заказ на доставку"), state=None)
 async def shipping_in(message: types.Message, state: FSMContext):
     await Shipping.title_item.set()
 
