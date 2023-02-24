@@ -13,33 +13,34 @@ from states.personal import StaffCall
 from utils.db_api.db_commands import DBCommands
 
 db = DBCommands()
-@dp.message_handler(Text(equals=["Официант", "Кальянный мастер"]), state=None)
+@dp.message_handler(Text(["👦 Официант", "👲 Кальянный мастер"]), state=None)
 async def waiter(message: Message, state: FSMContext):
-    if message.text == 'Официант':
+
+    if message.text == '👦 Официант':
 
         user_id = message.from_user.id
         codes = await db.get_active_codes_user(user_id)
 
-        text = 'Введите номер столика и комментарий для официанта, если Вам что-нибудь нужно.\n\n' \
+        text = 'Введи номер столика и комментарий для официанта, если Тебе что-нибудь нужно.\n\n' \
         '(Например: стол 1, принесите счет)'
         await StaffCall.waiter.set()
 
-    elif message.text == 'Кальянный мастер':
-        text = 'Введите номер столика и комментарий для кальянного мастера, если Вам что-нибудь нужно.\n\n' \
+    elif message.text == '👲 Кальянный мастер':
+        text = 'Введи номер столика и комментарий для кальянного мастера, если Тебе что-нибудь нужно.\n\n' \
                '(Например: стол 1, раскурите кальян)'
         await StaffCall.hookah_master.set()
 
-    await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
+    await message.answer(text=text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
 
 
 @dp.message_handler(content_types=["text"], state=StaffCall)
 async def waiter_go(message: types.Message, state: FSMContext):
     cur_state = await state.get_state()
     if cur_state == 'StaffCall:waiter':
-        text = "Официант уже на пути к Вам"
+        text = "Официант уже на пути к Тебе"
         personal = 'Официанта'
     elif cur_state == 'StaffCall:hookah_master':
-        text = "Кальянный мастер уже на пути к Вам"
+        text = "Кальянный мастер уже на пути к Тебе"
         personal = 'Кальянного мастера'
 
     await message.answer(text, reply_markup=menuUser, parse_mode=types.ParseMode.HTML)

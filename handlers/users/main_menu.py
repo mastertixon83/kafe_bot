@@ -13,15 +13,16 @@ from states.config import MainMenu
 from states.shipping import Shipping
 
 
+
 # Отмена действия
-@dp.message_handler(Text("Назад"), state="*")
+@dp.message_handler(Text(contains="Назад"), state="*")
 async def cancel(message: types.Message, state=FSMContext):
     current_state = await state.get_state()
     data = await state.get_data()
     await message.delete()
 
     if message.from_user.id == int(admins[0]):
-        await message.answer("Главное меню", reply_markup=menuUser)
+        await message.answer("Главное меню", reply_markup=menuAdmin)
 
     else:
         await message.answer("Главное меню", reply_markup=menuUser)
@@ -34,45 +35,35 @@ async def cancel(message: types.Message, state=FSMContext):
     await state.finish()
 
 
-@dp.message_handler(Text(equals=["Вызов персонала"]))
+@dp.message_handler(Text(contains=["Вызов персонала"]))
 async def ansver_menu(message: Message):
     text = f"Меню вызова персонала ниже"
     await message.answer(text=text, reply_markup=menuPersonal)
 
 
-@dp.message_handler(Text(equals=["Меню"]))
+@dp.message_handler(Text(contains=["Меню"]))
 async def menu(message: Message):
 
-    text = f"Меню к Вашим услугам"
+    text = f"Меню к Твоим услугам"
     markup = await show_menu_buttons(message_id=message.message_id+1)
     await bot.send_message(chat_id=message.from_user.id, text=text, reply_markup=markup)
 
 
-@dp.message_handler(Text(equals=["О нас"]))
+@dp.message_handler(Text(contains=["О ресторане"]))
 async def menu(message: Message):
     text = f"https://teletype.in/@andreytikhonov/uJftR9aBA"
     await message.answer(text)
 
 
-@dp.message_handler(Text("Доставка"), state=None)
+@dp.message_handler(Text(contains="Доставка"), state=None)
 async def shipping_in(message: types.Message, state: FSMContext):
     await Shipping.title_item.set()
 
-    text = f"""\n
-    1️⃣ Название блюда (если оно не одно, то ввести через запятую)\n
-    2️⃣ Количество порций (если блюдо не одно, то ввести через запятую, в том порядке что и названия блюд)\n
-    3️⃣ Количество персон\n
-    4️⃣ Дата доставки\n
-    5️⃣ Время доставки\n
-    6️⃣ Адресс доставки\n
-    7️⃣ Способ оплаты\n\n
-    8️⃣ Контактный телефон\n\n
-    <b>Шаг [1/8]</b> Введите название блюда
-"""
+    text = f"<b>Шаг [1/8]</b> Введи название блюда (если блюд несколько, то введи через запятую)"
     await message.answer(text=text, reply_markup=cancel_btn)
 
 # Административная часть
-@dp.message_handler(Text(equals=["Настройки"]), state="*")
+@dp.message_handler(Text(contains=["Настройки"]), state="*")
 async def admin_config(message: Message):
     text = "Меню настроек"
     await MainMenu.main.set()

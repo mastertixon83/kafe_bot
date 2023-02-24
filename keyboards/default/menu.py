@@ -3,35 +3,25 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 menuUser = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="О нас"),
+            KeyboardButton(text="О ресторане"),
         ],
         [
-            KeyboardButton(text="Меню")
+            KeyboardButton(text="📋 Меню")
         ],
         [
-            KeyboardButton(text="Вызов персонала"),
-            KeyboardButton(text="Забронировать стол")
+            KeyboardButton(text="📢 Вызов персонала"),
+            KeyboardButton(text="📝 Забронировать стол")
         ],
         [
-            KeyboardButton(text="Доставка")
+            KeyboardButton(text="🚚 Доставка")
         ],
         [
-            KeyboardButton(text="Программа лояльности"),
-            KeyboardButton(text="Пригласить друга")
+            KeyboardButton(text="👍 Программа лояльности"),
+            KeyboardButton(text="🚶 Пригласить друга")
         ],
         [
-            KeyboardButton(text="Проложить маршрут")
+            KeyboardButton(text="Задайте нам вопрос")
         ],
-        [
-            KeyboardButton(text="Написать владельцу")
-        ],
-        # [
-        #     KeyboardButton(text="Сделать рассылку подписчикам")
-        # ],
-        [
-            KeyboardButton(text="Настройки"),
-            KeyboardButton(text="Аналитика")
-        ]
     ],
     resize_keyboard=True
 )
@@ -40,23 +30,22 @@ menuUser = ReplyKeyboardMarkup(
 menuAdmin = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="О нас")
+            KeyboardButton(text="О ресторане")
         ],
         [
-            KeyboardButton(text="Меню")
+            KeyboardButton(text="📋 Меню"),
+            KeyboardButton(text="🚚 Доставка")
         ],
         [
-            KeyboardButton(text="Доставка")
+            KeyboardButton(text="📢 Вызов персонала"),
+            KeyboardButton(text="📝 Забронировать стол")
         ],
         [
-            KeyboardButton(text="Программа лояльности"),
-            KeyboardButton(text="Пригласить друга")
+            KeyboardButton(text="Задайте нам вопрос")
         ],
         [
-            KeyboardButton(text="Проложить маршрут")
-        ],
-        [
-            KeyboardButton(text="Написать владельцу")
+            KeyboardButton(text="👍 Программа лояльности"),
+            KeyboardButton(text="🚶 Пригласить друга")
         ],
         [
             KeyboardButton(text="Сделать рассылку подписчикам")
@@ -90,13 +79,13 @@ menuAdminOrders = ReplyKeyboardMarkup(
 menuPersonal = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="Официант")
+            KeyboardButton(text="👦 Официант")
         ],
         [
-            KeyboardButton(text="Кальянный мастер")
+            KeyboardButton(text="👲 Кальянный мастер")
         ],
         [
-            KeyboardButton(text="Назад")
+            KeyboardButton(text="⬅ Назад")
         ],
     ],
     resize_keyboard=True
@@ -104,16 +93,16 @@ menuPersonal = ReplyKeyboardMarkup(
 
 menuLoyality = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton("Получить карту")],
-        [KeyboardButton("Мои коды")],
-        [KeyboardButton("Назад")]
+        [KeyboardButton("💳 Оформить карту")],
+        [KeyboardButton("🎁 Мои подарки")],
+        [KeyboardButton("⬅ Назад")]
     ],
     resize_keyboard=True
 )
 
 cancel_btn = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton("Назад")]
+        [KeyboardButton("⬅ Назад")]
     ],
     resize_keyboard=True,
     one_time_keyboard=True
@@ -121,8 +110,8 @@ cancel_btn = ReplyKeyboardMarkup(
 
 send_phone_cancel = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton("Отправить свой контакт", request_contact=True)],
-        [KeyboardButton("Назад")]
+        [KeyboardButton("📲 Отправить свой контакт", request_contact=True)],
+        [KeyboardButton("⬅ Назад")]
     ],
     resize_keyboard=True
 )
@@ -136,13 +125,13 @@ menu_admin_config = ReplyKeyboardMarkup(
         ],
         [KeyboardButton("Разблокировать пользователя")],
         [KeyboardButton("Редактировать меню")],
-        [KeyboardButton("Назад")]
+        [KeyboardButton("⬅ Назад")]
     ]
 )
 
 menu_admin_edit2 = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton("Добавить")],
-        [KeyboardButton("Назад")]
+        [KeyboardButton("➕ Добавить")],
+        [KeyboardButton("⬅ Назад")]
     ]
 )

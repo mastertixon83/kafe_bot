@@ -17,7 +17,7 @@ from data.config import admins
 db = DBCommands()
 
 
-@dp.message_handler(Text("Администраторы бота"), state = "*")
+@dp.message_handler(Text(contains="Администраторы бота"), state = "*")
 async def config_username_for_admin(message: types.Message):
     await ConfigAdmins.config_admins_name.set()
 

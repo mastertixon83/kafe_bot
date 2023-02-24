@@ -17,7 +17,7 @@ async def out_categories(call: CallbackQuery, callback_data: dict):
 
     info = await db.get_category_info(id=int(category_id))
 
-    text = f"""Вы выбрали категорию {info[0]['title']}\n\n
+    text = f"""Выбрана категория {info[0]['title']}\n\n
         {info[0]['url']}
     """
     await call.message.edit_text(text=text, reply_markup=markup)

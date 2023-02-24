@@ -22,22 +22,6 @@ db = DBCommands()
 logging.basicConfig(format=u'%(filename)s [LINE:%(lineno)d] #%(levelname)-8s [%(asctime)s] %(message)s',
                     level=logging.INFO)
 
-MONTHS = [
-    'Январь',
-    'Февраль',
-    'Март',
-    'Апрель',
-    'Май',
-    'Июнь',
-    'Июль',
-    'Август',
-    'Сентябрь',
-    'Октябрь',
-    'Ноябрь',
-    'Декабрь',
-]
-
-
 ### Бронирование столика
 ### Составление клавиатуры столиков
 async def build_tables_ikb_on_data(data, order_id):
@@ -96,7 +80,7 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
     text += f"Комментарий: Дата/Время {result[0]['data_reservation'].strftime('%Y-%m-%d')} " \
             f"{result[0]['time_reservation']}\nКол-во человек: {result[0]['number_person']}\n"
     text += f"<b>Телефон:</b> {result[0]['phone']}\n"
-    text += f"Ваш столик: {tableNumber}"
+    # text += f"Ваш столик: {tableNumber}"
 
     admin_inline_send_ls.inline_keyboard[0][0]["url"] = f"https://t.me/{result[0]['username']}"
     await call.message.edit_text(text, reply_markup=admin_inline_send_ls, parse_mode=types.ParseMode.HTML)
@@ -105,7 +89,7 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
         await bot.send_message(chat_id=call_data[0],
                                text="К сожалению, все столы забронированы.😞 Если что-то измениться, мы свяжемся с Вами позже 🤝")
     elif call_data[2] == 'approved':
-        await bot.send_message(chat_id=call_data[0], text="Ваша запись подтвердждена администрацией. Ждем вас :)")
+        await bot.send_message(chat_id=call_data[0], text=f"Ваша запись подтвердждена администрацией. Ваш столик: {tableNumber}. Ждем вас :)")
     # Обновить статус заявки в БД
     await db.update_order_hall_status(id=int(call_data[1]), order_status=True, admin_answer=call_data[2],
                                       updated_at=datetime.now(timezone.utc), admin_id=admin_id,
@@ -113,12 +97,12 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
 
 
 ### Первый шаг
-@dp.message_handler(Text("Забронировать стол"), state=None)
+@dp.message_handler(Text(contains="Забронировать стол"), state=None)
 async def table_reservation(message: types.Message, state: FSMContext):
     await TableReservation.data.set()
 
-    date = datetime.now().strftime('%d.%m.%Y').split('.')
-    text = f"<b>Шаг [1/5]</b>\n\n Введите дату в формате ДД.ММ.ГГГГ (07.10.1985) Сегодня {date[0]} {MONTHS[int(date[1]) - 1]} {date[2]} года"
+    date = datetime.now().strftime('%d.%m.%Y')
+    text = f"<b>Шаг [1/5]</b>\n\n Введите дату в формате ДД.ММ.ГГГГ, сегодня {date}"
     await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
 
     async with state.proxy() as data:
@@ -148,12 +132,12 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
         else:
             raise Exception("input error")
     except Exception as _ex:
-        if str(_ex) == 'input error':
-            text = "Я Вас не понимаю! Введите дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
+        if (str(_ex) == 'input error') or (str(_ex) == 'day is out of range for month'):
+            text = f"<b>Шаг [1/5]</b>\n\nК сожалению я Тебя не понимаю, введите корректную дату в правильном формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
         elif str(_ex) == 'data error':
-            text = "Вы путешественник во времени? Нельзя забронировать столик на прошлое.\n" \
-                   "Введите правильную дату в формате ДД.ММ.ГГГГ (07.10.1985)"
+            text = f"К сожалению время не вернуть назад 😢\n" \
+                   f"Введи правильную дату в формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
         await message.answer(text=text)
         return
@@ -235,7 +219,7 @@ async def table_reservation_user_phone(message: types.Message, state: FSMContext
             data["phone_number"] = message.text
             data["name"] = message.from_user.username
 
-    await message.answer("<b>ШАГ [5/5]</b> Напишите свой комментарий или пожелание", reply_markup=cancel_btn,
+    await message.answer("<b>ШАГ [5/5]</b> Напишите свой комментарий или пожелание или просто поставьте точку", reply_markup=cancel_btn,
                          parse_mode=types.ParseMode.HTML)
 
 
@@ -251,7 +235,7 @@ async def table_reservation_user_comment(message: types.Message, state: FSMConte
     text = "Проверьте введенные данные:\n\n"
     # d = data["date"][:-3]
     date = data['data'].strftime('%d.%m.%Y').split('.')
-    text += f"Дата и время: {date[0]} {MONTHS[int(date[1]) - 1]} {date[2]} года в  {data['time'][:-3]}\n"
+    text += f"Дата и время: {date}  {data['time'][:-3]}\n"
     text += f"Количество человек: {data['count_mans']}\n"
     text += f"Номер телефона: {data['phone_number']}\n"
     text += f"Ваш комментарий: {data['comment']}"

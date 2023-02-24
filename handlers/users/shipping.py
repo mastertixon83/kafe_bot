@@ -1,10 +1,10 @@
 #TODO: Админская часть вывод заявок на доставку по датам
+#TODO: Проверка введенных данных на число, а не слово
 from datetime import datetime, timezone
 
 from aiogram.dispatcher import FSMContext
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
 
-from handlers.users.hall_reservation import MONTHS
 from loader import dp, bot, db
 from aiogram import types
 
@@ -33,7 +33,7 @@ async def shipping_title(message: types.Message, state: FSMContext):
         data['user_name'] = message.from_user.username
         data['user_id'] = message.from_user.id
 
-    text = "<b>Шаг [2/8]</b> Введите количество порций"
+    text = "<b>Шаг [2/8]</b> Введи количество порций (если блюда не одно, то введи через запятую в том порядке что и названия блюд)"
     await message.answer(text=text, reply_markup=cancel_btn)
 
 
@@ -46,10 +46,10 @@ async def shipping_portion_quantity(message: types.Message, state: FSMContext):
         async with state.proxy() as data:
             data['portion_quantity'] = message.text
 
-        text = "<b>Шаг [3/8]</b> На какое количество человек положить приборов?"
+        text = "<b>Шаг [3/8]</b> Сколько приборов потребуется?"
         await message.answer(text=text, reply_markup=cancel_btn)
     else:
-        text = "Я вас не понимаю!!! Введите корректные данные!!! \n <b>Шаг [2/8]</b> Введите количество порций"
+        text = "Я Тебя не понимаю, введи корректные данные!!! \n <b>Шаг [2/8]</b> Введи количество порций (если блюда не одно, то введи через запятую в том порядке что и названия блюд)"
         await message.answer(text=text, reply_markup=cancel_btn)
 
 
@@ -62,11 +62,11 @@ async def shipping_number_of_devices(message: types.Message, state: FSMContext):
             data['number_of_devices'] = message.text
 
         date = datetime.now().strftime('%d.%m.%Y').split('.')
-        text = "<b>Шаг [4/8]</b> На какую дату вы хотите заказать доставку?\n"
-        text += f"Введите дату в формате ДД.ММ.ГГГГ (07.10.1985) \n Сегодня {date[0]} {MONTHS[int(date[1]) - 1]} {date[2]} года"
+        text = "<b>Шаг [4/8]</b> На какую дату оформить доставку?\n"
+        text += f"Введите дату в формате ДД.ММ.ГГГГ \n Сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
         await message.answer(text=text, reply_markup=cancel_btn)
     else:
-        text = "Я вас не понимаю!!! Введите корректные данные!!! \n <b>Шаг [3/8]</b> На какое количество человек положить приборов?"
+        text = "К сожалению я Тебя не понимаю, введи корректные данные!!! \n <b>Шаг [3/8]</b> Сколько приборов потребуется?"
         await message.answer(text=text, reply_markup=cancel_btn)
 
 
@@ -85,18 +85,19 @@ async def shipping_number_of_devices(message: types.Message, state: FSMContext):
 
                     await Shipping.time.set()
 
-                    text = "<b>Шаг [5/8]</b>\n\n Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+                    text = "<b>Шаг [5/8]</b>\n\n К какому времени доствить? Введи время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
                     await message.answer(text, parse_mode=types.ParseMode.HTML)
         else:
             raise Exception("input error")
     except Exception as _ex:
-        if str(_ex) == 'input error':
-            text = f"Я Вас не понимаю! Введите дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
+        if (str(_ex) == 'input error') or (str(_ex) == 'day is out of range for month'):
+            text = f"<b>Шаг [5/8]</b>\n\nК сожалению я Тебя не понимаю, введит корректную дату в правильном формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
         elif str(_ex) == 'data error':
-            text = f"Вы путешественник во времени? Нельзя заказать доставку в прошлое.\n" \
-                   f"Введите правильную дату в формате ДД.ММ.ГГГГ (07.10.1985)"
+            #К сожалению время не вернуть назад, укажите корректную дату, сегодня 24.02.2023
+            text = f"К сожалению время не вернуть назад 😢 Введи корректную дату в формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
+        text = ""
         await message.answer(text=text)
         return
 
@@ -126,14 +127,13 @@ async def shipping_time(message: types.Message, state: FSMContext):
                 async with state.proxy() as data:
                     data["time"] = time.strftime("%H:%M:%S")
 
-                await message.answer("<b>Шаг [6/8]</b> Введите адрес доставки",
+                await message.answer("<b>Шаг [6/8]</b> Введи адрес доставки",
                                      parse_mode=types.ParseMode.HTML)
     except Exception as _ex:
         if str(_ex) == 'time error':
-            text = "Вы путешественник во времени? Невозможно заказать доставку на время указанное вами. Введите время заново в " \
-                   "формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+            text = "К сожалению время не вернуть назад 😢 Введи время заново в  формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
         else:
-            text = "Я Вас, к сожалению, не понимаю. Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+            text = "Я Тебя, к сожалению, не понимаю. Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
 
         await message.answer(text=text)
         return
@@ -144,7 +144,7 @@ async def shipping_time(message: types.Message, state: FSMContext):
 async def shipping_time(message: types.Message, state: FSMContext):
     await Shipping.phone.set()
 
-    text = "<b>Шаг [7/8]</b> Введите или отправьте Ваш контактный номер телефона "
+    text = "<b>Шаг [7/8]</b> Введи или отправь Свой контактный номер телефона "
     msg = await message.answer(text=text, reply_markup=send_phone_cancel)
 
     async with state.proxy() as data:
@@ -175,7 +175,7 @@ async def shipping_time(message: types.Message, state: FSMContext):
         InlineKeyboardButton(text="💳 Карта", callback_data="pay_method_card"),
         InlineKeyboardButton(text="💵 Наличка", callback_data="pay_method_money"),
     )
-    await message.answer(text="Выберите способ оплаты", reply_markup=markup)
+    await message.answer(text="Выбери способ оплаты", reply_markup=markup)
 
 
 ### Ловлю ответ от пользователя способ оплаты
@@ -188,7 +188,7 @@ async def shipping_pay_method(call: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['pay_method'] = call.data
 
-    text = f"""{data['name']}, Ваш заказ\n
+    text = f"""{data['name']}, Твой заказ\n
     1️⃣ {data['title']}\n
     2️⃣ {data['portion_quantity']}\n
     3️⃣ {data['number_of_devices']}\n
@@ -197,7 +197,7 @@ async def shipping_pay_method(call: types.CallbackQuery, state: FSMContext):
     6️⃣ {data['address']}\n
     7️⃣ {data['pay_method']}\n
     8️⃣ {data['phone_number']}\n
-    Если всё правильно, подтвердите
+    Если всё правильно, подтверди
 """
     await call.message.answer(text=text, reply_markup=user_inline_approve)
 
@@ -220,7 +220,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
             time_reservation=data['time'][:-3], pay_method=data['pay_method'], user_id=str(data['user_id']),
             user_name=data['user_name']
         )
-        text = f"{data['user_name']} Ваша заявка отправлена нашему сотруднику. Ожидайте. Он с Вами скоро свяжется"
+        text = f"{data['user_name']} Твоя заявка отправлена нашему сотруднику. Ожидай. Он с Тобой скоро свяжется"
         await call.message.answer(text=text, reply_markup=menuUser)
         text = "Поступила заявка на доставку\n"
         text += f"Пользователь @{data['user_name']} заказал:\n"
@@ -252,17 +252,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
 
     elif call.data == "cancel_order_user":
         await Shipping.title_item.set()
-        text = f"""\n
-            1️⃣ Название блюда (если оно не одно, то ввести через запятую)\n
-            2️⃣ Количество порций (если блюдо не одно, то ввести через запятую, в том порядке что и названия блюд)\n
-            3️⃣ Количество персон\n
-            4️⃣ Дата доставки\n
-            5️⃣ Время доставки\n
-            6️⃣ Адресс доставки\n
-            7️⃣ Способ оплаты\n
-            8️⃣ Контактный телефон\n
-            <b>Шаг [1/8]</b> Введите название блюда
-        """
+        text = f"<b>Шаг [1/8]</b> Введи название блюда (если блюд несколько, то введи через запятую)"
         await call.message.answer(text=text, reply_markup=cancel_btn)
 
 
@@ -271,7 +261,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
 async def shipping_admin_check_order(call: types.CallbackQuery):
     await call.message.edit_reply_markup(reply_markup="")
     data = call.data.split('-')
-    print(data)
+
     await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,
                                             admin_id=str(call.from_user.id), admin_answer=data[0])
 

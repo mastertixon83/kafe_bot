@@ -1,4 +1,5 @@
 # TODO: У администратора просмотр не использованных кодов
+#TODO: Протестить получение и обмен кодов
 import os
 from datetime import datetime
 
@@ -84,25 +85,25 @@ async def sum_approved_users(user_id):
     return info, referral_id, approved_users, all_invited_users
 
 
-@dp.message_handler(Text("Пригласить друга"))
+@dp.message_handler(Text(contains="Пригласить друга"))
 async def invite_friend(message: Message):
     user_id = message.from_user.id
 
     info, referral_id, approved_users, all_invited_users = await sum_approved_users(user_id=user_id)
 
-    text = "Получи любую пиццу на выбор бесплатно в нашем ресторане \n\n Для этого нужно пригласить всего лишь 5 друзей \n\n✅ Используйте любую из ссылок ниже, чтобы пригласить друзей в бота. Чтобы приглашение было вам засчитано, " \
-           "приглашенный вами пользователь должен оформить карту лояльности находясь в заведении!"
+    text = "Получи любую пиццу на выбор бесплатно в нашем ресторане \n\n Для этого нужно пригласить всего лишь 5 друзей \n\n✅ Используй любую из ссылок ниже, чтобы пригласить друзей в бота. Чтобы приглашение было Тебе засчитано, " \
+           "приглашенный тобой пользователь должен оформить карту лояльности находясь в заведении!"
 
     await message.answer(text, reply_markup=cancel_btn)
     prizes = approved_users // 5 - info[0]["prize"]
 
     text = f"Получено подарков за приглашения: {info[0]['prize']}/{prizes + info[0]['prize']}\n\n" \
-           f"Вы пригласили {str(len(all_invited_users))} человека в бота\n" \
+           f"Ты пригласил {str(len(all_invited_users))} человека в бота\n" \
            f"Подтверждённых приглашений (Оформили карту лояльности): {str(approved_users)}\n\n" \
-           "Внутренняя ссылка: эту ссылку вы можете скидывать своим друзьям или выкладывать в чаты внутри экосистемы " \
+           "Внутренняя ссылка: эту ссылку Ты можешь скидывать своим друзьям или выкладывать в чаты внутри экосистемы " \
            "Telegram:\n\n" \
            f"https://t.me/tgpb_bot?start={referral_id}\n\n" \
-           "Внешняя ссылка: эту ссылку вы можете скидывать своим друзьям во всех других соц. сетях, мессенджерах, " \
+           "Внешняя ссылка: эту ссылку ты можешь скидывать своим друзьям во всех других соц. сетях, мессенджерах, " \
            "прикреплять в stories в Instagram и т.д.:\n\n" \
            f"https://tx.me/tgpb_bot?start={referral_id}\n\n"
 
@@ -114,7 +115,7 @@ async def invite_friend(message: Message):
 
 
 # Показать активные коды скидок
-@dp.message_handler(Text("Мои коды"))
+@dp.message_handler(Text(contains="Мои подарки"))
 async def get_active_codes(message: Message):
     user_id = message.from_user.id
     codes = await db.get_active_codes_user(user_id)
@@ -124,13 +125,13 @@ async def get_active_codes(message: Message):
 
     if codes:
         text = "Ваши коды\n\n"
-        text += "Для их использования Вы должны находиться в заведении\n"
+        text += "Для их использования Ты должен находиться в заведении\n"
 
         for code in codes:
             markup.add(InlineKeyboardButton(f"{str(code['code'])} - {code['code_description']}",
                                             callback_data=f"prize_code-{str(code['code'])}"))
     else:
-        text = "К сожалению у Вас нет призовых кодов"
+        text = "К сожалению у Тебя нет призовых кодов"
 
     await message.answer(text=text, reply_markup=markup)
 
@@ -147,10 +148,10 @@ async def use_prize_code(call, state: FSMContext):
         data["prize_id"] = pc_info[0]["id"]
 
     if pc_info[0]['code_status'] == True:
-        text = 'Введите номер столика и официант принисет Ваш приз.\n\n'
+        text = 'Введи номер столика и официант принисет Твой приз.\n\n'
         markup = cancel_btn
     else:
-        text = 'К сожалению Вы уже использовали этот код!!!'
+        text = 'К сожалению Ты уже использовал этот код!!!'
         await state.finish()
         markup = menuUser
 
@@ -168,7 +169,7 @@ async def use_prize_code_waiter_call(message: types.Message, state: FSMContext):
     await bot.send_message(chat_id=admins[0], text=text)
     await db.update_prize_code_status(data["prize_code"])
 
-    text = "Официант уже на пути к Вам"
+    text = "Официант уже на пути к Тебе"
     await message.answer(text=text, reply_markup=menuUser, parse_mode=types.ParseMode.HTML)
 
 
@@ -184,7 +185,7 @@ async def get_user_prize(call):
 
     await bot.edit_message_reply_markup(call.message.chat.id, message_id=call.message.message_id, reply_markup="")
 
-    text = "Вот ваши коды\n"
+    text = "Вот Твои коды\n"
     while prizes != 0:
         id_code = await db.generate_prize_code(int(user_id))
         info = await db.get_user_info(int(user_id))
@@ -195,18 +196,18 @@ async def get_user_prize(call):
         text += f"{code_info[0]['code']} - {code_info[0]['code_description']} \n\n "
         prizes -= 1
 
-    text += f"Используйте его при из меню Программа лояльности - Мои Коды"
+    text += f"Используй его из меню Программа лояльности - Мои Коды"
 
     await call.message.answer(text=text, reply_markup=menuUser)
 
 
 # Программа лояльности
-@dp.message_handler(Text("Программа лояльности"), state=None)
+@dp.message_handler(Text(contains="Программа лояльности"), state=None)
 async def reg_loyal_card(message: Message, state: FSMContext):
     info = await db.get_user_info(message.from_user.id)
 
     if info[0]['card_status'] != True:
-        text = "Получите карту скидок!!!"
+        text = "Оформи карту скидок!!!"
     else:
         text = "Меню программы лояльности"
     await message.delete()
@@ -214,7 +215,7 @@ async def reg_loyal_card(message: Message, state: FSMContext):
 
 
 # 1 шаг Фамилия Имя
-@dp.message_handler(Text("Получить карту"), state=None)
+@dp.message_handler(Text(contains="Оформить карту"), state=None)
 async def reg_loyal_card(message: Message, state: FSMContext):
     info = await db.get_user_info(message.from_user.id)
     await CardLoyalReg.fio.set()
@@ -223,11 +224,11 @@ async def reg_loyal_card(message: Message, state: FSMContext):
         # Введите Ваши имя и фамилию. Два слова.
         # Введите дату Вашего рождения в формате ДД.ММ.ГГГГ
         # Отправьте номер Вашего телефона нажав на кнопку ниже
-        text = "<b>Шаг [1/4]</b>\n\n Введите Ваши имя и фамилию. Два слова."
+        text = "<b>Шаг [1/4]</b>\n\n Введи свои имя и фамилию. Два слова."
         await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
     else:
         await state.finish()
-        text = "Вот ваша карточка. Используйте её для получения скидок и участия в акциях."
+        text = "Вот твоя карточка. Используй её для получения скидок и участия в акциях."
         card = card_generate(info[0]["user_id"], info[0]["card_fio"], info[0]["card_number"])
         await bot.send_photo(chat_id=info[0]['user_id'], photo=card, caption=text, reply_markup=menuUser)
 
@@ -241,7 +242,7 @@ async def reg_loyal_card_fio(message: types.Message, state: FSMContext):
         data["user_id"] = message.from_user.id
         data["card_fio"] = message.text
 
-    text = "<b>Шаг [2/4]</b>\n\n Введите дату Вашего рождения в формате ДД.ММ.ГГГГ (07.10.1985)"
+    text = "<b>Шаг [2/4]</b>\n\n Введи дату твоего рождения в формате ДД.ММ.ГГГГ (07.10.1985)"
     await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
 
 
@@ -266,18 +267,18 @@ async def reg_loyal_card_birthday(message: types.Message, state: FSMContext):
 
                     async with state.proxy() as data:
                         data["birthday"] = datetime.strptime(message.text.replace(".", "-"), "%d-%m-%Y").date()
-                    text = "<b>Шаг [3/4]</b>\n\n Отправьте номер Вашего телефона нажав на кнопку ниже \n\n " \
-                           "или введите в формате +77777777777\n\nНажмите кнопку ниже⬇"
+                    text = "<b>Шаг [3/4]</b>\n\n Отправь свой номер телефона, нажав на кнопку ниже \n\n " \
+                           "или введи в формате +77777777777\n\nНажми кнопку ниже⬇"
                     await message.answer(text, reply_markup=send_phone_cancel, parse_mode=types.ParseMode.HTML)
 
                 else:
-                    text = "Я Вас не понимаю! Введите дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
+                    text = "Я Тебя не понимаю! Введи дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
                     await message.answer(text=text)
             else:
-                text = "Я Вас не понимаю! Введите дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
+                text = "Я Тебя не понимаю! Введи дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
                 await message.answer(text=text)
     except:
-        text = "Я Вас не понимаю! Введите дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
+        text = "Я Тебя не понимаю! Введи дату в правильном формате ДД.ММ.ГГГГ (07.10.1985)"
         await message.answer(text=text)
 
 
@@ -298,14 +299,14 @@ async def reg_loyal_card_phone(message: types.Message, state: FSMContext):
 
     await CardLoyalReg.approve.set()
 
-    text = "Проверьте введенные данные:\n\n"
-    text += f"Ваше имя и фамилия: {data['card_fio']}\n"
-    text += f"Ваш день рождения: {data['birthday'].strftime('%m-%d-%Y')}\n"
-    text += f"Ваш номер телефона: {data['phone_number']}\n"
+    text = "Проверь введенные данные:\n\n"
+    text += f"Твои имя и фамилия: {data['card_fio']}\n"
+    text += f"Твой день рождения: {data['birthday'].strftime('%m-%d-%Y')}\n"
+    text += f"Твой номер телефона: {data['phone_number']}\n"
 
     await message.answer(text)
 
-    await message.answer("Если всё правильно, подтвердите", reply_markup=user_inline_approve)
+    await message.answer("Если всё правильно, подтверди", reply_markup=user_inline_approve)
 
     async with state.proxy() as data:
         data["msg_id"] = message.message_id
@@ -324,9 +325,9 @@ async def reg_loyal_card_approve(call, state: FSMContext):
         info = await db.get_user_info(data["user_id"])
 
         if info[0]["card_status"] != True:
-            await call.message.edit_text("Если всё правильно, подтвердите", reply_markup="")
+            await call.message.edit_text("Если всё правильно, подтверди", reply_markup="")
 
-            await call.message.answer("⏳Ожидайте подтверждения от администрации",
+            await call.message.answer("⏳Ожидай подтверждения от администрации",
                                       reply_markup=menuUser)
 
             text = f"Пользователь @{info[0]['username']} оформил карту лояльности"
@@ -341,7 +342,7 @@ async def reg_loyal_card_approve(call, state: FSMContext):
             await state.finish()
         else:
             card = card_generate(data["user_id"], data["card_fio"], data["card_number"])
-            text = "Вот ваша карточка. Используйте её для получения скидок и участия в акциях."
+            text = "Вот Твоя карточка. Используй её для получения скидок и участия в акциях."
 
             if call.message.from_user.id == int(admins[0]):
                 await bot.send_photo(chat_id=info[0]['user_id'], photo=card, caption=text,
@@ -352,8 +353,8 @@ async def reg_loyal_card_approve(call, state: FSMContext):
 
     elif call.data == "cancel_order_user":
         await state.finish()
-        await call.message.edit_text("Исправьте данные", reply_markup="")
-        text = "<b>Шаг [1/3]</b>\n\n Введите Ваши имя и фамилию. Два слова."
+        await call.message.edit_text("Исправь данные", reply_markup="")
+        text = "<b>Шаг [1/3]</b>\n\n Введите свои имя и фамилию. Два слова."
         await call.message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
 
         await CardLoyalReg.fio.set()
@@ -376,8 +377,8 @@ async def reg_loyal_card_admin_approve(call, state: FSMContext):
         # Активация карты лояльности
         await db.approve_user_card_admin(int(cb_data[1]))
 
-        text = "Поздравляем! Вы стали участником программы лояльности.\n\n " \
-               "Вот ваша карточка. Используйте её для получения скидок и участия в акциях."
+        text = "Поздравляем! Ты стал участником программы лояльности.\n\n " \
+               "Вот Твоя карточка. Используй её для получения скидок и участия в акциях."
 
         if call.message.from_user.id == int(admins[0]):
             await bot.send_photo(chat_id=info[0]['user_id'], photo=card, caption=text,
@@ -387,7 +388,7 @@ async def reg_loyal_card_admin_approve(call, state: FSMContext):
                                  reply_markup=menuUser)
 
     else:
-        text = "Вот ваша карточка. Используйте её для получения скидок и участия в акциях."
+        text = "Вот Твоя карточка. Используй её для получения скидок и участия в акциях."
 
         if call.message.from_user.id == int(admins[0]):
             await bot.send_photo(chat_id=info[0]['user_id'], photo=card, caption=text,
@@ -406,4 +407,4 @@ async def reg_loyal_card_admin_reject(call):
     text = call.message.text
     await call.message.edit_text(text=text, reply_markup="")
 
-    await bot.send_message(chat_id=cb_data[1], text="Ваша заявка на карту отклонена администрацией.")
+    await bot.send_message(chat_id=cb_data[1], text="Твоя заявка на карту отклонена администрацией.")
