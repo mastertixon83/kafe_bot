@@ -309,7 +309,7 @@ async def shipping_address(message: types.Message, state: FSMContext):
             data["phone_number"] = message.text
             data["name"] = message.from_user.username
 
-    text = "<b>Шаг [8/8]</b> 💳 vs 💵"
+    text = "💳 vs 💵"
     msg = await message.answer(text=text, reply_markup=cancel_btn)
     markup = InlineKeyboardMarkup()
     markup.add(
@@ -363,8 +363,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
         await call.message.answer(text=text, reply_markup=menuUser)
         text = "Поступила заявка на доставку\n"
         text += f"Пользователь @{data['user_name']} заказал:\n"
-        text += f"{data['title']}\n"
-        text += f"Количество порций: {data['portion_quantity']}\n"
+
         text += f"Количество приборов: {data['number_of_devices']}\n"
         text += f"Дата доставки: {data['data']}\n"
         text += f"Время доставки: {data['time']}\n"
@@ -391,5 +390,5 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
 
     elif call.data == "cancel_order_user":
         await Shipping.data.set()
-        text = f"<b>Шаг [1/8]</b> Введи название блюда (если блюд несколько, то введи через запятую)"
-        await call.message.answer(text=text, reply_markup=cancel_btn)
+        text = "Главное меню"
+        await call.message.answer(text=text, reply_markup=menuUser)
