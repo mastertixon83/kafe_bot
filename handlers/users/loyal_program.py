@@ -1,5 +1,5 @@
-# TODO: У администратора просмотр не использованных кодов
-#TODO: Протестить получение и обмен кодов
+#TODO: У администратора просмотр не использованных кодов
+
 import os
 from datetime import datetime
 
@@ -117,6 +117,7 @@ async def invite_friend(message: Message):
 # Показать активные коды скидок
 @dp.message_handler(Text(contains="Мои подарки"))
 async def get_active_codes(message: Message):
+    # TODO: Протестить получение и обмен кодов
     user_id = message.from_user.id
     codes = await db.get_active_codes_user(user_id)
 

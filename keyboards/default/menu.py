@@ -84,7 +84,7 @@ menuPersonal = ReplyKeyboardMarkup(
             KeyboardButton(text="👲 Кальянный мастер")
         ],
         [
-            KeyboardButton(text="⬅ Назад")
+            KeyboardButton(text="⬅ Главное меню")
         ],
     ],
     resize_keyboard=True
@@ -94,14 +94,14 @@ menuLoyality = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton("💳 Оформить карту")],
         [KeyboardButton("🎁 Мои подарки")],
-        [KeyboardButton("⬅ Назад")]
+        [KeyboardButton("⬅ Главное меню")]
     ],
     resize_keyboard=True
 )
 
 cancel_btn = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton("⬅ Назад")]
+        [KeyboardButton("⬅ Главное меню")]
     ],
     resize_keyboard=True,
     one_time_keyboard=True
@@ -110,7 +110,7 @@ cancel_btn = ReplyKeyboardMarkup(
 send_phone_cancel = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton("📲 Отправить свой контакт", request_contact=True)],
-        [KeyboardButton("⬅ Назад")]
+        [KeyboardButton("⬅ Главное меню")]
     ],
     resize_keyboard=True
 )
@@ -124,13 +124,13 @@ menu_admin_config = ReplyKeyboardMarkup(
         ],
         [KeyboardButton("Разблокировать пользователя")],
         [KeyboardButton("Редактировать меню")],
-        [KeyboardButton("⬅ Назад")]
+        [KeyboardButton("⬅ Главное меню")]
     ]
 )
 
 menu_admin_edit2 = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton("➕ Добавить")],
-        [KeyboardButton("⬅ Назад")]
+        [KeyboardButton("⬅ Главное меню")]
     ]
 )

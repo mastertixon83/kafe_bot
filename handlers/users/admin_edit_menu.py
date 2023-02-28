@@ -18,7 +18,7 @@ url_pattern = re.compile(r'(http|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%
 db = DBCommands()
 
 
-@dp.message_handler(Text(equals=["Редактировать меню"]), state='*')
+@dp.message_handler(Text(contains=["Редактировать меню"]), state='*')
 async def show_menu(message: types.Message, state: FSMContext):
     await MainMenu.main.set()
     await message.delete()
@@ -65,7 +65,7 @@ async def navigate(call: types.CallbackQuery, callback_data: dict, state: FSMCon
         state=st
     )
 
-
+### Ловлю нажатие кнопки выход
 async def main_menu(callback: types.CallbackQuery, what, state, **kwargs):
     await callback.message.delete()
     await callback.message.answer(text="Главное меню", reply_markup=menuAdmin)
@@ -73,6 +73,7 @@ async def main_menu(callback: types.CallbackQuery, what, state, **kwargs):
     await state.finish()
 
 
+### Ловлю нажатие кнопки Что будем редактировать
 async def what_to_edit(message: Union[types.Message, types.CallbackQuery], **kwargs):
     markup = await what_to_edit_keyboard()
 
@@ -92,7 +93,7 @@ async def edit_position_category(callback: types.CallbackQuery, category_id, act
     async with kwargs['state'].proxy() as data:
         data['category_id'] = category_id
 
-    if action == "edit_position":
+    if action == "edit_category_position":
         text = f"Текущая позиция {info[0]['position']}\n\nВведи позицию категории"
         await callback.message.edit_text(text=text)
 
@@ -153,7 +154,7 @@ async def list_items_in_category(callback: types.CallbackQuery, category_id, act
                 text = f"Выбрана категория {info[0]['title']} \nКакое блюдо будем редактировать?"
             await callback.message.edit_text(text=text, reply_markup=markup)
 
-    elif action == "edit_category":
+    elif action == "edit_category_position":
 
         async with kwargs['state'].proxy() as data:
             data['category_id'] = category_id
@@ -176,7 +177,7 @@ async def new_category(callback: types.CallbackQuery, category_id, action, **kwa
     await MainMenu.category_title.set()
 
     async with kwargs['state'].proxy() as data:
-        if action == "edit_category": data['category_id'] = category_id
+        if action == "edit_category_position": data['category_id'] = category_id
         data['action'] = action
 
     text = "<b>ШАГ [1/2]</b>Введи название категории"
@@ -206,7 +207,7 @@ async def category_url(message: types.Message, state: FSMContext):
     match = re.search(url_pattern, message.text)
     if match:
         url = match.group(0)
-        if data['action'] == "edit_category":
+        if data['action'] == "edit_category_position":
             await db.update_category(title=data['title'], id=int(data['category_id']), url=message.text)
         elif data['action'] == "new_category":
             await db.add_new_category(title=data['title'], url=url)
@@ -226,10 +227,11 @@ async def category_url(message: types.Message, state: FSMContext):
 
 
 ### Ловлю нажатие на кнопку блюда - Редктирование
-async def edit_item(callback: types.CallbackQuery, item_id, category_id, action, **kwargs):
+async def edit_item(callback: types.CallbackQuery, item_id, category_id, action, state, **kwargs):
     await MainMenu.item_title.set()
+    data = await state.get_data()
 
-    async with kwargs["state"].proxy() as data:
+    async with state.proxy() as data:
         data["item_id"] = item_id
         data["category_id"] = category_id
         data['action'] = action
@@ -240,7 +242,8 @@ async def edit_item(callback: types.CallbackQuery, item_id, category_id, action,
     text += f"{item[0]['description']}\n"
     text += f"Цена: {item[0]['price']}\n\n"
     text += "<b>ШАГ [1/4]</b>Введи название блюда"
-    await bot.edit_message_text(text=text, chat_id=callback.message.from_user.id, message_id=data['message_id'])
+    await callback.message.edit_text(text=text)
+    # await bot.edit_message_text(text=text, chat_id=callback.message.from_user.id, message_id=data['message_id'])
 
 
 ### Нажатие на кнопку добавить новое блюдо
@@ -310,7 +313,7 @@ async def check_photo(message: types.Message, state: FSMContext):
 
     return await bot.edit_message_text(text=text, chat_id=message.from_user.id, message_id=data['message_id'])
 
-
+### Ловлю фото блюда
 @dp.message_handler(content_types=types.ContentType.PHOTO, state=MainMenu.item_photo)
 async def edit_menu_item_description(message: types.Message, state: FSMContext):
     await message.delete()

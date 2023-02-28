@@ -1,3 +1,4 @@
+#TODO: Проверка на существование пользователя в БД на людбой стадии, если нет, то добавить его в БД
 from loader import dp, bot, db
 
 from aiogram.types import Message, ReplyKeyboardRemove

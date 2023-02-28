@@ -53,10 +53,12 @@ async def categories_keyboard(what):
             action = "edit_category"
         elif what == "items":
             action = "edit_items"
+        elif what == "shipping":
+            action = ""
 
         callback_data = make_callback_data(level=CURRENT_LEVEL + 1, action=action, category_id=category['id'])
         cb_data = make_callback_data(level=13, action="delete_category", category_id=category['id'])
-        cb_data_position = make_callback_data(level=14, action="edit_position", category_id=category['id'])
+        cb_data_position = make_callback_data(level=14, action="edit_category_position", category_id=category['id'])
 
         if action == "edit_category":
             markup.add(
@@ -64,23 +66,25 @@ async def categories_keyboard(what):
                 InlineKeyboardButton(text=button_text, callback_data=callback_data),
                 InlineKeyboardButton(text='🔗', url=category['url']),
                 InlineKeyboardButton(text="❌", callback_data=cb_data)
-
             )
 
         elif action == "edit_items":
             markup.add(
                 InlineKeyboardButton(text=button_text, callback_data=callback_data)
             )
+
     if what == "category":
         markup.row(
             InlineKeyboardButton(text="Назад", callback_data=make_callback_data(level=CURRENT_LEVEL - 1)),
             InlineKeyboardButton(text="Добавить", callback_data=make_callback_data(level=12, action="new_category"))
         )
+
     elif what == "items":
         markup.row(
             InlineKeyboardButton(text="Назад", callback_data=make_callback_data(level=CURRENT_LEVEL - 1, what="items"))
             # InlineKeyboardButton(text="Добавить", callback_data=make_callback_data(level=22, action="new_item"))
         )
+
     return markup
 
 

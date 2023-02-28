@@ -15,7 +15,7 @@ from states.shipping import Shipping
 
 
 # Отмена действия
-@dp.message_handler(Text(contains="Назад"), state="*")
+@dp.message_handler(Text(contains="Главное меню"), state="*")
 async def cancel(message: types.Message, state=FSMContext):
     current_state = await state.get_state()
     data = await state.get_data()
@@ -23,7 +23,6 @@ async def cancel(message: types.Message, state=FSMContext):
 
     if message.from_user.id == int(admins[0]):
         await message.answer("Главное меню", reply_markup=menuAdmin)
-
     else:
         await message.answer("Главное меню", reply_markup=menuUser)
 
@@ -33,6 +32,7 @@ async def cancel(message: types.Message, state=FSMContext):
         else:
             await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id-1)
     await state.finish()
+    await db.delete_cart(str(message.chat.id))
 
 
 @dp.message_handler(Text(contains=["Вызов персонала"]))
@@ -55,12 +55,12 @@ async def menu(message: Message):
     await message.answer(text)
 
 
-@dp.message_handler(Text(contains="Оформить заказ на доставку"), state=None)
-async def shipping_in(message: types.Message, state: FSMContext):
-    await Shipping.title_item.set()
-
-    text = f"<b>Шаг [1/8]</b> Введи название блюда (если блюд несколько, то введи через запятую)"
-    await message.answer(text=text, reply_markup=cancel_btn)
+# @dp.message_handler(Text(contains="Оформить заказ на доставку"), state=None)
+# async def shipping_in(message: types.Message, state: FSMContext):
+#     await Shipping.title_item.set()
+#
+#     text = f"<b>Шаг [1/8]</b> Введи название блюда (если блюд несколько, то введи через запятую)"
+#     await message.answer(text=text, reply_markup=cancel_btn)
 
 # Административная часть
 @dp.message_handler(Text(contains=["Настройки"]), state="*")

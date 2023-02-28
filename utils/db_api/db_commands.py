@@ -43,6 +43,12 @@ class DBCommands:
     ADD_NEW_SHIPPING_ORDER = "INSERT INTO shipping (title, portion_quantity, number_of_devices, address, phone, " \
                              "data_reservation, time_reservation, pay_method, user_id, user_name)" \
                              "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id"
+    ### Корзина
+    ADD_CART = "INSERT INTO cart (item_id, item_count, user_id, title, price) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+    UPDATE_CART = "UPDATE cart SET item_count = $1, title = $4, price = $5 WHERE item_id = $2 AND user_id = $3 RETURNING id"
+    DELETE_CART = "DELETE FROM cart WHERE user_id = $1"
+    CART_INFO = "SELECT * FROM cart WHERE user_id = $1 ORDER BY title"
+    GET_CART_PRODUCTS_INFO = "SELECT * FROM items_menu WHERE id = any($1::int[]) ORDER BY id"
 
     ### Обновление заявки администратором
     UPDATE_SHIPPING_ORDER_STATUS = "UPDATE shipping SET order_status = false, admin_name = $2, admin_id = $3, admin_answer = $4 WHERE id = $1"
@@ -69,7 +75,6 @@ class DBCommands:
     GET_ALL_ADMINS = "SELECT * FROM users WHERE administrator = true"
 
     ###  Добавление нового пользователя с рефералом и без ###
-
     async def add_new_user(self, referral=None):
         user = types.User.get_current()
         chat_id = str(user.id)
@@ -261,6 +266,37 @@ class DBCommands:
     async def delete_item(self, id):
         command = self.DELETE_ITEM
         await self.pool.fetch(command, id)
+
+    ### Корзина
+    ### Добавление новой корзины пользователя
+    async def add_new_cart(self, item_id, item_count, user_id, title, price):
+        command = self.ADD_CART
+        args = item_id, item_count, user_id, title, price
+        cart_id = await self.pool.fetchval(command, *args)
+        return cart_id
+
+    ### Обновление корзины пользователя
+    async def update_cart(self, item_id, item_count, user_id, title, price):
+        command = self.UPDATE_CART
+        args = item_count, item_id, user_id, title, price
+        cart_id = await self.pool.fetch(command, *args)
+        return cart_id
+
+    ### Удаление корзины пользователя
+    async def delete_cart(self, user_id):
+        command = self.DELETE_CART
+        await self.pool.fetch(command, user_id)
+
+    ### Информация по корзине пользователя
+    async def cart_info(self, user_id):
+        command = self.CART_INFO
+        return await self.pool.fetch(command, user_id)
+
+    ### Информация о товарах в корзине
+    async def get_cart_products_info(self, id_list):
+        command = self.GET_CART_PRODUCTS_INFO
+        return await self.pool.fetch(command, id_list)
+
 
     ### Выбор всех администроторов
     async def get_all_admins(self):
