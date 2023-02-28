@@ -1,4 +1,6 @@
+import json
 import re
+import time
 from typing import Union
 from aiogram import types
 from aiogram.dispatcher import FSMContext
@@ -187,7 +189,6 @@ async def delivery_registration(callback: types.CallbackQuery, **kwargs):
     await callback.message.delete()
     await Shipping.data.set()
 
-    date = datetime.now().strftime('%d.%m.%Y').split('.')
     text = "На какую дату оформить доставку?\n"
     text += f"Введи дату в формате ДД.ММ.ГГГГ \n Сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
@@ -206,6 +207,8 @@ async def shipping_data(message: types.Message, state: FSMContext):
                 else:
                     async with state.proxy() as data:
                         data["data"] = datetime.strptime(message.text.replace(".", "-"), "%d-%m-%Y").date()
+                        data["user_id"] = message.chat.id
+                        data['user_name'] = message.from_user.username
 
                     await Shipping.time.set()
 
@@ -214,14 +217,14 @@ async def shipping_data(message: types.Message, state: FSMContext):
         else:
             raise Exception("input error")
     except Exception as _ex:
+        text=""
         if (str(_ex) == 'input error') or (str(_ex) == 'day is out of range for month'):
-            text = f"К сожалению я Тебя не понимаю, введит корректную дату в правильном формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
+            text = f"К сожалению я Тебя не понимаю, введи корректную дату в правильном формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
         elif str(_ex) == 'data error':
             #К сожалению время не вернуть назад, укажите корректную дату, сегодня 24.02.2023
             text = f"К сожалению время не вернуть назад 😢 Введи корректную дату в формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
-        text = ""
         await message.answer(text=text)
         return
 
@@ -229,7 +232,6 @@ async def shipping_data(message: types.Message, state: FSMContext):
 ### Ловлю от пользователя время доставки
 @dp.message_handler(content_types=["text"], state=Shipping.time)
 async def shipping_time(message: types.Message, state: FSMContext):
-    await Shipping.number_of_devices.set()
     msg = message.text
     data = await state.get_data()
     try:
@@ -247,10 +249,10 @@ async def shipping_time(message: types.Message, state: FSMContext):
             if data['data'] == datetime.now() and time < datetime.now().time():
                 raise Exception('time error')
             else:
-                await Shipping.address.set()
+                await Shipping.number_of_devices.set()
 
                 async with state.proxy() as data:
-                    data["time"] = time.strftime("%H:%M:%S")
+                    data["time"] = time.strftime("%H:%M")
 
                 await message.answer("Сколько приборов потребуется?",
                                      parse_mode=types.ParseMode.HTML)
@@ -268,36 +270,20 @@ async def shipping_time(message: types.Message, state: FSMContext):
 @dp.message_handler(content_types=["text"], state=Shipping.number_of_devices)
 async def shipping_number_of_devices(message: types.Message, state: FSMContext):
     if message.text.isdigit():
-        await Shipping.address.set()
+        await Shipping.phone.set()
         async with state.proxy() as data:
             data['number_of_devices'] = message.text
 
-        date = datetime.now().strftime('%d.%m.%Y').split('.')
-        text = "Введи адрес доставки\n"
-        await message.answer(text=text, reply_markup=cancel_btn)
+        text = "Введи или отправь Свой контактный номер телефона "
+        msg = await message.answer(text=text, reply_markup=send_phone_cancel)
     else:
         text = "К сожалению я Тебя не понимаю, введи корректные данные!!! \nСколько приборов потребуется?"
         await message.answer(text=text, reply_markup=cancel_btn)
 
 
-### Ловлю от пользователя адрес доставки
-@dp.message_handler(content_types=["text"], state=Shipping.address)
-async def shipping_address(message: types.Message, state: FSMContext):
-    await Shipping.phone.set()
-
-    text = "Введи или отправь Свой контактный номер телефона "
-    msg = await message.answer(text=text, reply_markup=send_phone_cancel)
-
-    async with state.proxy() as data:
-        data['address'] = message.text
-        data['message_id'] = msg.message_id
-
-
 ### Ловлю от пользователя контактный номер телефона
 @dp.message_handler(content_types=["contact", "text"], state=Shipping.phone)
 async def shipping_address(message: types.Message, state: FSMContext):
-    await Shipping.pay_method.set()
-
     async with state.proxy() as data:
         if message.content_type == 'contact':
             if message.contact.phone_number[0] != "+":
@@ -308,9 +294,20 @@ async def shipping_address(message: types.Message, state: FSMContext):
         else:
             data["phone_number"] = message.text
             data["name"] = message.from_user.username
+    await Shipping.address.set()
 
-    text = "💳 vs 💵"
-    msg = await message.answer(text=text, reply_markup=cancel_btn)
+    text = "Укажи адрес на который нужно доставить"
+    await message.answer(text=text, reply_markup=cancel_btn)
+
+
+### Ловлю от пользователя адрес доставки
+@dp.message_handler(content_types=["text"], state=Shipping.address)
+async def shipping_address(message: types.Message, state: FSMContext):
+    await Shipping.pay_method.set()
+
+    async with state.proxy() as data:
+        data['address'] = message.text
+
     markup = InlineKeyboardMarkup()
     markup.add(
         InlineKeyboardButton(text="💳 Карта", callback_data="pay_method_card"),
@@ -324,19 +321,29 @@ async def shipping_address(message: types.Message, state: FSMContext):
 async def shipping_pay_method(call: types.CallbackQuery, state: FSMContext):
     await Shipping.check.set()
     await call.message.edit_reply_markup(reply_markup="")
-
+    await call.message.delete()
     cart_info = await db.cart_info(user_id=str(call.message.chat.id))
-    async with state.proxy() as data:
-        data['pay_method'] = call.data
 
     text = "Ваш заказ\n"
     summa = 0
+    item_list = []
     for item in cart_info:
+        item_list.append(
+            {
+                "title": item['title'],
+                'count': item['item_count'],
+                'price': int(item['price'])
+            }
+        )
         text += f"{item['title']}\nКол-во порций: {item['item_count']}\nЦена: {item['price']}\n\n"
         summa += item['item_count'] * item['price']
 
+    async with state.proxy() as data:
+        data['items'] = item_list
+        data['pay_method'] = call.data
+        data['finall_summa'] = summa
+
     text += f"Общая сумма заказа: {summa}"
-    await call.message.answer(text=text, reply_markup=cancel_btn)
 
     await call.message.answer(text=text, reply_markup=user_inline_approve)
 
@@ -346,14 +353,18 @@ async def shipping_pay_method(call: types.CallbackQuery, state: FSMContext):
 async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext):
     await call.message.edit_reply_markup(reply_markup="")
     await call.message.delete()
-
-    await call.answer(cache_time=60)
+    await call.answer(cache_time=10)
 
     if call.data == "approve_order_user":
         data = await state.get_data()
 
+        json_data = json.dumps(data['items'])
+
+        user_id = call.message.chat.id
+        await db.delete_cart(user_id=str(user_id))
+
         order_id = await db.add_new_shipping_order(
-            title=data['title'],
+            tpc=json_data,
             number_of_devices=int(data['number_of_devices']),
             address=data['address'], phone=data['phone_number'], data_reservation=data['data'],
             time_reservation=data['time'][:-3], pay_method=data['pay_method'], user_id=str(data['user_id']),
@@ -361,9 +372,11 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
         )
         text = f"{data['user_name']} Твоя заявка отправлена нашему сотруднику. Ожидай. Он с Тобой скоро свяжется"
         await call.message.answer(text=text, reply_markup=menuUser)
+
         text = "Поступила заявка на доставку\n"
         text += f"Пользователь @{data['user_name']} заказал:\n"
-
+        for item in data['items']:
+            text += f"{item['title']} - {item['count']}\n"
         text += f"Количество приборов: {data['number_of_devices']}\n"
         text += f"Дата доставки: {data['data']}\n"
         text += f"Время доставки: {data['time']}\n"
@@ -389,6 +402,6 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
         await state.finish()
 
     elif call.data == "cancel_order_user":
-        await Shipping.data.set()
+        await state.finish()
         text = "Главное меню"
         await call.message.answer(text=text, reply_markup=menuUser)

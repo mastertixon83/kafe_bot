@@ -40,9 +40,9 @@ class DBCommands:
 
     ### Заявка на доставку
     ### Добавление новой заявки
-    ADD_NEW_SHIPPING_ORDER = "INSERT INTO shipping (title, portion_quantity, number_of_devices, address, phone, " \
+    ADD_NEW_SHIPPING_ORDER = "INSERT INTO shipping (tpc, number_of_devices, address, phone, " \
                              "data_reservation, time_reservation, pay_method, user_id, user_name)" \
-                             "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id"
+                             "VALUES ($1::jsonb, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id"
     ### Корзина
     ADD_CART = "INSERT INTO cart (item_id, item_count, user_id, title, price) VALUES ($1, $2, $3, $4, $5) RETURNING id"
     UPDATE_CART = "UPDATE cart SET item_count = $1, title = $4, price = $5 WHERE item_id = $2 AND user_id = $3 RETURNING id"
@@ -179,10 +179,10 @@ class DBCommands:
 
     ### Доставка
     ### Добавление новой заявки
-    async def add_new_shipping_order(self, title, portion_quantity, number_of_devices, address, phone,
+    async def add_new_shipping_order(self, tpc, number_of_devices, address, phone,
                                      data_reservation, time_reservation, pay_method, user_id, user_name):
         command = self.ADD_NEW_SHIPPING_ORDER
-        args = title, portion_quantity, number_of_devices, address, phone, data_reservation, time_reservation, pay_method,\
+        args = tpc, number_of_devices, address, phone, data_reservation, time_reservation, pay_method,\
                user_id, user_name
 
         try:
