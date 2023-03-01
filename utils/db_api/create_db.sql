@@ -95,6 +95,7 @@ create table if not exists shipping
     phone text,
     data_reservation DATE NOT NULL,
     time_reservation varchar(5),
+    final_summa numeric(9, 2),
     pay_method varchar(16),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

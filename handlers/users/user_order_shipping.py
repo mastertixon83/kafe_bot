@@ -341,7 +341,7 @@ async def shipping_pay_method(call: types.CallbackQuery, state: FSMContext):
     async with state.proxy() as data:
         data['items'] = item_list
         data['pay_method'] = call.data
-        data['finall_summa'] = summa
+        data['final_summa'] = summa
 
     text += f"Общая сумма заказа: {summa}"
 
@@ -367,7 +367,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
             tpc=json_data,
             number_of_devices=int(data['number_of_devices']),
             address=data['address'], phone=data['phone_number'], data_reservation=data['data'],
-            time_reservation=data['time'][:-3], pay_method=data['pay_method'], user_id=str(data['user_id']),
+            time_reservation=data['time'], final_summa=data['final_summa'], pay_method=data['pay_method'], user_id=str(data['user_id']),
             user_name=data['user_name']
         )
         text = f"{data['user_name']} Твоя заявка отправлена нашему сотруднику. Ожидай. Он с Тобой скоро свяжется"
@@ -377,6 +377,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
         text += f"Пользователь @{data['user_name']} заказал:\n"
         for item in data['items']:
             text += f"{item['title']} - {item['count']}\n"
+        text += "-"*70+"\n"
         text += f"Количество приборов: {data['number_of_devices']}\n"
         text += f"Дата доставки: {data['data']}\n"
         text += f"Время доставки: {data['time']}\n"
@@ -386,6 +387,8 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
         elif data['pay_method'] == "pay_method_money":
             text += "Способ оплаты: Наличные\n"
         text += f"Контактный номер телефона: {data['phone_number']}\n"
+        text += "-" * 70 + "\n"
+        text += f"<b>Сумма заказа: {data['final_summa']}</b>\n"
 
         markup = InlineKeyboardMarkup()
 
@@ -398,10 +401,23 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
                                  url=f"https://t.me/{data['user_name']}")
         )
 
-        await bot.send_message(chat_id=admins[0], text=text, reply_markup=markup)
+        await bot.send_message(chat_id=admins[0], text=text, parse_mode="HTML", reply_markup=markup)
         await state.finish()
 
     elif call.data == "cancel_order_user":
+        user_id = call.message.chat.id
+        await db.delete_cart(user_id=str(user_id))
+
         await state.finish()
         text = "Главное меню"
         await call.message.answer(text=text, reply_markup=menuUser)
+
+
+### Ловлю ответ от администратора о заявке
+@dp.callback_query_handler(text_contains=["shipping"])
+async def shipping_admin_check_order(call: types.CallbackQuery):
+    await call.message.edit_reply_markup(reply_markup="")
+    data = call.data.split('-')
+
+    await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,
+                                            admin_id=str(call.from_user.id), admin_answer=data[0])
