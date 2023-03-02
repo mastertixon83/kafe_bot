@@ -1,5 +1,10 @@
-a = [1,2,43]
+import re
 
-d = {f"{i}": i for i in a}
+string = "ConfigAdmins:config_admins_list"
+pattern = r"ConfigAdmins:config_admins_"
+result = re.search(pattern, string)
 
-print(d['2'])
+if re.search(r"ConfigAdmins:config_admins_", current_state):
+    print("Строка содержит подстроку.")
+else:
+    print("Строка не содержит подстроку.")

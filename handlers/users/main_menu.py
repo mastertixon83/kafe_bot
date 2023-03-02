@@ -1,4 +1,5 @@
 from loader import dp, bot
+import re
 
 from aiogram import types
 from keyboards.default import *
@@ -31,6 +32,14 @@ async def cancel(message: types.Message, state=FSMContext):
             await bot.delete_message(chat_id=message.from_user.id, message_id=data['message_id'])
         else:
             await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id-1)
+
+    elif re.search(r"ConfigAdmins:config_admins_", current_state):
+        for id_msg in data['id_msg_list']:
+            try:
+                await bot.delete_message(chat_id=message.from_user.id, message_id=id_msg)
+            except Exception as ex:
+                pass
+
     await state.finish()
     await db.delete_cart(str(message.chat.id))
 
@@ -45,7 +54,10 @@ async def ansver_menu(message: Message):
 async def menu(message: Message):
 
     text = f"Меню к Твоим услугам"
-    markup = await show_menu_buttons(message_id=message.message_id+1)
+    msg = await message.answer(text=text, reply_markup=ReplyKeyboardRemove())
+    await bot.delete_message(chat_id=message.chat.id, message_id=msg.message_id)
+
+    markup = await show_menu_buttons(message_id=msg.message_id+1)
     await bot.send_message(chat_id=message.from_user.id, text=text, reply_markup=markup)
 
 
@@ -55,14 +67,6 @@ async def menu(message: Message):
     await message.answer(text)
 
 
-# @dp.message_handler(Text(contains="Оформить заказ на доставку"), state=None)
-# async def shipping_in(message: types.Message, state: FSMContext):
-#     await Shipping.title_item.set()
-#
-#     text = f"<b>Шаг [1/8]</b> Введи название блюда (если блюд несколько, то введи через запятую)"
-#     await message.answer(text=text, reply_markup=cancel_btn)
-
-# Административная часть
 @dp.message_handler(Text(contains=["Настройки"]), state="*")
 async def admin_config(message: Message):
     text = "Меню настроек"

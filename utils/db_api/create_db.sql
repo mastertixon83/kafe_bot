@@ -17,7 +17,8 @@ create table if not exists users
     prize int default 0,
     balance int default 0,
     administrator boolean default FALSE,
-    director boolean default FALSE
+    director boolean default FALSE,
+    ban_status boolean default FALSE
 );
 
 create table if not exists prize_codes

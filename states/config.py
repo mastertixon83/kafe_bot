@@ -14,4 +14,5 @@ class MainMenu(StatesGroup):
 
 
 class ConfigAdmins(StatesGroup):
+    config_admins_list = State()
     config_admins_name = State()
