@@ -119,10 +119,8 @@ menu_admin_config = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton("Администраторы бота")],
         [
-            KeyboardButton("Предупредить"),
-            KeyboardButton("Заблокировать")
+            KeyboardButton("Список нарушителей")
         ],
-        [KeyboardButton("Разблокировать пользователя")],
         [KeyboardButton("Редактировать меню")],
         [KeyboardButton("⬅ Главное меню")]
     ]

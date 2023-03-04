@@ -15,7 +15,6 @@ class BlacklistMiddleware(BaseMiddleware):
         for item in await db.get_black_list():
             b_list.append(item['user_id'])
 
-        print(b_list)
         if update.message:
             user = update.message.from_user.id
         elif update.callback_query:
@@ -24,9 +23,6 @@ class BlacklistMiddleware(BaseMiddleware):
 
         if str(user) in b_list:
             await update.message.answer("Вы в черном списке", reply_markup=ReplyKeyboardRemove())
-            print("You BANED")
             raise CancelHandler()
 
-    async def on_process_update(self, update: types.Update, data: dict):
-        print('process update')
 

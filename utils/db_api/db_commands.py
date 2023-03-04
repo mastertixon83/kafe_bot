@@ -12,9 +12,12 @@ class DBCommands:
                             "VALUES ($1, $2, $3, $4) RETURNING id"
     ADD_NEW_USER = "INSERT INTO users(user_id, username, full_name) VALUES ($1, $2, $3) RETURNING id"
 
+    ### Добавление пользователя в черный список
+    UPDATE_BLACKLIST_STATUS = "UPDATE users SET ban_status = $3, reason_for_ban = $2 WHERE id = $1"
+
     ### Программа лояльности оформление карты и выбор подтвержденных пользователей $$$
     GET_USER_INFO = "SELECT * FROM users WHERE user_id = $1"
-    GET_BLACK_LIST = "SELECT user_id FROM users WHERE ban_status = TRUE"
+    GET_BLACK_LIST = "SELECT * FROM users WHERE ban_status = TRUE"
     GET_ALL_INVITED = "SELECT * FROM users WHERE referral = $1"
     UPDATE_USER_DATA_CARD = "UPDATE users SET card_fio = $2, card_phone = $3, birthday = $4 " \
                             " WHERE user_id = $1"
@@ -97,6 +100,11 @@ class DBCommands:
             return record_id
         except UniqueViolationError:
             pass
+
+    async def update_blacklist_status(self, id, reason, status):
+        """Добавление пользователя в черный список"""
+        command = self.UPDATE_BLACKLIST_STATUS
+        await self.pool.fetch(command, id, reason, status)
 
     ### Программа лояльности
     async def get_user_info(self, user_id):

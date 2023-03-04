@@ -10,7 +10,7 @@ from aiogram.dispatcher.filters import Text
 from data.config import admins
 from aiogram.dispatcher import FSMContext
 
-from states.config import MainMenu
+from states.config import MainMenu, ConfigAdmins
 from states.shipping import Shipping
 
 
@@ -33,12 +33,13 @@ async def cancel(message: types.Message, state=FSMContext):
         else:
             await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id-1)
 
-    elif re.search(r"ConfigAdmins:config_admins_", current_state):
+    elif re.search(r"ConfigAdmins:config_admins_", current_state) or re.search(r"ConfigBlackList:config_blacklist", current_state):
         for id_msg in data['id_msg_list']:
             try:
                 await bot.delete_message(chat_id=message.from_user.id, message_id=id_msg)
             except Exception as ex:
                 pass
+
 
     await state.finish()
     await db.delete_cart(str(message.chat.id))
@@ -71,4 +72,5 @@ async def menu(message: Message):
 async def admin_config(message: Message):
     text = "Меню настроек"
     await MainMenu.main.set()
+    await ConfigAdmins.config_main.set()
     await message.answer(text=text, reply_markup=menu_admin_config)
