@@ -24,5 +24,6 @@ class ConfigAdmins(StatesGroup):
 class ConfigBlackList(StatesGroup):
     """Класс состояний для управления черным списком"""
     config_blacklist = State()
-    config_black_list_ban_reason = State()
+    config_blacklist_username = State()
+    config_blacklist_ban_reason = State()
     config_blacklist_unban = State()

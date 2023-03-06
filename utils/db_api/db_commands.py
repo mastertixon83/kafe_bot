@@ -12,8 +12,9 @@ class DBCommands:
                             "VALUES ($1, $2, $3, $4) RETURNING id"
     ADD_NEW_USER = "INSERT INTO users(user_id, username, full_name) VALUES ($1, $2, $3) RETURNING id"
 
-    ### Добавление пользователя в черный список
+    ### Удаление пользователя в черный список
     UPDATE_BLACKLIST_STATUS = "UPDATE users SET ban_status = $3, reason_for_ban = $2 WHERE id = $1"
+    GET_USER_ID = "SELECT id FROM users WHERE username = $1"
 
     ### Программа лояльности оформление карты и выбор подтвержденных пользователей $$$
     GET_USER_INFO = "SELECT * FROM users WHERE user_id = $1"
@@ -105,6 +106,11 @@ class DBCommands:
         """Добавление пользователя в черный список"""
         command = self.UPDATE_BLACKLIST_STATUS
         await self.pool.fetch(command, id, reason, status)
+
+    async def get_user_id(self, username):
+        """Вывод id пользователя по его username"""
+        command = self.GET_USER_ID
+        return await self.pool.fetch(command, username)
 
     ### Программа лояльности
     async def get_user_info(self, user_id):

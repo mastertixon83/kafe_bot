@@ -33,7 +33,9 @@ async def cancel(message: types.Message, state=FSMContext):
         else:
             await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id-1)
 
-    elif re.search(r"ConfigAdmins:config_admins_", current_state) or re.search(r"ConfigBlackList:config_blacklist", current_state):
+    elif re.search(r"ConfigAdmins:config_admins_", current_state) \
+            or re.search(r"ConfigBlackList:config_blacklist", current_state)\
+            or re.search(r"ConfigAdmins:config_main", current_state):
         for id_msg in data['id_msg_list']:
             try:
                 await bot.delete_message(chat_id=message.from_user.id, message_id=id_msg)
