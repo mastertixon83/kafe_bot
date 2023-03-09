@@ -9,7 +9,7 @@ from keyboards.inline.inline_buttons import admin_inline_staff, admin_inline_sen
     user_inline_approve
 
 from keyboards.default.menu import menuUser, menuAdmin, \
-    send_phone_cancel, cancel_btn, menuAdminOrders
+    send_phone_cancel, cancel_btn
 from states.restoran import TableReservation, TableReservationAdmin
 from utils.db_api.db_commands import DBCommands
 

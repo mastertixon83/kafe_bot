@@ -7,7 +7,7 @@ from aiogram import types
 from aiogram.utils import exceptions
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from keyboards.default.menu import menuUser, menuAdmin, cancel_btn, menu_admin_config
+from keyboards.default.menu import cancel_btn, menu_admin_config
 from aiogram.dispatcher import FSMContext
 from utils.db_api.db_commands import DBCommands
 
@@ -258,7 +258,7 @@ async def username_for_ban(message: types.Message, state: FSMContext):
 async def username_ban_reason(message: types.Message, state: FSMContext):
     """Ловлю username от пользователя причину добваления в черный список"""
     await message.delete()
-    await ConfigAdmins.config_main.set()
+    await ConfigBlackList.config_blacklist.set()
 
     ban_reason = message.text.strip()
 
@@ -272,7 +272,7 @@ async def username_ban_reason(message: types.Message, state: FSMContext):
     try:
         await db.update_blacklist_status(id=int(user_id[0]['id']), reason=ban_reason, status=True)
     except Exception as _ex:
-        print(_ex)
+        await message.answer(text=f"Пользователь с username - {username} - в нашей базе данных не найден", reply_markup=cancel_btn)
 
     for id in id_msg_list:
         try:

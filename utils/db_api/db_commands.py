@@ -2,7 +2,7 @@ from asyncpg import Connection, Record
 from asyncpg.exceptions import UniqueViolationError
 from aiogram import types
 
-from loader import bot, dp, db
+from loader import db
 
 
 class DBCommands:
@@ -80,6 +80,9 @@ class DBCommands:
     GET_ALL_ADMINS = "SELECT * FROM users WHERE administrator = true"
     REMOVE_ADMIN_STATUS_FROM_USER = "UPDATE users SET administrator = FALSE WHERE id = $1"
     ADD_ADMIN_STATUS_FOR_USER = "UPDATE users SET administrator = TRUE WHERE username = $1"
+
+    ### Рассылки
+    ADD_NEW_NEWSLETTER = "INSERT INTO newsletter(type, status, picture, caption, admin_name) VALUES ($1, $2, $3, $4, $5) RETURNING id"
 
     ###  Пользователи
     async def add_new_user(self, referral=None):
@@ -351,4 +354,12 @@ class DBCommands:
         """Добавление статуса администратора пользователю"""
         command = self.ADD_ADMIN_STATUS_FOR_USER
         return await self.pool.fetch(command, username)
+
+    ### Рассылки
+    async def add_new_newsletter(self, type, status, picture, caption, admin_name):
+        """Добавление данных рассылки"""
+        command = self.ADD_NEW_NEWSLETTER
+        args = type, status, picture, caption, admin_name
+        return await self.pool.fetchval(command, *args)
+
 

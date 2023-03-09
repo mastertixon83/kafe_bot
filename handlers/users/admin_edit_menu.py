@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Union
 from aiogram import types
@@ -271,9 +272,9 @@ async def edit_menu_item_description(message: types.Message, state: FSMContext):
     await bot.edit_message_text(text=text, chat_id=message.from_user.id, message_id=data['message_id'])
 
 
-### Ловлю описание блюда
 @dp.message_handler(content_types=["text"], state=MainMenu.item_desc)
 async def edit_menu_item_description(message: types.Message, state: FSMContext):
+    """Ловлю описание блюда"""
     await MainMenu.item_price.set()
 
     async with state.proxy() as data:
@@ -302,9 +303,9 @@ async def edit_menu_item_description(message: types.Message, state: FSMContext):
     await bot.edit_message_text(text=text, chat_id=message.from_user.id, message_id=data['message_id'])
 
 
-### Ловлю изображение блюда
 @dp.message_handler(lambda message: not message.photo, state=MainMenu.item_photo)
 async def check_photo(message: types.Message, state: FSMContext):
+    """Проверяю сообщение на тип, картинка или нет"""
     await message.delete()
 
     data = await state.get_data()
@@ -313,15 +314,18 @@ async def check_photo(message: types.Message, state: FSMContext):
 
     return await bot.edit_message_text(text=text, chat_id=message.from_user.id, message_id=data['message_id'])
 
-### Ловлю фото блюда
+
 @dp.message_handler(content_types=types.ContentType.PHOTO, state=MainMenu.item_photo)
 async def edit_menu_item_description(message: types.Message, state: FSMContext):
-    await message.delete()
-
+    """Ловлю изображение блюда"""
     async with state.proxy() as data:
         data['photo'] = message.photo[-1].file_id
 
-    await message.photo[-1].download(f'media/{data["photo"]}.jpg')
+    try:
+        await message.photo[-1].download(f'media/menu/{data["photo"]}.jpg')
+    except Exception as _ex:
+        os.mkdir("media/menu")
+        await message.photo[-1].download(f'media/menu/{data["photo"]}.jpg')
 
     data = await state.get_data()
 
@@ -355,9 +359,9 @@ async def edit_menu_item_description(message: types.Message, state: FSMContext):
 
     await MainMenu.main.set()
 
-### Ловлю нажатие на кнопку удалить блюдо
-async def delete_item(callback: types.CallbackQuery, item_id, category_id, **kwargs):
 
+async def delete_item(callback: types.CallbackQuery, item_id, category_id, **kwargs):
+    """Ловлю нажатие на кнопку Удалить блюдо"""
     await db.delete_item(id=int(item_id))
 
     await list_items_in_category(callback=callback, category_id=int(category_id), action='edit_items', kwargs=kwargs)

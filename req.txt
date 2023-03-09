@@ -2,6 +2,7 @@ aiogram==2.9
 aiohttp==3.8.3
 aioredis==2.0.1
 aiosignal==1.2.0
+APScheduler==3.10.1
 async-timeout==4.0.2
 asyncpg==0.27.0
 attrs==22.1.0
@@ -20,7 +21,12 @@ multidict==6.0.2
 Pillow==9.4.0
 python-dotenv==0.21.0
 pytz==2022.4
+pytz-deprecation-shim==0.1.0.post0
+rodi==2.0.0
+six==1.16.0
 soupsieve==2.3.2.post1
 typing_extensions==4.4.0
+tzdata==2022.7
+tzlocal==4.2
 urllib3==1.26.12
 yarl==1.8.1

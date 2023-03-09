@@ -95,11 +95,11 @@ async def build_category_keyboard(message: Union[types.Message, types.CallbackQu
             await bot.delete_message(chat_id=message.from_user.id, message_id=msg_id)
 
     if isinstance(message, types.Message):
-        await message.answer("Что будешь заказывать?", reply_markup=markup)
+        await message.answer("Что будете заказывать?", reply_markup=markup)
 
     elif isinstance(message, types.CallbackQuery):
         call = message
-        await call.message.edit_text(text="Что будешь заказывать?", reply_markup=markup)
+        await call.message.edit_text(text="Что будете заказывать?", reply_markup=markup)
 
 
 ### Построение карточек блюд, после выбора категории
@@ -190,7 +190,7 @@ async def delivery_registration(callback: types.CallbackQuery, **kwargs):
     await Shipping.data.set()
 
     text = "На какую дату оформить доставку?\n"
-    text += f"Введи дату в формате ДД.ММ.ГГГГ \n Сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
+    text += f"Введите дату в формате ДД.ММ.ГГГГ \n Сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
     await callback.message.answer(text=text, reply_markup=cancel_btn)
 
@@ -212,18 +212,18 @@ async def shipping_data(message: types.Message, state: FSMContext):
 
                     await Shipping.time.set()
 
-                    text = "К какому времени доствить? Введи время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+                    text = "К какому времени доствить? Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
                     await message.answer(text, parse_mode=types.ParseMode.HTML)
         else:
             raise Exception("input error")
     except Exception as _ex:
         text=""
         if (str(_ex) == 'input error') or (str(_ex) == 'day is out of range for month'):
-            text = f"К сожалению я Тебя не понимаю, введи корректную дату в правильном формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
+            text = f"К сожалению я Вас не понимаю, введите корректную дату в правильном формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
         elif str(_ex) == 'data error':
             #К сожалению время не вернуть назад, укажите корректную дату, сегодня 24.02.2023
-            text = f"К сожалению время не вернуть назад 😢 Введи корректную дату в формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
+            text = f"К сожалению время не вернуть назад 😢 Введите корректную дату в формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
         await message.answer(text=text)
         return
@@ -258,9 +258,9 @@ async def shipping_time(message: types.Message, state: FSMContext):
                                      parse_mode=types.ParseMode.HTML)
     except Exception as _ex:
         if str(_ex) == 'time error':
-            text = "К сожалению время не вернуть назад 😢 Введи корректное время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+            text = "К сожалению время не вернуть назад 😢 Введите корректное время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
         else:
-            text = "Я Тебя, к сожалению, не понимаю. Введи время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+            text = "Я Вас, к сожалению, не понимаю. Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
 
         await message.answer(text=text)
         return
@@ -274,10 +274,10 @@ async def shipping_number_of_devices(message: types.Message, state: FSMContext):
         async with state.proxy() as data:
             data['number_of_devices'] = message.text
 
-        text = "Введи или отправь Свой контактный номер телефона "
+        text = "Введите или отправьте Ваш контактный номер телефона "
         msg = await message.answer(text=text, reply_markup=send_phone_cancel)
     else:
-        text = "К сожалению я Тебя не понимаю, введи корректные данные!!! \nСколько приборов потребуется?"
+        text = "К сожалению я Вас не понимаю, введите корректные данные!!! \nСколько приборов потребуется?"
         await message.answer(text=text, reply_markup=cancel_btn)
 
 
@@ -296,7 +296,7 @@ async def shipping_address(message: types.Message, state: FSMContext):
             data["name"] = message.from_user.username
     await Shipping.address.set()
 
-    text = "Укажи адрес на который нужно доставить"
+    text = "Укажите адрес на который нужно доставить"
     await message.answer(text=text, reply_markup=cancel_btn)
 
 
@@ -313,7 +313,7 @@ async def shipping_address(message: types.Message, state: FSMContext):
         InlineKeyboardButton(text="💳 Карта", callback_data="pay_method_card"),
         InlineKeyboardButton(text="💵 Наличка", callback_data="pay_method_money"),
     )
-    await message.answer(text="Выбери способ оплаты", reply_markup=markup)
+    await message.answer(text="Выберите способ оплаты", reply_markup=markup)
 
 
 ### Ловлю от пользователя способ оплаты
@@ -370,7 +370,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
             time_reservation=data['time'], final_summa=data['final_summa'], pay_method=data['pay_method'], user_id=str(data['user_id']),
             user_name=data['user_name']
         )
-        text = f"{data['user_name']} Твоя заявка отправлена нашему сотруднику. Ожидай. Он с Тобой скоро свяжется"
+        text = f"{data['user_name']} Ваша заявка отправлена нашему сотруднику. Ожидайте. Он с Вами скоро свяжется"
         await call.message.answer(text=text, reply_markup=menuUser)
 
         text = "Поступила заявка на доставку\n"
