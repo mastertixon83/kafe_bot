@@ -86,6 +86,7 @@ class DBCommands:
     ADD_NEW_TASK = "INSERT INTO task(admin_name, type_mailing, picture, message, status, execution_date, error) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id"
     UPDATE_TASK = "UPDATE task SET status=$1, error=$2 WHERE id=$3 RETURNING id"
     GET_TASK_INFO = "SELECT * FROM task WHERE id=$1"
+    GET_BIRTHDAY_USERS = "SELECT * FROM users WHERE birthday = $1 and ban_status = FALSE"
 
     ###  Пользователи
     async def add_new_user(self, referral=None):
@@ -381,3 +382,7 @@ class DBCommands:
     async def get_all_users(self):
         command = self.GET_ALL_USERS
         return await self.pool.fetch(command)
+
+    async def get_birthday_users(self, target_data):
+        command = self.GET_BIRTHDAY_USERS
+        return await self.pool.fetch(command, target_data)

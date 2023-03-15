@@ -8,7 +8,7 @@ db = DBCommands()
 
 async def send_message_date(bot, **kwargs):
     task_id = kwargs.get('task_id')
-    users = await db.get_all_users()
+    users = kwargs.get('users')
 
     task_info = await db.get_task_info(task_id=int(task_id))
     picture = task_info[0]['picture']
