@@ -11,6 +11,7 @@ class DBCommands:
     ADD_NEW_USER_REFERRAL = "INSERT INTO users(user_id, username, full_name, referral) " \
                             "VALUES ($1, $2, $3, $4) RETURNING id"
     ADD_NEW_USER = "INSERT INTO users(user_id, username, full_name) VALUES ($1, $2, $3) RETURNING id"
+    GET_ALL_USERS = "SELECT * FROM users WHERE ban_status=FALSE"
 
     ### Удаление пользователя в черный список
     UPDATE_BLACKLIST_STATUS = "UPDATE users SET ban_status = $3, reason_for_ban = $2 WHERE id = $1"
@@ -82,7 +83,9 @@ class DBCommands:
     ADD_ADMIN_STATUS_FOR_USER = "UPDATE users SET administrator = TRUE WHERE username = $1"
 
     ### Рассылки
-    ADD_NEW_NEWSLETTER = "INSERT INTO newsletter(type, status, picture, caption, admin_name) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+    ADD_NEW_TASK = "INSERT INTO task(admin_name, type_mailing, picture, message, status, execution_date, error) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id"
+    UPDATE_TASK = "UPDATE task SET status=$1, error=$2 WHERE id=$3 RETURNING id"
+    GET_TASK_INFO = "SELECT * FROM task WHERE id=$1"
 
     ###  Пользователи
     async def add_new_user(self, referral=None):
@@ -238,7 +241,6 @@ class DBCommands:
         args = id, admin_name, admin_id, admin_answer
         await self.pool.fetch(command, *args)
 
-
     ### Административная часть
     async def get_all_categories(self):
         """Выборка всех категорий меню"""
@@ -356,10 +358,26 @@ class DBCommands:
         return await self.pool.fetch(command, username)
 
     ### Рассылки
-    async def add_new_newsletter(self, type, status, picture, caption, admin_name):
-        """Добавление данных рассылки"""
-        command = self.ADD_NEW_NEWSLETTER
-        args = type, status, picture, caption, admin_name
-        return await self.pool.fetchval(command, *args)
+    async def add_new_task(self, admin_name, type_mailing, picture, message, status, execution_date, error):
+        """Добавление нового задания в очередь"""
+        command = self.ADD_NEW_TASK
+        args = admin_name, type_mailing, picture, message, status, execution_date, error
+        task_id = await self.pool.fetchval(command, *args)
+        return task_id
 
+    async def update_task(self, status, error, task_id):
+        """Обновление задания"""
+        command = self.UPDATE_TASK
+        args = status, error, task_id
+        task_id = await self.pool.fetch(command, *args)
+        return task_id
 
+    async def get_task_info(self, task_id):
+        """Выборка задания по id"""
+        command = self.GET_TASK_INFO
+        task_info = await self.pool.fetch(command, task_id)
+        return task_info
+
+    async def get_all_users(self):
+        command = self.GET_ALL_USERS
+        return await self.pool.fetch(command)
