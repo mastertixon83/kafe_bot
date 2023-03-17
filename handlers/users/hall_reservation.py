@@ -97,21 +97,6 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
 
 
 ### Первый шаг
-@dp.message_handler(Text(contains="Забронировать стол"), state=None)
-async def table_reservation(message: types.Message, state: FSMContext):
-    await TableReservation.data.set()
-
-    date = datetime.now().strftime('%d.%m.%Y')
-    text = f"<b>Шаг [1/5]</b>\n\n Введи дату в формате ДД.ММ.ГГГГ, сегодня {date}"
-    await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
-
-    async with state.proxy() as data:
-        data["chat_id"] = str(message.chat.id)
-        data["user_name"] = message.from_user.username
-        data["user_id"] = str(message.from_user.id)
-        data['full_name'] = message.from_user.full_name
-
-
 # Ловим ответ от пользователя дата
 @dp.message_handler(content_types=["text"], state=TableReservation.data)
 async def table_reservation_time(message: types.Message, state: FSMContext):

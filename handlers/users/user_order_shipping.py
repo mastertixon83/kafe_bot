@@ -23,18 +23,6 @@ from utils.db_api.db_commands import DBCommands
 db = DBCommands()
 
 
-@dp.message_handler(Text(contains="Оформить заказ на доставку"), state=None)
-async def show_menu_order_shipping(message: types.Message, state: FSMContext):
-    await message.delete()
-    await db.delete_cart(str(message.chat.id))
-    await message.answer('Оформление заказа на доставку', reply_markup=ReplyKeyboardRemove())
-    await build_category_keyboard(message)
-
-    async with state.proxy() as data:
-        data["message_id"] = message.message_id + 2
-        data["chat_id"] = message.from_user.id
-
-
 ###Ловлю нажатие любой инлайн кнопки
 @dp.callback_query_handler(menu_cd.filter(), state="*")
 async def navigate(call: types.CallbackQuery, callback_data: dict, state: FSMContext):

@@ -1,4 +1,5 @@
 #TODO: У администратора просмотр не использованных кодов
+#TODO: Удаление карты лояльности
 
 import os
 from datetime import datetime
@@ -200,19 +201,6 @@ async def get_user_prize(call):
     text += f"Используй его из меню Программа лояльности - Мои Коды"
 
     await call.message.answer(text=text, reply_markup=menuUser)
-
-
-# Программа лояльности
-@dp.message_handler(Text(contains="Программа лояльности"), state=None)
-async def reg_loyal_card(message: Message, state: FSMContext):
-    info = await db.get_user_info(message.from_user.id)
-
-    if info[0]['card_status'] != True:
-        text = "Оформи карту скидок!!!"
-    else:
-        text = "Меню программы лояльности"
-    await message.delete()
-    await message.answer(text, reply_markup=menuLoyality, parse_mode=types.ParseMode.HTML)
 
 
 # 1 шаг Фамилия Имя
