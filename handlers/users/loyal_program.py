@@ -1,5 +1,5 @@
-#TODO: У администратора просмотр не использованных кодов
-#TODO: Удаление карты лояльности
+# TODO: У администратора просмотр не использованных кодов
+# TODO: Удаление карты лояльности
 
 import os
 from datetime import datetime
@@ -204,7 +204,7 @@ async def get_user_prize(call):
 
 
 # 1 шаг Фамилия Имя
-@dp.message_handler(Text(contains="Оформить карту"), state=None)
+@dp.message_handler(Text(contains="Оформить карту"), state="*")
 async def reg_loyal_card(message: Message, state: FSMContext):
     info = await db.get_user_info(message.from_user.id)
     await CardLoyalReg.fio.set()
@@ -219,7 +219,12 @@ async def reg_loyal_card(message: Message, state: FSMContext):
         await state.finish()
         text = "Вот твоя карточка. Используй её для получения скидок и участия в акциях."
         card = card_generate(info[0]["user_id"], info[0]["card_fio"], info[0]["card_number"])
-        await bot.send_photo(chat_id=info[0]['user_id'], photo=card, caption=text, reply_markup=menuUser)
+        if str(message.from_user.id) == admins[0]:
+            markup = menuAdmin
+        else:
+            markup = menuUser
+
+        await bot.send_photo(chat_id=info[0]['user_id'], photo=card, caption=text, reply_markup=markup)
 
 
 # Программа лояльности
