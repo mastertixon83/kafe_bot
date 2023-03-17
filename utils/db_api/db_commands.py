@@ -11,7 +11,7 @@ class DBCommands:
     ADD_NEW_USER_REFERRAL = "INSERT INTO users(user_id, username, full_name, referral) " \
                             "VALUES ($1, $2, $3, $4) RETURNING id"
     ADD_NEW_USER = "INSERT INTO users(user_id, username, full_name) VALUES ($1, $2, $3) RETURNING id"
-    GET_ALL_USERS = "SELECT * FROM users WHERE ban_status=FALSE"
+    GET_ALL_USERS = "SELECT user_id, administrator FROM users WHERE ban_status=FALSE"
 
     ### Удаление пользователя в черный список
     UPDATE_BLACKLIST_STATUS = "UPDATE users SET ban_status = $3, reason_for_ban = $2 WHERE id = $1"
@@ -84,9 +84,12 @@ class DBCommands:
 
     ### Рассылки
     ADD_NEW_TASK = "INSERT INTO task(admin_name, type_mailing, picture, message, status, execution_date, error) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id"
+    UPDATE_BEFORE_ADDING = "UPDATE task set status = 'off' WHERE type_mailing = $1 and status = 'waiting'"
     UPDATE_TASK = "UPDATE task SET status=$1, error=$2 WHERE id=$3 RETURNING id"
     GET_TASK_INFO = "SELECT * FROM task WHERE id=$1"
+    GET_TASK_BIRTHDAY = "SELECT * FROM task WHERE type_mailing = 'birthday' and status = 'waiting'"
     GET_BIRTHDAY_USERS = "SELECT * FROM users WHERE birthday = $1 and ban_status = FALSE"
+    GET_LOYAL_CARD_USERS = "SELECT * FROM users WHERE card_status = TRUE"
 
     ###  Пользователи
     async def add_new_user(self, referral=None):
@@ -366,6 +369,10 @@ class DBCommands:
         task_id = await self.pool.fetchval(command, *args)
         return task_id
 
+    async def update_before_adding(self, type_mailing):
+        """Обновление задачи перед добавлением новой"""
+        command = self.UPDATE_BEFORE_ADDING
+        await self.pool.fetch(command, type_mailing)
     async def update_task(self, status, error, task_id):
         """Обновление задания"""
         command = self.UPDATE_TASK
@@ -379,10 +386,22 @@ class DBCommands:
         task_info = await self.pool.fetch(command, task_id)
         return task_info
 
+    async def get_task_birthday(self):
+        """Выбор рассылки для именинников"""
+        command = self.GET_TASK_BIRTHDAY
+        return await self.pool.fetch(command)
+
     async def get_all_users(self):
+        """Выбор всех пользователей, которые не забанены"""
         command = self.GET_ALL_USERS
         return await self.pool.fetch(command)
 
     async def get_birthday_users(self, target_data):
+        """Выбор именинников"""
         command = self.GET_BIRTHDAY_USERS
         return await self.pool.fetch(command, target_data)
+
+    async def get_loyal_card_users(self):
+        """Выбор дежателей карты лояльности"""
+        command = self.GET_LOYAL_CARD_USERS
+        return await self.pool.fetch(command)

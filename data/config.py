@@ -13,6 +13,8 @@ PG_USER = os.getenv("PG_USER")
 PG_PASS = os.getenv("PG_PASS")
 DB_NAME = os.getenv("DB_NAME")
 
+BIRTHDAY_NOTIFICATION_TIME = os.getenv('birthday_notification_time')
+
 # Ссылка подключения к базе данных
 POSTGRES_URI = f"postgresql://{PG_USER}:{PG_PASS}@{host}/{DB_NAME}"
 

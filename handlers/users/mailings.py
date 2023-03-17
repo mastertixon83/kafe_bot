@@ -19,37 +19,36 @@ db = DBCommands()
 
 
 @dp.message_handler(
-                    Text(contains="Обычная рассылка") | Text(contains="Предложение для именинников") |
-                    Text(contains="Призыв к бронированию") | Text(contains="Закажите доставку") |
-                    Text(contains="Владельцам карт лояльности") | Text(contains="Конкретным пользователям"),
-                    state=Mailings.main
+    Text(contains="Обычная рассылка") | Text(contains="Предложение для именинников") |
+    Text(contains="Призыв к бронированию") | Text(contains="Закажите доставку") |
+    Text(contains="Владельцам карт лояльности") | Text(contains="Конкретным пользователям"),
+    state=Mailings.main
 )
 async def standard_mailing(message: types.Message, state: FSMContext):
     """Ловлю выбор рассылки"""
-    await message.delete()
 
     if "Обычная рассылка" in message.text.strip():
         type_mailing = "standard"
-        users = db.get_all_users()
+        users = await db.get_all_users()
 
     elif "Предложение для именинников" in message.text.strip():
         type_mailing = "birthday"
-        delta = datetime.timedelta(days=3)
+        delta = timedelta(days=3)
         current_data = datetime.now().date()
         target_data = current_data + delta
-        users = db.get_birthday_users(target_data=target_data)
+        users = await db.get_birthday_users(target_data=target_data)
 
     elif "Призыв к бронированию" in message.text.strip():
         type_mailing = "hall_reservation"
-        users = db.get_all_users()
+        users = await db.get_all_users()
 
     elif "Закажите доставку" in message.text.strip():
         type_mailing = "shipping"
-        users = db.get_all_users()
+        users = await db.get_all_users()
 
     elif "Владельцам карт лояльности" in message.text.strip():
         type_mailing = "loyal_card"
-        users = db.get_all_users()
+        users = await db.get_loyal_card_users()
 
     # elif "Конкретным пользователям" in message.text.strip():
     #     type_mailing = "users"
@@ -73,11 +72,15 @@ async def standard_mailing(message: types.Message, state: FSMContext):
         pass
 
     id_msg_list.append(msg.message_id)
+    id_user_list = [{'id': user['user_id'].strip(), 'administrator': user['administrator']} for user in users]
+
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
         data['admin_name'] = message.from_user.username
         data['type_mailing'] = type_mailing
-        data['users'] = users
+        data['users'] = id_user_list
+
+    await message.delete()
 
 
 @dp.message_handler(lambda message: not message.photo, state=Mailings.standard_mailing_picture)
@@ -160,14 +163,16 @@ async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
         date = datetime.now()
         minute_later = date + timedelta(minutes=1)
 
+        await db.update_before_adding(type_mailing=type_mailing)
+
         task_id = await db.add_new_task(admin_name=admin_name, type_mailing=type_mailing, picture=picture,
                                         message=message_text, status="waiting", execution_date=minute_later,
                                         error="No error")
         try:
             if users:
                 scheduler.add_job(
-                    apsched.send_message_date, 'date', run_date=minute_later, id='job_1',
-                    kwargs={'bot': bot, 'task_id': task_id, 'users': users}
+                    apsched.send_message_date, 'date', run_date=minute_later, id=type_mailing,
+                    kwargs={'bot': bot, 'task_id': task_id, 'users': users, 'type_mailing': type_mailing}
                 )
                 text = f"Рассылка запланирована на {minute_later.strftime('%Y-%m-%d %H:%M:%S')}"
             else:
@@ -181,7 +186,7 @@ async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
         # waiting
         # draft
         # error
-        msg = await call.message.answer(text=text)
+        msg = await call.message.answer(text=text, reply_markup=newsletter_kbd)
         id_msg_list.append(msg.message_id)
 
         await state.finish()
@@ -213,6 +218,7 @@ async def standard_mailing_date_time(message: types.Message, state: FSMContext):
     users = data["users"]
 
     try:
+        await db.update_before_adding(type_mailing=type_mailing)
 
         task_id = await db.add_new_task(admin_name=admin_name, type_mailing=type_mailing, picture=picture,
                                         message=message_text, status="waiting",
@@ -222,7 +228,7 @@ async def standard_mailing_date_time(message: types.Message, state: FSMContext):
             if users:
                 scheduler.add_job(
                     apsched.send_message_date, 'date', run_date=datetime.strptime(date, "%Y-%m-%d %H:%M:%S"),
-                    id='job_1', kwargs={'bot': bot, 'task_id': task_id, 'users': users}
+                    id=type_mailing, kwargs={'bot': bot, 'task_id': task_id, 'users': users, 'type_mailing': type_mailing}
                 )
                 text = f"Рассылка запланирована на {datetime.strptime(date, '%Y-%m-%d %H:%M:%S')}"
             else:
@@ -231,7 +237,7 @@ async def standard_mailing_date_time(message: types.Message, state: FSMContext):
             text = f"Рассылка не запланирована - Ошибка: {_ex}"
             await db.update_task(task_id=int(task_id), status="error", error=_ex)
 
-        msg = await message.answer(text=text)
+        msg = await message.answer(text=text, reply_markup=newsletter_kbd)
 
         id_msg_list.append(msg.message_id)
 

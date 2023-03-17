@@ -36,11 +36,12 @@ async def cancel(message: types.Message, state=FSMContext):
     elif (re.search(r"ConfigAdmins:config_admins_", current_state) or re.search(r"ConfigBlackList:config_blacklist",
                                                                                 current_state) or re.search(
             r"ConfigAdmins:config_main", current_state) or re.search(r"Mailings", current_state)):
-        for id_msg in data['id_msg_list']:
-            try:
-                await bot.delete_message(chat_id=message.from_user.id, message_id=id_msg)
-            except Exception as ex:
-                pass
+        if data['id_msg_list']:
+            for id_msg in data['id_msg_list']:
+                try:
+                    await bot.delete_message(chat_id=message.from_user.id, message_id=id_msg)
+                except Exception as ex:
+                    pass
 
     await state.finish()
     await db.delete_cart(str(message.chat.id))
@@ -69,9 +70,11 @@ async def menu(message: Message):
 
 
 @dp.message_handler(Text(contains=["Настройки"]), state="*")
-async def admin_config(message: Message):
+async def admin_config(message: Message, state: FSMContext):
     text = "Меню настроек"
     await ConfigAdmins.config_main.set()
+    async with state.proxy() as data:
+        data['id_msg_list'] = []
     await message.answer(text=text, reply_markup=menu_admin_config)
 
 
