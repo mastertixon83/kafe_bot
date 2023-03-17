@@ -13,8 +13,9 @@ from states.personal import StaffCall
 from utils.db_api.db_commands import DBCommands
 
 db = DBCommands()
-@dp.message_handler(Text(["👦 Официант", "👲 Кальянный мастер"]), state=None)
+@dp.message_handler(Text(["👦 Официант", "👲 Кальянный мастер"]), state="*")
 async def waiter(message: Message, state: FSMContext):
+    """Ловлю выбор персонала от пользователя"""
 
     if message.text == '👦 Официант':
 
@@ -35,6 +36,7 @@ async def waiter(message: Message, state: FSMContext):
 
 @dp.message_handler(content_types=["text"], state=StaffCall)
 async def waiter_go(message: types.Message, state: FSMContext):
+    """Ловлю комментарий от пользователя"""
     cur_state = await state.get_state()
     if cur_state == 'StaffCall:waiter':
         text = "Официант уже на пути к Тебе"

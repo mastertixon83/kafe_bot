@@ -22,9 +22,9 @@ db = DBCommands()
 logging.basicConfig(format=u'%(filename)s [LINE:%(lineno)d] #%(levelname)-8s [%(asctime)s] %(message)s',
                     level=logging.INFO)
 
-### Бронирование столика
-### Составление клавиатуры столиков
+
 async def build_tables_ikb_on_data(data, order_id):
+    """Составление кнопок со столиками"""
     result = await db.get_approved_orders_on_data(dataReservation=data["data"])
     tList = []
     for item in result:
@@ -54,9 +54,9 @@ async def build_tables_ikb_on_data(data, order_id):
     admin_inline_staff.inline_keyboard[3][0]["callback_data"] = f"{data['chat_id']}-{order_id}-foolrest"
     return admin_inline_staff
 
-### Резервирование столика обработка данных
+
 async def table_reservation_admin_butons(call, call_data, adminUsername, admin_id, tableNumber):
-    # Выбрать из БД заявку
+    """Обработка данных и вывод сообщения с кнопками администратору"""
     result = await db.get_order_hall_data(id=int(call_data[1]))
 
     res = datetime.now(timezone.utc) - result[0]['updated_at']
@@ -87,19 +87,18 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
 
     if call_data[2] in ['rejected', 'foolrest']:
         await bot.send_message(chat_id=call_data[0],
-                               text="К сожалению, все столы забронированы.😞 Если что-то измениться, мы свяжемся с Тобой позже 🤝")
+                               text="К сожалению, все столы забронированы.😞 Если что-то измениться, мы свяжемся с Вами позже 🤝")
     elif call_data[2] == 'approved':
-        await bot.send_message(chat_id=call_data[0], text=f"Твоя запись подтвердждена администрацией. Твой столик: {tableNumber}. Ждем вас :)")
+        await bot.send_message(chat_id=call_data[0], text=f"Ваша запись подтвердждена администрацией. Ваш столик: {tableNumber}. Ждем вас :)")
     # Обновить статус заявки в БД
     await db.update_order_hall_status(id=int(call_data[1]), order_status=True, admin_answer=call_data[2],
                                       updated_at=datetime.now(timezone.utc), admin_id=admin_id,
                                       admin_name=f'@{adminUsername}', table_number=tableNumber)
 
 
-### Первый шаг
-# Ловим ответ от пользователя дата
 @dp.message_handler(content_types=["text"], state=TableReservation.data)
 async def table_reservation_time(message: types.Message, state: FSMContext):
+    """Ловлю дату бронирования от пользователя"""
     try:
         date = message.text
         if len(date.split('.')) == 3:
@@ -112,24 +111,24 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
 
                     await TableReservation.time.set()
 
-                    text = "<b>Шаг [2/5]</b>\n\n Введи время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+                    text = "<b>Шаг [2/5]</b>\n\n Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
                     await message.answer(text, parse_mode=types.ParseMode.HTML)
         else:
             raise Exception("input error")
     except Exception as _ex:
         if (str(_ex) == 'input error') or (str(_ex) == 'day is out of range for month'):
-            text = f"<b>Шаг [1/5]</b>\n\nК сожалению я Тебя не понимаю, введи корректную дату в правильном формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
+            text = f"<b>Шаг [1/5]</b>\n\nК сожалению я Вас не понимаю, введите корректную дату в правильном формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
         elif str(_ex) == 'data error':
-            text = f"К сожалению время не вернуть назад 😢 Введи корректную дату в формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
+            text = f"К сожалению время не вернуть назад 😢 Введите корректную дату в формате ДД.ММ.ГГГГ, сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
 
         await message.answer(text=text)
         return
 
 
-# Ловим ответ от пользователя время
 @dp.message_handler(content_types=["text"], state=TableReservation.time)
 async def table_reservation_time(message: types.Message, state: FSMContext):
+    """Ловлю время бронирования"""
     msg = message.text
     text = ''
     data = await state.get_data()
@@ -157,38 +156,38 @@ async def table_reservation_time(message: types.Message, state: FSMContext):
                                      parse_mode=types.ParseMode.HTML)
     except Exception as _ex:
         if str(_ex) == 'time error':
-            text = "К сожалению время не вернуть назад 😢 Введи корректное время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+            text = "К сожалению время не вернуть назад 😢 Введите корректное время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
         else:
-            text = "Я Тебя, к сожалению, не понимаю. Введи время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
+            text = "Я Вас, к сожалению, не понимаю. Введите время в формате ЧЧ.ММ, ЧЧ:ММ, ЧЧ-ММ или ЧЧ ММ"
 
         await message.answer(text=text)
         return
 
 
-# Ловим ответ от пользователя количество человек
 # @dp.callback_query_handler(text_contains="person", state=TableReservation.count_men)
 @dp.message_handler(content_types=["text"], state=TableReservation.count_men)
 async def table_reservation_count_man(message: types.Message, state: FSMContext):
+    """Ловлю количество человек"""
     await TableReservation.phone.set()
     if message.text.isdigit():
         count_mans = int(message.text)
         async with state.proxy() as data:
             data["count_mans"] = count_mans
 
-        await bot.send_message(chat_id=message.from_user.id, text="<b>ШАГ [4/5]</b> ⬇️ Отправь номер телефона", reply_markup=send_phone_cancel,
+        await bot.send_message(chat_id=message.from_user.id, text="<b>ШАГ [4/5]</b> ⬇️ Отправьте номер телефона", reply_markup=send_phone_cancel,
                                  parse_mode=types.ParseMode.HTML)
     else:
         await TableReservation.count_men.set()
-        text = "Я Тебя, к сожалению, не понимаю.\n"
+        text = "Я Вас, к сожалению, не понимаю.\n"
         text +="<b>ШАГ [3/5]</b> На сколько персон накрыть стол?"
         await bot.send_message(chat_id=message.from_user.id, text=text,
                                reply_markup=cancel_btn,
                                parse_mode=types.ParseMode.HTML)
 
 
-# Ловим ответ от пользователя отправка номера телефона
 @dp.message_handler(content_types=["contact", "text"], state=TableReservation.phone)
 async def table_reservation_user_phone(message: types.Message, state: FSMContext):
+    """Ловлю от пользователя номер телефона"""
     data = await state.get_data()
     await TableReservation.comment.set()
     async with state.proxy() as data:
@@ -202,14 +201,13 @@ async def table_reservation_user_phone(message: types.Message, state: FSMContext
             data["phone_number"] = message.text
             data["name"] = message.from_user.username
 
-    await message.answer("<b>ШАГ [5/5]</b> Напиши свой комментарий или пожелание или же просто отправь точку", reply_markup=cancel_btn,
+    await message.answer("<b>ШАГ [5/5]</b> Напишите свой комментарий или пожелание или же просто отправьте точку", reply_markup=cancel_btn,
                          parse_mode=types.ParseMode.HTML)
 
 
 
-# Ловим ответ от пользователя комментарий
-@dp.message_handler(content_types=["text"], state=TableReservation.comment)
 async def table_reservation_user_comment(message: types.Message, state: FSMContext):
+    """Ловлю комментарий от пользователя"""
     data = await state.get_data()
 
     await TableReservation.check.set()
@@ -228,10 +226,10 @@ async def table_reservation_user_comment(message: types.Message, state: FSMConte
     await message.answer("Если всё правильно, подтвердите", reply_markup=user_inline_approve)
 
 
-# Подтверждение,изменение заявки пользователем
 @dp.callback_query_handler(text=["approve_order_user", "cancel_order_user"],
                            state=TableReservation.check)
 async def table_reservation_check_data(call, state: FSMContext):
+    """Подтверждение иили отмена заяявки пользователем"""
     await call.answer(cache_time=60)
     if call.data == "approve_order_user":
         data = await state.get_data()
@@ -276,9 +274,9 @@ async def table_reservation_check_data(call, state: FSMContext):
         await TableReservation.data.set()
 
 
-# Подтверждение заявки админом
 @dp.callback_query_handler(text_contains="approved-free")
 async def table_reservation_admin(call):
+    """Подтверждение заявки администратором"""
     await call.answer(cache_time=60)
 
     call_data = call.data.split("-")
@@ -289,9 +287,9 @@ async def table_reservation_admin(call):
                                          tableNumber=int(call_data[4]))
 
 
-# Полная посадка Адмни
 @dp.callback_query_handler(text_contains="foolrest")
 async def table_reservation_admin_fool_rest(call):
+    """Нажатие админом на кнопку Полная посадка"""
     await call.answer(cache_time=60)
 
     call_data = call.data.split("-")
@@ -301,9 +299,9 @@ async def table_reservation_admin_fool_rest(call):
                                          tableNumber=0)
 
 
-# Отклонение заявки админом
 @dp.callback_query_handler(text_contains="rejected")
 async def table_reservation_admin_reject(call):
+    """Отклонение заявки администратором"""
     await call.answer(cache_time=60)
 
     call_data = call.data.split("-")

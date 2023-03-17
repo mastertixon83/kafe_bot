@@ -66,10 +66,9 @@ def card_generate(user_id, user_fio, card_number):
     return data
 
 
-# Нажатие на кнопку Пригласить друга
-# Генерация реферальных ссылок
 # async def sum_approved_users(user_id):
 async def sum_approved_users(user_id):
+    """Генерация реферальных ссылок"""
     info = await db.get_user_info(user_id)
     referral_id = info[0]['referral_id']
     all_invited_users = await db.get_all_invited_users(referral_id)
@@ -88,6 +87,7 @@ async def sum_approved_users(user_id):
 
 @dp.message_handler(Text(contains="Пригласить друга"))
 async def invite_friend(message: Message):
+    """Нажатие на кнопку пригласит друга"""
     user_id = message.from_user.id
 
     info, referral_id, approved_users, all_invited_users = await sum_approved_users(user_id=user_id)
@@ -112,12 +112,16 @@ async def invite_friend(message: Message):
         get_prize_inline.inline_keyboard[0][0]["callback_data"] = f"get_prize-{user_id}"
         await message.answer(text, reply_markup=get_prize_inline)
     else:
-        await message.answer(text, reply_markup=menuUser)
+        if str(message.from_user.id) == admins[0]:
+            markup = menuAdmin
+        else:
+            markup = menuUser
+        await message.answer(text, reply_markup=markup)
 
 
-# Показать активные коды скидок
-@dp.message_handler(Text(contains="Мои подарки"))
+@dp.message_handler(Text(contains="Мои подарки"), state="*")
 async def get_active_codes(message: Message):
+    """Нажатие на кнопку Мои подарки"""
     # TODO: Протестить получение и обмен кодов
     user_id = message.from_user.id
     codes = await db.get_active_codes_user(user_id)
@@ -139,8 +143,9 @@ async def get_active_codes(message: Message):
 
 
 # Использовать призовые коды
-@dp.callback_query_handler(text_contains=["prize_code"], state=None)
+@dp.callback_query_handler(text_contains=["prize_code"], state="*")
 async def use_prize_code(call, state: FSMContext):
+    """Нажатие на кноаку использовать призовые коды"""
     await UsePrizeCode.use_prize.set()
     pc_info = await db.get_code_prize_info(int(call.data.split('-')[1]))
 
@@ -164,6 +169,7 @@ async def use_prize_code(call, state: FSMContext):
 # Использовать коды, ловим номер столика для вызова официантв
 @dp.message_handler(content_types=["text"], state=UsePrizeCode.use_prize)
 async def use_prize_code_waiter_call(message: types.Message, state: FSMContext):
+    """Ловлю номер столика для вызова официанта, использование кодов"""
     data = await state.get_data()
     await state.finish()
 
@@ -178,6 +184,7 @@ async def use_prize_code_waiter_call(message: types.Message, state: FSMContext):
 # Нажатие на кнопку получить приз
 @dp.callback_query_handler(text_contains=["get_prize"])
 async def get_user_prize(call):
+    """Ловлю нажатие на кнопку получить приз"""
     await call.answer(cache_time=60)
     cb_data = call.data.split('-')
     user_id = int(cb_data[1])
@@ -191,7 +198,7 @@ async def get_user_prize(call):
     while prizes != 0:
         id_code = await db.generate_prize_code(int(user_id))
         info = await db.get_user_info(int(user_id))
-        print(info[0]['prize'])
+
         count_prize = info[0]['prize'] + 1
         await db.update_count_prize(int(user_id), count_prize)
         code_info = await db.get_code_prize(id_code)
@@ -206,6 +213,7 @@ async def get_user_prize(call):
 # 1 шаг Фамилия Имя
 @dp.message_handler(Text(contains="Оформить карту"), state="*")
 async def reg_loyal_card(message: Message, state: FSMContext):
+    """Ловлю фамилию и имя"""
     info = await db.get_user_info(message.from_user.id)
     await CardLoyalReg.fio.set()
 
@@ -231,6 +239,7 @@ async def reg_loyal_card(message: Message, state: FSMContext):
 # 2 шаг Дата рождения
 @dp.message_handler(content_types=["text"], state=CardLoyalReg.fio)
 async def reg_loyal_card_fio(message: types.Message, state: FSMContext):
+    """Ловлю дату рожддения"""
     await CardLoyalReg.birthday.set()
     async with state.proxy() as data:
         data["user_id"] = message.from_user.id
@@ -244,6 +253,7 @@ async def reg_loyal_card_fio(message: types.Message, state: FSMContext):
 # 3 шаг Номер телефона
 @dp.message_handler(content_types=["text"], state=CardLoyalReg.birthday)
 async def reg_loyal_card_birthday(message: types.Message, state: FSMContext):
+    """Ловлю номер телефона"""
     try:
         data = message.text.split(".")
         data_cur = datetime.now()

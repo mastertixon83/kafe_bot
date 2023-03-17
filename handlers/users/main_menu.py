@@ -21,7 +21,7 @@ from states.restoran import TableReservation
 @dp.message_handler(Text(contains="Главное меню"), state="*")
 async def cancel(message: types.Message, state=FSMContext):
     current_state = await state.get_state()
-    print(current_state)
+
     data = await state.get_data()
     await message.delete()
 

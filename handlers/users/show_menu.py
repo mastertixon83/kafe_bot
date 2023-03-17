@@ -1,4 +1,5 @@
-from keyboards.default import menuUser
+from data.config import admins
+from keyboards.default import menuUser, menuAdmin
 from keyboards.inline.inline_show_menu_buttons import menu_cd_show, show_menu_buttons
 from aiogram.types import CallbackQuery
 from loader import dp, bot
@@ -16,7 +17,13 @@ async def out_categories(call: CallbackQuery, callback_data: dict):
 
     if (callback_data['exit']) == "Exit":
         await bot.delete_message(chat_id=call.message.chat.id, message_id=message_id)
-        await call.message.answer(text="Главное меню", reply_markup=menuUser)
+
+        if str(call.from_user.id) == admins[0]:
+            markup = menuAdmin
+        else:
+            markup = menuUser
+
+        await call.message.answer(text="Главное меню", reply_markup=markup)
     else:
         markup = await show_menu_buttons(message_id=message_id)
 
