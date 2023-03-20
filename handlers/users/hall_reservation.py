@@ -205,8 +205,9 @@ async def table_reservation_user_phone(message: types.Message, state: FSMContext
                          parse_mode=types.ParseMode.HTML)
 
 
-
+@dp.message_handler(content_types=["text"], state=TableReservation.comment)
 async def table_reservation_user_comment(message: types.Message, state: FSMContext):
+
     """Ловлю комментарий от пользователя"""
     data = await state.get_data()
 

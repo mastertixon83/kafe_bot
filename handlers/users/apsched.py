@@ -1,7 +1,7 @@
 import datetime
 
 from aiogram import Bot
-from loader import db
+from loader import db, scheduler
 from utils.db_api.db_commands import DBCommands
 import time
 

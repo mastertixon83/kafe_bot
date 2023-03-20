@@ -356,7 +356,7 @@ async def edit_menu_item_description(message: types.Message, state: FSMContext):
 
     markup = await items_in_category_keyboard(int(category_id))
     text = f"Выбрана категория <b>{info[0]['title']}</b> \nКкое блюдо будем редактировать?"
-
+    await message.delete()
     await bot.edit_message_text(text=text, chat_id=message.from_user.id, message_id=data['message_id'], reply_markup=markup)
 
     await MainMenu.main.set()

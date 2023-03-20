@@ -92,19 +92,19 @@ async def invite_friend(message: Message):
 
     info, referral_id, approved_users, all_invited_users = await sum_approved_users(user_id=user_id)
 
-    text = "Получи любую пиццу на выбор бесплатно в нашем ресторане \n\n Для этого нужно пригласить всего лишь 5 друзей \n\n✅ Используй любую из ссылок ниже, чтобы пригласить друзей в бота. Чтобы приглашение было Тебе засчитано, " \
-           "приглашенный тобой пользователь должен оформить карту лояльности находясь в заведении!"
+    text = "Получите любую пиццу на выбор бесплатно в нашем ресторане \n\n Для этого нужно пригласить всего лишь 5 друзей \n\n✅ Используйте любую из ссылок ниже, чтобы пригласить друзей в бота. Чтобы приглашение было Вам засчитано, " \
+           "приглашенный Вами человек должен оформить карту лояльности находясь в заведении!"
 
     await message.answer(text, reply_markup=cancel_btn)
     prizes = approved_users // 5 - info[0]["prize"]
 
     text = f"Получено подарков за приглашения: {info[0]['prize']}/{prizes + info[0]['prize']}\n\n" \
-           f"Ты пригласил {str(len(all_invited_users))} человека в бота\n" \
+           f"Вы пригласили {str(len(all_invited_users))} человека в бота\n" \
            f"Подтверждённых приглашений (Оформили карту лояльности): {str(approved_users)}\n\n" \
-           "Внутренняя ссылка: эту ссылку Ты можешь скидывать своим друзьям или выкладывать в чаты внутри экосистемы " \
+           "Внутренняя ссылка: эту ссылку Вы можете скидывать своим друзьям или выкладывать в чаты внутри экосистемы " \
            "Telegram:\n\n" \
            f"https://t.me/tgpb_bot?start={referral_id}\n\n" \
-           "Внешняя ссылка: эту ссылку ты можешь скидывать своим друзьям во всех других соц. сетях, мессенджерах, " \
+           "Внешняя ссылка: эту ссылку Вы можете скидывать своим друзьям во всех других соц. сетях, мессенджерах, " \
            "прикреплять в stories в Instagram и т.д.:\n\n" \
            f"https://tx.me/tgpb_bot?start={referral_id}\n\n"
 
@@ -131,13 +131,13 @@ async def get_active_codes(message: Message):
 
     if codes:
         text = "Ваши коды\n\n"
-        text += "Для их использования Ты должен находиться в заведении\n"
+        text += "Для их использования Вы должны находиться в заведении\n"
 
         for code in codes:
             markup.add(InlineKeyboardButton(f"{str(code['code'])} - {code['code_description']}",
                                             callback_data=f"prize_code-{str(code['code'])}"))
     else:
-        text = "К сожалению у Тебя нет призовых кодов"
+        text = "К сожалению у Вас нет призовых кодов"
 
     await message.answer(text=text, reply_markup=markup)
 
@@ -155,10 +155,10 @@ async def use_prize_code(call, state: FSMContext):
         data["prize_id"] = pc_info[0]["id"]
 
     if pc_info[0]['code_status'] == True:
-        text = 'Введи номер столика и официант принисет Твой приз.\n\n'
+        text = 'Введите номер столика и официант принисет Твой приз.\n\n'
         markup = cancel_btn
     else:
-        text = 'К сожалению Ты уже использовал этот код!!!'
+        text = 'К сожалению Вы уже использовал этот код!!!'
         await state.finish()
         markup = menuUser
 
@@ -177,7 +177,7 @@ async def use_prize_code_waiter_call(message: types.Message, state: FSMContext):
     await bot.send_message(chat_id=admins[0], text=text)
     await db.update_prize_code_status(data["prize_code"])
 
-    text = "Официант уже на пути к Тебе"
+    text = "Официант уже на пути к Вам"
     await message.answer(text=text, reply_markup=menuUser, parse_mode=types.ParseMode.HTML)
 
 
@@ -194,7 +194,7 @@ async def get_user_prize(call):
 
     await bot.edit_message_reply_markup(call.message.chat.id, message_id=call.message.message_id, reply_markup="")
 
-    text = "Вот Твои коды\n"
+    text = "Вот Ваши коды\n"
     while prizes != 0:
         id_code = await db.generate_prize_code(int(user_id))
         info = await db.get_user_info(int(user_id))
@@ -205,7 +205,7 @@ async def get_user_prize(call):
         text += f"{code_info[0]['code']} - {code_info[0]['code_description']} \n\n "
         prizes -= 1
 
-    text += f"Используй его из меню Программа лояльности - Мои Коды"
+    text += f"Используйте его из меню Программа лояльности - Мои Коды"
 
     await call.message.answer(text=text, reply_markup=menuUser)
 

@@ -1,8 +1,8 @@
-import datetime
+import aiocron
+import asyncio
 
-delta = datetime.timedelta(days=3)
-current_data = datetime.datetime.now().date()
-start_data = current_data
-end_data = current_data + delta
+@aiocron.crontab('*/30 * * * *')
+async def attime():
+    print('run')
 
-print(f"start {start_data} end {end_data}")
+asyncio.get_event_loop().run_forever()
