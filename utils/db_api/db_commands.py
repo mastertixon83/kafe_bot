@@ -1,3 +1,5 @@
+import datetime
+
 from asyncpg import Connection, Record
 from asyncpg.exceptions import UniqueViolationError
 from aiogram import types
@@ -88,7 +90,7 @@ class DBCommands:
     UPDATE_TASK = "UPDATE task SET status=$1, error=$2 WHERE id=$3 RETURNING id"
     GET_TASK_INFO = "SELECT * FROM task WHERE id=$1"
     GET_TASK_BIRTHDAY = "SELECT * FROM task WHERE type_mailing = 'birthday' and status = 'waiting'"
-    GET_BIRTHDAY_USERS = "SELECT * FROM users WHERE birthday = $1 and ban_status = FALSE"
+    GET_BIRTHDAY_USERS = "SELECT * FROM users WHERE EXTRACT(DAY FROM birthday) = $1 AND EXTRACT(MONTH FROM birthday) = $2;"
     GET_LOYAL_CARD_USERS = "SELECT * FROM users WHERE card_status = TRUE"
 
     ###  Пользователи
@@ -399,7 +401,10 @@ class DBCommands:
     async def get_birthday_users(self, target_data):
         """Выбор именинников"""
         command = self.GET_BIRTHDAY_USERS
-        return await self.pool.fetch(command, target_data)
+        data_obj = target_data
+        args = data_obj.day, data_obj.month
+        users = await self.pool.fetch(command, *args)
+        return users
 
     async def get_loyal_card_users(self):
         """Выбор дежателей карты лояльности"""

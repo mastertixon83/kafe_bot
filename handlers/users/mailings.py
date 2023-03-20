@@ -37,6 +37,7 @@ async def standard_mailing(message: types.Message, state: FSMContext):
         current_data = datetime.now().date()
         target_data = current_data + delta
         users = await db.get_birthday_users(target_data=target_data)
+        print(users)
 
     elif "Призыв к бронированию" in message.text.strip():
         type_mailing = "hall_reservation"

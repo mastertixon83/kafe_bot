@@ -30,8 +30,8 @@ async def on_startup(dp):
     notification_time = config.BIRTHDAY_NOTIFICATION_TIME.split(":")
 
     # scheduler.add_job(apsched.planer_main, trigger='interval', minutes=3, id='main', kwargs={'bot': dp.bot})
-    # job = scheduler.add_job(apsched.send_birthday_cron, trigger='cron', day="*", hour=notification_time[0],
-    #                   minute=notification_time[1], args=(dp.bot,))
+    job = scheduler.add_job(apsched.send_birthday_cron, trigger='cron', day="*", hour=notification_time[0],
+                       minute=notification_time[1], args=(dp.bot,))
     # print(job.next_run_time)
 
     # scheduler.add_job(apsched.send_message_cron, trigger='cron', hour=15, minute=15, args=(dp.bot,))
