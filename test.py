@@ -1,10 +1,25 @@
-import datetime
-from datetime import timedelta
+from datetime import datetime
+import time
+import os
 
-current_data = datetime.datetime.now()
-delta_t = timedelta(days=1)
+from apscheduler.schedulers.background import BackgroundScheduler
 
-run_dt = (current_data + delta_t).year, (current_data + delta_t).month, (current_data + delta_t).day, 10, 30
+def task():
+    print(f'From process {os.getpid()}: The time is {datetime.now()}')
+    print(f'Starting job inside {os.getpid()}')
+    time.sleep(4)
+    print(f'Ending job inside {os.getpid()}')
 
-print(*run_dt)
-print(datetime.datetime(*run_dt))
+if __name__ == '__main__':
+    scheduler = BackgroundScheduler()
+    scheduler.add_executor('processpool')
+    scheduler.add_job(task, 'interval', seconds=3, max_instances=3)
+    scheduler.start()
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+
+scheduler.shutdown()

@@ -4,6 +4,7 @@ from datetime import timedelta
 from aiogram import Bot
 
 from data import config
+from data.config import admins
 from loader import db, scheduler
 from utils.db_api.db_commands import DBCommands
 import time
@@ -16,35 +17,31 @@ async def send_birthday_cron(bot, **kwargs):
 
     before_birthday_days = config.BEFORE_BIRTHDAY_DAYS
     delta_u = timedelta(days=int(before_birthday_days))
-    delta_t = timedelta(days=1)
 
     current_data = datetime.datetime.now().date()
     target_data = current_data + delta_u
-    notification_time = config.BIRTHDAY_NOTIFICATION_TIME.split(":")
 
-    run_dt = (current_data + delta_t).year, (current_data + delta_t).month, (current_data + delta_t).day, \
-             notification_time[0], notification_time[1]
-
-    users = await db.get_birthday_users(target_data=target_data)
     task_info = await db.get_task_birthday()
+    if task_info:
+        users = await db.get_birthday_users(target_data=target_data)
+        if users:
+            picture = task_info[0]['picture']
+            caption = task_info[0]['message']
 
-    picture = task_info[0]['picture']
-    caption = task_info[0]['message']
+            try:
+                for user in users:
+                    if user['administrator'] != True:
+                        await bot.send_photo(chat_id=user['user_id'], photo=picture, caption=caption)
+                        time.sleep(2)
 
-    try:
-        for user in users:
-            if user['administrator'] != True:
-                await bot.send_photo(chat_id=int(user['id']), photo=picture, caption=caption)
-                time.sleep(2)
-
-        scheduler.add_job(
-            send_birthday_cron, trigger='date', run_date=datetime.datetime(*run_dt), id="birthday", kwargs={'bot': bot, }
-        )
-    except Exception as _ex:
-        pass
+            except Exception as _ex:
+                pass
+    else:
+        await bot.send_message(chat_id=admins[0], text="‼️‼️‼️‼️‼️\n Не создана рассылка для именинников! Не забуюте создать")
 
 
 async def send_message_date(bot, **kwargs):
+    """Отправка рассылки на дату"""
     task_id = kwargs.get('task_id')
     users = kwargs.get('users')
     type_mailing = kwargs.get('type_mailing')
@@ -54,7 +51,7 @@ async def send_message_date(bot, **kwargs):
     try:
         for user in users:
             if user['administrator'] != True:
-                await bot.send_photo(chat_id=int(user['id']), photo=picture, caption=caption)
+                await bot.send_photo(chat_id=int(user['user_id']), photo=picture, caption=caption)
                 time.sleep(2)
             # await bot.send_photo(chat_id=user['user_id'], photo=picture, caption=caption)
         # await bot.send_message(chat_id=553603641, text='date')

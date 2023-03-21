@@ -35,8 +35,8 @@ async def standard_mailing(message: types.Message, state: FSMContext):
 
     elif "Предложение для именинников" in message.text.strip():
         type_mailing = "birthday"
-        before_birthday = config.BEFORE_BIRTHDAY
-        delta = timedelta(days=int(before_birthday))
+        before_birthday_days = config.BEFORE_BIRTHDAY_DAYS
+        delta = timedelta(days=int(before_birthday_days))
         current_data = datetime.now().date()
         target_data = current_data + delta
         users = await db.get_birthday_users(target_data=target_data)
@@ -75,7 +75,7 @@ async def standard_mailing(message: types.Message, state: FSMContext):
         pass
 
     id_msg_list.append(msg.message_id)
-    id_user_list = [{'id': user['user_id'].strip(), 'administrator': user['administrator']} for user in users]
+    id_user_list = [{'user_id': user['user_id'].strip(), 'administrator': user['administrator']} for user in users]
 
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
@@ -135,9 +135,12 @@ async def standard_mailing_text(message: types.Message, state: FSMContext):
     markup = InlineKeyboardMarkup()
     markup.add(
         InlineKeyboardButton(text="📅 Указать дату", callback_data="delayed_mailing"),
-        InlineKeyboardButton(text="📤 Отправить немедленно", callback_data="send_immediately"),
+        InlineKeyboardButton(text="📤 Отправить немедленно", callback_data="send_immediately")
     )
-    msg = await message.answer(text="Выберите способ отпарвки", reply_markup=markup)
+    if data["type_mailing"] == "birthday":
+        markup.row(InlineKeyboardButton(text="💾 Сохранить", callback_data="save_task"))
+
+    msg = await message.answer(text="Выберите действие", reply_markup=markup)
 
     id_msg_list = []
     id_msg_list = data['id_msg_list']
@@ -148,7 +151,7 @@ async def standard_mailing_text(message: types.Message, state: FSMContext):
         data['message_text'] = message_text
 
 
-@dp.callback_query_handler(text=["delayed_mailing", "send_immediately"], state=Mailings.standard_sending_method)
+@dp.callback_query_handler(text=["delayed_mailing", "send_immediately", "save_task"], state=Mailings.standard_sending_method)
 async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
     """Ловлю от пользователя способ отправки"""
     await call.answer()
@@ -161,7 +164,7 @@ async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
     id_msg_list = data["id_msg_list"]
     users = data['users']
 
-    if call.data == "send_immediately":
+    if (call.data == "send_immediately") or (call.data == "save_task"):
         # Отпраивть немедленно
         date = datetime.now()
         minute_later = date + timedelta(minutes=1)
@@ -170,25 +173,24 @@ async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
 
         task_id = await db.add_new_task(admin_name=admin_name, type_mailing=type_mailing, picture=picture,
                                         message=message_text, status="waiting", execution_date=minute_later,
-                                        error="No error")
-        try:
-            if users:
-                scheduler.add_job(
-                    apsched.send_message_date, 'date', run_date=minute_later, id=type_mailing,
-                    kwargs={'bot': bot, 'task_id': task_id, 'users': users, 'type_mailing': type_mailing}
-                )
-                text = f"Рассылка запланирована на {minute_later.strftime('%Y-%m-%d %H:%M:%S')}"
-            else:
-                text = "Нет пользователей для рассылки"
-        except Exception as _ex:
-            text = f"Рассылка не запланирована - Ошибка: {_ex}"
-            await db.update_task(task_id=int(task_id), status="error", error=_ex)
+                                        error="No errors")
+        if call.data != "save_task":
+            try:
+                if users:
+                    scheduler.add_job(
+                        apsched.send_message_date, 'date', run_date=minute_later, id=type_mailing,
+                        kwargs={'bot': bot, 'task_id': task_id, 'users': users, 'type_mailing': type_mailing}
+                    )
+                    text = f"Рассылка запланирована на {minute_later.strftime('%Y-%m-%d %H:%M:%S')}"
+                else:
+                    text = "Нет пользователей для рассылки"
+            except Exception as _ex:
+                text = f"Рассылка не запланирована - Ошибка: {_ex}"
+                await db.update_task(task_id=int(task_id), status="error", error=_ex)
+        else:
+            text = "Рассылка сохранена"
 
         await call.message.delete()
-        # performed
-        # waiting
-        # draft
-        # error
         msg = await call.message.answer(text=text, reply_markup=newsletter_kbd)
         id_msg_list.append(msg.message_id)
 

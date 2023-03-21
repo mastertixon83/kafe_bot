@@ -36,15 +36,13 @@ async def on_startup(dp):
     # job = scheduler.add_job(apsched.send_birthday_cron, trigger='data', day="*", hour=notification_time[0],
     #                    minute=notification_time[1], args=(dp.bot,))
     # print(job.next_run_time)
-    current_data = datetime.datetime.now()
-    before_birthday_days = config.BEFORE_BIRTHDAY_DAYS
-    delta_u = datetime.timedelta(days=int(before_birthday_days))
-    delta_t = datetime.timedelta(days=1)
-    run_dt = current_data.year, current_data.month, current_data.day, current_data.hour, current_data.minute+1
 
-    scheduler.add_job(
-        apsched.send_birthday_cron, 'date', run_date=datetime.datetime(*run_dt), id="birthday", kwargs={'bot': dp.bot, }
-    )
+    # job = scheduler.add_job(
+    #     apsched.send_birthday_cron, 'date', run_date=datetime.datetime(*run_dt), id="birthday", kwargs={'bot': dp.bot, }
+    # )
+    # 03:00
+    scheduler.add_job(apsched.send_birthday_cron, 'cron', hour=str(notification_time[0]),
+                      minute=str(notification_time[1]), kwargs={'bot': dp.bot})
 
 
 if __name__ == '__main__':
