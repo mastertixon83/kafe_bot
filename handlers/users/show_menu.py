@@ -9,9 +9,9 @@ from utils.db_api.db_commands import DBCommands
 db = DBCommands()
 
 
-###Обработка нажатий на кнопки меню
 @dp.callback_query_handler(menu_cd_show.filter())
 async def out_categories(call: CallbackQuery, callback_data: dict):
+    """Обработчик нажатий на кнопки меню"""
     category_id = callback_data['category_id']
     message_id = callback_data['message_id']
 

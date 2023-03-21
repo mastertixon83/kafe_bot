@@ -37,8 +37,8 @@ async def categories_keyboard():
             )
     ### Добавление последних кнопок
     markup.row(
-        InlineKeyboardButton(text="Оформить доставку", callback_data=make_callback_data(level=3, what="ordering")),
-        InlineKeyboardButton(text="Выход", callback_data=make_callback_data(level=-1, what="exit"))
+        InlineKeyboardButton(text="✅ Оформить доставку", callback_data=make_callback_data(level=3, what="ordering")),
+        InlineKeyboardButton(text="Главное меню", callback_data=make_callback_data(level=-1, what="exit"))
     )
 
     return markup

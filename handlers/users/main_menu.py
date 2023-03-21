@@ -20,6 +20,7 @@ from states.restoran import TableReservation
 # Отмена действия
 @dp.message_handler(Text(contains="Главное меню"), state="*")
 async def cancel(message: types.Message, state=FSMContext):
+    """Ловлю нажатие на кнопку Главное меню"""
     current_state = await state.get_state()
 
     data = await state.get_data()
@@ -82,7 +83,7 @@ async def table_reservation(message: types.Message, state: FSMContext):
     await TableReservation.data.set()
 
     date = datetime.now().strftime('%d.%m.%Y')
-    text = f"<b>Шаг [1/5]</b>\n\n Введи дату в формате ДД.ММ.ГГГГ, сегодня {date}"
+    text = f"<b>Шаг [1/5]</b>\n\n Введите дату в формате ДД.ММ.ГГГГ, сегодня {date}"
     await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
 
     async with state.proxy() as data:
@@ -111,7 +112,7 @@ async def reg_loyal_card(message: Message, state: FSMContext):
     info = await db.get_user_info(message.from_user.id)
     await MainMenu.main.set()
     if info[0]['card_status'] != True:
-        text = "Оформи карту скидок!!!"
+        text = "Оформите карту скидок!!!"
     else:
         text = "Меню программы лояльности"
     await message.delete()
@@ -128,6 +129,7 @@ async def newsletter(message: Message):
 
 @dp.message_handler(Text(contains=["Настройки"]), state="*")
 async def admin_config(message: Message, state: FSMContext):
+    """Ловлю нажатие на кнопку Настройки"""
     text = "Меню настроек"
     await ConfigAdmins.config_main.set()
     async with state.proxy() as data:

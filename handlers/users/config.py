@@ -99,7 +99,7 @@ async def add_admin_status(call: types.CallbackQuery, state: FSMContext):
     await ConfigAdmins.config_admins_name.set()
     data = await state.get_data()
 
-    text = "Введи username пользователя (Пользователь должен быть подписан на бота)"
+    text = "Введите username пользователя (Пользователь должен быть подписан на бота)"
     await bot.delete_message(chat_id=call.message.chat.id, message_id=data['id_msg_list'][-1])
 
     id_msg_list = data['id_msg_list']
@@ -222,7 +222,7 @@ async def ban_user(call: types.CallbackQuery, state: FSMContext):
 
     await ConfigBlackList.config_blacklist_username.set()
 
-    text = "Введи username пользователя (Пользователь должен быть подписан на бота)"
+    text = "Введите username пользователя (Пользователь должен быть подписан на бота)"
     await bot.delete_message(chat_id=call.message.chat.id, message_id=data['id_msg_list'][-1])
 
     id_msg_list = data['id_msg_list']

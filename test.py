@@ -1,8 +1,10 @@
-import aiocron
-import asyncio
+import datetime
+from datetime import timedelta
 
-@aiocron.crontab('*/30 * * * *')
-async def attime():
-    print('run')
+current_data = datetime.datetime.now()
+delta_t = timedelta(days=1)
 
-asyncio.get_event_loop().run_forever()
+run_dt = (current_data + delta_t).year, (current_data + delta_t).month, (current_data + delta_t).day, 10, 30
+
+print(*run_dt)
+print(datetime.datetime(*run_dt))

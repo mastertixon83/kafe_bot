@@ -269,7 +269,7 @@ async def table_reservation_check_data(call, state: FSMContext):
     elif call.data == "cancel_order_user":
         await call.message.edit_text("Если всё правильно, подтвердите", reply_markup="")
 
-        text = f"<b>ШАГ [1/5]</b>\n Выберите дату\n\nСегодня {datetime.now().strftime('%d.%m.%Y')}"
+        text = f"<b>ШАГ [1/5]</b>\n Введите дату\n\nСегодня {datetime.now().strftime('%d.%m.%Y')}"
         await call.message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
 
         await TableReservation.data.set()

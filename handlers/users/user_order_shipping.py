@@ -26,6 +26,7 @@ db = DBCommands()
 ###Ловлю нажатие любой инлайн кнопки
 @dp.callback_query_handler(menu_cd.filter(), state="*")
 async def navigate(call: types.CallbackQuery, callback_data: dict, state: FSMContext):
+    """Главный обработчик нажатий на кнопки"""
     current_level = callback_data.get('level')
     category_id = callback_data.get('category_id')
     item_id = callback_data.get('item_id')
@@ -65,8 +66,8 @@ async def navigate(call: types.CallbackQuery, callback_data: dict, state: FSMCon
     )
 
 
-### Ловлю нажатие кнопки выход
 async def main_menu(callback: types.CallbackQuery, what, state, **kwargs):
+    """Обработчик нажатия на кнопку выход"""
     await callback.message.delete()
     await callback.message.answer(text="Главное меню", reply_markup=menuAdmin)
     user_id = callback.message.chat.id
@@ -74,8 +75,8 @@ async def main_menu(callback: types.CallbackQuery, what, state, **kwargs):
     await state.finish()
 
 
-### Построение клавиатуры категорий, после нажатия на кнопку Оформить заказ на доставку
 async def build_category_keyboard(message: Union[types.Message, types.CallbackQuery], **kwargs):
+    """Построение клавиатуры категорий, после нажатия на кнопку Оформить заказ на доставку"""
     markup = await categories_keyboard()
     if kwargs:
         data = await kwargs['state'].get_data()
@@ -90,8 +91,8 @@ async def build_category_keyboard(message: Union[types.Message, types.CallbackQu
         await call.message.edit_text(text="Что будете заказывать?", reply_markup=markup)
 
 
-### Построение карточек блюд, после выбора категории
 async def build_item_cards(callback: types.CallbackQuery, category_id, state, **kwargs):
+    """Построение карточек блюлд, после выбора категориии"""
     category_info = await db.get_category_info(id=int(category_id))
 
     msg = await callback.message.edit_text(f"Блюда категории {category_info[0]['title']}")
@@ -128,8 +129,8 @@ async def build_item_cards(callback: types.CallbackQuery, category_id, state, **
     await callback.message.answer(text="Добавить другие блюда", reply_markup=markup2)
 
 
-### Добавление блюда в корзину
 async def add_order_item(callback: types.CallbackQuery, **kwargs):
+    """Добавление блюда в корзину"""
     count = int(kwargs['count'][0])
     item_id = kwargs['item_id']
 
@@ -155,8 +156,8 @@ async def add_order_item(callback: types.CallbackQuery, **kwargs):
     await callback.message.edit_reply_markup(markup)
 
 
-### Отнимание блюда из корзины
 async def del_order_item(callback: types.CallbackQuery, **kwargs):
+    """Удаление блюда из корзины"""
     count = int(kwargs['count'][0])
 
     if count > 0:
@@ -172,8 +173,8 @@ async def del_order_item(callback: types.CallbackQuery, **kwargs):
         await callback.message.edit_reply_markup(markup)
 
 
-### Ловлю нажатие на кнопку Оформить доставку
 async def delivery_registration(callback: types.CallbackQuery, **kwargs):
+    """Ловлю нажатие на кнопку оформить доставку"""
     await callback.message.delete()
     await Shipping.data.set()
 
@@ -183,9 +184,9 @@ async def delivery_registration(callback: types.CallbackQuery, **kwargs):
     await callback.message.answer(text=text, reply_markup=cancel_btn)
 
 
-### Ловлю от пользователя дату доставки
 @dp.message_handler(content_types=["text"], state=Shipping.data)
 async def shipping_data(message: types.Message, state: FSMContext):
+    """Ловлю от пользователя дату доставки"""
     try:
         date = message.text
         if len(date.split('.')) == 3:
@@ -217,9 +218,9 @@ async def shipping_data(message: types.Message, state: FSMContext):
         return
 
 
-### Ловлю от пользователя время доставки
 @dp.message_handler(content_types=["text"], state=Shipping.time)
 async def shipping_time(message: types.Message, state: FSMContext):
+    """Ловлю от пользователя время доставки"""
     msg = message.text
     data = await state.get_data()
     try:
@@ -254,9 +255,9 @@ async def shipping_time(message: types.Message, state: FSMContext):
         return
 
 
-### Ловлю от пользователя кол-во приборов
 @dp.message_handler(content_types=["text"], state=Shipping.number_of_devices)
 async def shipping_number_of_devices(message: types.Message, state: FSMContext):
+    """Ловлю от пользователя количество приборов"""
     if message.text.isdigit():
         await Shipping.phone.set()
         async with state.proxy() as data:
@@ -269,9 +270,9 @@ async def shipping_number_of_devices(message: types.Message, state: FSMContext):
         await message.answer(text=text, reply_markup=cancel_btn)
 
 
-### Ловлю от пользователя контактный номер телефона
 @dp.message_handler(content_types=["contact", "text"], state=Shipping.phone)
 async def shipping_address(message: types.Message, state: FSMContext):
+    """Ловлю от пользователя контактный номер телефона"""
     async with state.proxy() as data:
         if message.content_type == 'contact':
             if message.contact.phone_number[0] != "+":
@@ -288,9 +289,9 @@ async def shipping_address(message: types.Message, state: FSMContext):
     await message.answer(text=text, reply_markup=cancel_btn)
 
 
-### Ловлю от пользователя адрес доставки
 @dp.message_handler(content_types=["text"], state=Shipping.address)
 async def shipping_address(message: types.Message, state: FSMContext):
+    """Ловлю от пользователя адрес доставки"""
     await Shipping.pay_method.set()
 
     async with state.proxy() as data:
@@ -304,9 +305,9 @@ async def shipping_address(message: types.Message, state: FSMContext):
     await message.answer(text="Выберите способ оплаты", reply_markup=markup)
 
 
-### Ловлю от пользователя способ оплаты
 @dp.callback_query_handler(text=["pay_method_card", "pay_method_money"], state=Shipping.pay_method)
 async def shipping_pay_method(call: types.CallbackQuery, state: FSMContext):
+    """Ловлю от пользователя способ оплаты"""
     await Shipping.check.set()
     await call.message.edit_reply_markup(reply_markup="")
     await call.message.delete()
@@ -336,9 +337,9 @@ async def shipping_pay_method(call: types.CallbackQuery, state: FSMContext):
     await call.message.answer(text=text, reply_markup=user_inline_approve)
 
 
-### Ловлю от пользователя проверка
 @dp.callback_query_handler(text=["approve_order_user", "cancel_order_user"], state=Shipping.check)
 async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext):
+    """Ловлю от пользователя проверку данных"""
     await call.message.edit_reply_markup(reply_markup="")
     await call.message.delete()
     await call.answer(cache_time=10)
@@ -401,9 +402,9 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
         await call.message.answer(text=text, reply_markup=menuUser)
 
 
-### Ловлю ответ от администратора о заявке
 @dp.callback_query_handler(text_contains=["shipping"])
 async def shipping_admin_check_order(call: types.CallbackQuery):
+    """Ловлю от администратора ответ о заявке"""
     await call.message.edit_reply_markup(reply_markup="")
     data = call.data.split('-')
 

@@ -10,9 +10,9 @@ from loader import db
 class DBCommands:
     pool: Connection = db
     ###  Добавление нового пользователя с рефералом и без ###
-    ADD_NEW_USER_REFERRAL = "INSERT INTO users(user_id, username, full_name, referral) " \
-                            "VALUES ($1, $2, $3, $4) RETURNING id"
-    ADD_NEW_USER = "INSERT INTO users(user_id, username, full_name) VALUES ($1, $2, $3) RETURNING id"
+    ADD_NEW_USER_REFERRAL = "INSERT INTO users(user_id, username, full_name, referral, gender, employment) " \
+                            "VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
+    ADD_NEW_USER = "INSERT INTO users(user_id, username, full_name, gender, employment) VALUES ($1, $2, $3, $4, $5) RETURNING id"
     GET_ALL_USERS = "SELECT user_id, administrator FROM users WHERE ban_status=FALSE"
 
     ### Удаление пользователя в черный список
@@ -94,7 +94,7 @@ class DBCommands:
     GET_LOYAL_CARD_USERS = "SELECT * FROM users WHERE card_status = TRUE"
 
     ###  Пользователи
-    async def add_new_user(self, referral=None):
+    async def add_new_user(self, referral=None, gender="", employment=""):
         """Добавление нового пользователя с рефералом или без"""
         user = types.User.get_current()
         chat_id = str(user.id)
@@ -102,10 +102,10 @@ class DBCommands:
         full_name = user.full_name
 
         if referral:
-            args = chat_id, username, full_name, referral
+            args = chat_id, username, full_name, referral, gender, employment
             command = self.ADD_NEW_USER_REFERRAL
         else:
-            args = chat_id, username, full_name
+            args = chat_id, username, full_name, gender, employment
             command = self.ADD_NEW_USER
 
         try:

@@ -2,6 +2,8 @@ import os
 from datetime import datetime, timezone, timedelta
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+from data import config
 from handlers.users import apsched
 
 from loader import dp, bot, db, scheduler
@@ -33,11 +35,11 @@ async def standard_mailing(message: types.Message, state: FSMContext):
 
     elif "Предложение для именинников" in message.text.strip():
         type_mailing = "birthday"
-        delta = timedelta(days=3)
+        before_birthday = config.BEFORE_BIRTHDAY
+        delta = timedelta(days=int(before_birthday))
         current_data = datetime.now().date()
         target_data = current_data + delta
         users = await db.get_birthday_users(target_data=target_data)
-        print(users)
 
     elif "Призыв к бронированию" in message.text.strip():
         type_mailing = "hall_reservation"

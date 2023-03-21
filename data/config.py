@@ -1,7 +1,6 @@
 import os
 
 from dotenv import load_dotenv
-# from apscheduler.jobstores.redis import RedisJobStore
 
 load_dotenv()
 
@@ -14,6 +13,7 @@ PG_PASS = os.getenv("PG_PASS")
 DB_NAME = os.getenv("DB_NAME")
 
 BIRTHDAY_NOTIFICATION_TIME = os.getenv('birthday_notification_time')
+BEFORE_BIRTHDAY_DAYS = os.getenv('before_birthday_days')
 
 # Ссылка подключения к базе данных
 POSTGRES_URI = f"postgresql://{PG_USER}:{PG_PASS}@{host}/{DB_NAME}"
