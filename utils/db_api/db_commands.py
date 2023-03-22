@@ -115,7 +115,8 @@ class DBCommands:
     GET_ALL_APPRODEV_ORDERS_HALL = "SELECT * FROM orders_hall WHERE admin_answer = 'approved'"
 
     GET_APPROVED_SHIPPING = "SELECT * FROM shipping WHERE admin_answer = 'admin_approve_shipping' and updated_at >= $1 AND updated_at < $2"
-    GET_ALL_APPRODEV_SHIPPING = "SELECT * FROM shipping WHERE admin_answer = 'admin_approve_shipping'"
+    GET_ALL_APPROVED_SHIPPING = "SELECT * FROM shipping WHERE admin_answer = 'admin_approve_shipping'"
+    GET_SHIPPING_ORDER_MADE_TODAY = "SELECT * FROM shipping WHERE created_at = $1"
 
     GET_PERSONAL_REQUEST_TODAY = "SELECT * FROM personal WHERE personal = $1 and created_at >= $2 AND created_at < $3"
 
@@ -522,7 +523,7 @@ class DBCommands:
 
     async def get_all_approved_shipping(self):
         """Выбор все подтвержденных администратором доставок"""
-        command = self.GET_ALL_APPRODEV_SHIPPING
+        command = self.GET_ALL_APPROVED_SHIPPING
         return await self.pool.fetch(command)
 
     async def get_personal_request_today(self, personal, start_date, end_date):
@@ -530,6 +531,11 @@ class DBCommands:
         command = self.GET_PERSONAL_REQUEST_TODAY
         args = personal, start_date, end_date
         return await self.pool.fetch(command, *args)
+
+    async def get_shipping_order_made_today(self, date):
+        """Выьор заявок на доставку сделанных сегодня"""
+        command = self.GET_SHIPPING_ORDER_MADE_TODAY
+        return await self.pool.fetch(command, date)
 
     async def get_tasks_mailing(self, type_mailing, start_date, end_date):
         """Выбор подписок для статистики"""

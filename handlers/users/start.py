@@ -1,6 +1,7 @@
 #TODO: Написать инструкцию по пользованию ботом
 #TODO: !!!Сделать логирование
-#TODO: !!!Добавит исключения
+#TODO: !!!Добавить исключения
+#TODO: !!!Разобраться со временем и датой в БД
 from keyboards.inline.dating_ikb import user_gender_ikb, user_work_ikb
 from loader import dp, bot, db
 

@@ -1,6 +1,7 @@
 # TODO: смотреть заявки на доставку, которые были созданы сегодня
 # TODO: статистика по забраным призам
 # TODO: Отправит Excel файл
+import json
 from datetime import datetime, timezone, timedelta
 import csv
 
@@ -169,10 +170,12 @@ async def analytics_mailings(message: types.Message, state: FSMContext):
             await db.get_tasks_mailing(type_mailing=item, start_date=kwargs['start_date'], end_date=kwargs['end_date']))
         # За неделю
         week_count = len(
-            await db.get_tasks_mailing(type_mailing=item, start_date=kwargs['start_date_week'], end_date=kwargs['end_date_week']))
+            await db.get_tasks_mailing(type_mailing=item, start_date=kwargs['start_date_week'],
+                                       end_date=kwargs['end_date_week']))
         # За предыдущий месяц
         month_count = len(
-            await db.get_tasks_mailing(type_mailing=item, start_date=kwargs['start_date_month'], end_date=kwargs['end_date_month']))
+            await db.get_tasks_mailing(type_mailing=item, start_date=kwargs['start_date_month'],
+                                       end_date=kwargs['end_date_month']))
         # За месяц
         prev_month_count = len(
             await db.get_tasks_mailing(type_mailing=item,
@@ -184,7 +187,7 @@ async def analytics_mailings(message: types.Message, state: FSMContext):
         text += f" За неделю: {week_count}\n"
         text += f" За текущий месяц: {prev_month_count}\n"
         text += f" За предыдущий месяц: {month_count}\n"
-        text += "-" * 80 + "\n"
+        text += f'{"-" * 50}\n'
 
     msg = await message.answer(text=text)
 
@@ -205,8 +208,10 @@ async def analytics_personal(message: types.Message, state: FSMContext):
     end_date = start_date + timedelta(days=1)
     who1 = "Официанта"
     who2 = "Кальянного мастера"
-    today_count1 = len(await db.get_personal_request_today(personal=who1, start_date=kwargs['start_date'], end_date=kwargs['end_date']))
-    today_count2 = len(await db.get_personal_request_today(personal=who2, start_date=kwargs['start_date'], end_date=kwargs['end_date']))
+    today_count1 = len(await db.get_personal_request_today(personal=who1, start_date=kwargs['start_date'],
+                                                           end_date=kwargs['end_date']))
+    today_count2 = len(await db.get_personal_request_today(personal=who2, start_date=kwargs['start_date'],
+                                                           end_date=kwargs['end_date']))
 
     text = "<b>За сегодня вызывали персонал</b>\n"
     text += f"{who1}: {plural_form(today_count1, 'раз')}\n"
@@ -230,10 +235,12 @@ async def analytics_hall_reservation(message: types.Message, state: FSMContext):
     today_count = len(await db.get_approved_orders_hall(start_date=kwargs['start_date'], end_date=kwargs['end_date']))
 
     # За неделю
-    week_count = len(await db.get_approved_orders_hall(start_date=kwargs['start_date_week'], end_date=kwargs['end_date_week']))
+    week_count = len(
+        await db.get_approved_orders_hall(start_date=kwargs['start_date_week'], end_date=kwargs['end_date_week']))
 
     # За предыдущий месяц
-    month_count = len(await db.get_approved_orders_hall(start_date=kwargs['start_date_month'], end_date=kwargs['end_date_month']))
+    month_count = len(
+        await db.get_approved_orders_hall(start_date=kwargs['start_date_month'], end_date=kwargs['end_date_month']))
 
     # За месяц
     prev_month_count = len(
@@ -247,7 +254,7 @@ async def analytics_hall_reservation(message: types.Message, state: FSMContext):
     text += f"За неделю: {week_count}\n"
     text += f"За текущий месяц: {prev_month_count}\n"
     text += f"За предыдущий месяц: {month_count}\n"
-    text += "-" * 80
+    text += f'{"-" * 50}\n'
     text += f"Всего: {total}\n"
 
     msg = await message.answer(text=text)
@@ -268,10 +275,12 @@ async def analytics_shipping(message: types.Message, state: FSMContext):
     today_count = len(await db.get_approved_shipping(start_date=kwargs['start_date'], end_date=kwargs['end_date']))
 
     # За неделю
-    week_count = len(await db.get_approved_shipping(start_date=kwargs['start_date_week'], end_date=kwargs['end_date_week']))
+    week_count = len(
+        await db.get_approved_shipping(start_date=kwargs['start_date_week'], end_date=kwargs['end_date_week']))
 
     # За предыдущий месяц
-    month_count = len(await db.get_approved_shipping(start_date=kwargs['start_date_month'], end_date=kwargs['end_date_month']))
+    month_count = len(
+        await db.get_approved_shipping(start_date=kwargs['start_date_month'], end_date=kwargs['end_date_month']))
 
     # За месяц
     prev_month_count = len(
@@ -285,14 +294,62 @@ async def analytics_shipping(message: types.Message, state: FSMContext):
     text += f"За неделю: {week_count}\n"
     text += f"За текущий месяц: {prev_month_count}\n"
     text += f"За предыдущий месяц: {month_count}\n"
-    text += "-" * 80
+    text += f'{"-" * 50}\n'
     text += f"Всего: {total}\n"
 
-    msg = await message.answer(text=text)
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Показать заявки сделанные сегодня", callback_data="a_shipping_order")]
+        ]
+    )
+
+    msg = await message.answer(text=text, reply_markup=markup)
 
     data = await state.get_data()
     id_msg_list = data['id_msg_list']
     id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
+
+
+@dp.callback_query_handler(text_contains=["a_shipping_order"], state=Analytics.main)
+async def get_shipping_order_made_today(call: types.CallbackQuery, state: FSMContext):
+    """Выборка заявок на доставку сделанных сегодня"""
+    orders = await db.get_shipping_order_made_today(date=datetime.now().date())
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+
+
+    for item in orders:
+        text = f"Заявка на {item['data_reservation']} {item['time_reservation']}\n"
+        text += f"от @{item['user_name']}\n"
+        text += f"Адрес: {item['address']}\n"
+        text += f"Телофон: {item['phone']}\n"
+        text += f"Кол-во приборов: {item['number_of_devices']}\n"
+        text += f"{'-' * 50}\n"
+        data = json.loads(item['tpc'])
+        for title in data:
+            text += f"{title['title']} - {title['count']}\n"
+        text += f'{"-" * 50}\n'
+        text += f"Итого: {item['final_summa']} тенге"
+        if item['admin_answer']:
+            markup = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="Отменить", callback_data="a_cancel_shipping")]
+                ]
+            )
+        else:
+            markup = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(text="Взять в работу", callback_data="a_approve_shipping"),
+                        InlineKeyboardButton(text="Отменить", callback_data="a_cancel_shipping")
+                    ]
+                ]
+            )
+        msg = await call.message.answer(text=text, reply_markup=markup)
+        id_msg_list.append(msg.message_id)
+
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
 

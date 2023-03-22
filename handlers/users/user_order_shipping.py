@@ -82,14 +82,16 @@ async def cart(callback: types.CallbackQuery, what, state, **kwargs):
 
         markup = await items_in_category_keyboard(item_id=int(item_id), count=item["item_count"],
                                                   user_id=data['chat_id'])
+        with open(f"media/menu/{info[0]['photo']}.jpg", "rb") as file:
+            photo = types.InputFile(file)
 
-        msg = await bot.send_photo(
-            chat_id=callback.message.chat.id,
-            photo=info[0]['photo'],
-            caption=f"{info[0]['description']}\nЦена: {str(item['price'])[:-3]} тенге.",
-            parse_mode="HTML",
-            reply_markup=markup
-        )
+            msg = await bot.send_photo(
+                chat_id=callback.message.chat.id,
+                photo=photo,
+                caption=f"{info[0]['description']}\nЦена: {str(item['price'])[:-3]} тенге.",
+                parse_mode="HTML",
+                reply_markup=markup
+            )
 
         message_id_list.append(msg.message_id)
 
@@ -151,13 +153,16 @@ async def build_item_cards(callback: types.CallbackQuery, category_id, state, **
 
         markup = await items_in_category_keyboard(item_id=int(item['id']), count=0, user_id=data['chat_id'])
 
-        msg = await bot.send_photo(
-            chat_id=callback.message.chat.id,
-            photo=info[0]['photo'],
-            caption=f"{info[0]['description']}\n{'-'*50}\nЦена: {str(item['price'])[:-3]} тенге.",
-            parse_mode="HTML",
-            reply_markup=markup
-        )
+        with open(f"media/menu/{info[0]['photo']}.jpg", "rb") as file:
+            photo = types.InputFile(file)
+
+            msg = await bot.send_photo(
+                chat_id=callback.message.chat.id,
+                photo=photo,
+                caption=f"{info[0]['description']}\n{'-'*50}\nЦена: {str(item['price'])[:-3]} тенге.",
+                parse_mode="HTML",
+                reply_markup=markup
+            )
 
         message_id_list.append(msg.message_id)
 
