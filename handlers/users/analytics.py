@@ -1,3 +1,5 @@
+#TODO: смотреть заявки на доставку, которые были созданы сегодня
+#TODO: статистика по забраным призам
 from datetime import datetime, timezone, timedelta
 import csv
 
@@ -27,21 +29,6 @@ def plural_form(n, word):
         return f"{n} {word}а"
     else:
         return f"{n} {word}"
-
-
-@dp.message_handler(Text(contains=["Пользователи"]), state=Analytics.main)
-async def analytics_users(message: types.Message, state: FSMContext):
-    """Ловлю нажатие на кнопку Пользователи"""
-
-    users_nb_info = await db.get_all_nb_users()
-    all_users_info = await db.get_all_users()
-
-    text = f"Активных пользователей: {len(users_nb_info)}\nВсего пользователей: {len(all_users_info)}"
-    markup = InlineKeyboardMarkup()
-    markup.add(
-        InlineKeyboardButton(text="Выгрузить Excel файл", callback_data="excel_users")
-    )
-    await message.answer(text=text, reply_markup=markup)
 
 
 @dp.callback_query_handler(text=["excel_users"], state=Analytics.main)
@@ -106,6 +93,26 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
 
         writer.writerows(result)
 
+@dp.message_handler(Text(contains=["Пользователи"]), state=Analytics.main)
+async def analytics_users(message: types.Message, state: FSMContext):
+    """Ловлю нажатие на кнопку Пользователи"""
+    await message.delete()
+    users_nb_info = await db.get_all_nb_users()
+    all_users_info = await db.get_all_users()
+
+    text = f"Активных пользователей: {len(users_nb_info)}\nВсего пользователей: {len(all_users_info)}"
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton(text="Выгрузить Excel файл", callback_data="excel_users")
+    )
+    msg = await message.answer(text=text, reply_markup=markup)
+
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
+
 
 @dp.message_handler(Text(contains=["Рассылки"]), state=Analytics.main)
 async def analytics_mailings(message: types.Message, state: FSMContext):
@@ -156,12 +163,19 @@ async def analytics_mailings(message: types.Message, state: FSMContext):
         text += f" За предыдущий месяц: {month_count}\n"
         text += "-" * 80 + "\n"
 
-    await message.answer(text=text)
+    msg = await message.answer(text=text)
+
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.message_handler(Text(contains=["Статистика вызовова персонала"]), state=Analytics.main)
 async def analytics_personal(message: types.Message, state: FSMContext):
     """Ловлю нажатие на кнопку Статистика вызовов персоналов"""
+    await message.delete()
     # За сегодня
     start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     end_date = start_date + timedelta(days=1)
@@ -174,12 +188,19 @@ async def analytics_personal(message: types.Message, state: FSMContext):
     text += f"{who1}: {plural_form(today_count1, 'раз')}\n"
     text += f"{who2}: {plural_form(today_count2, 'раз')}"
 
-    await message.answer(text=text)
+    msg = await message.answer(text=text)
+
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.message_handler(Text(contains=["Статистика бронирований"]), state=Analytics.main)
 async def analytics_hall_reservation(message: types.Message, state: FSMContext):
     """Ловлю нажатие на кнопку Статистика бронирований"""
+    await message.delete()
     # За сегодня
     start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     end_date = start_date + timedelta(days=1)
@@ -215,12 +236,19 @@ async def analytics_hall_reservation(message: types.Message, state: FSMContext):
     text += "-" * 80
     text += f"Всего: {total}\n"
 
-    await message.answer(text=text)
+    msg = await message.answer(text=text)
+
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.message_handler(Text(contains=["Статистика доставки"]), state=Analytics.main)
 async def analytics_shipping(message: types.Message, state: FSMContext):
     """Ловлю нажатие на кнопку Статистика доставки"""
+    await message.delete()
     # За сегодня
     start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     end_date = start_date + timedelta(days=1)
@@ -256,12 +284,19 @@ async def analytics_shipping(message: types.Message, state: FSMContext):
     text += "-" * 80
     text += f"Всего: {total}\n"
 
-    await message.answer(text=text)
+    msg = await message.answer(text=text)
+
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.message_handler(Text(contains=["Участники программы лояльности"]), state=Analytics.main)
 async def analytics_loyal_program_participants(message: types.Message, state: FSMContext):
     """Ловлю нажатие на кнопку Участники программы лояльности"""
+    await message.delete()
     loyal_program_participants_info = await db.get_loyal_program_participants()
     markup = InlineKeyboardMarkup()
     for user_info in loyal_program_participants_info:
@@ -270,8 +305,13 @@ async def analytics_loyal_program_participants(message: types.Message, state: FS
                                  callback_data=f"{user_info['user_id']}-user_info")
         )
     msg = await message.answer(text="Участники программы лояльности", reply_markup=markup)
+
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+    id_msg_list.append(msg.message_id)
+
     async with state.proxy() as data:
-        data["message_id"] = msg.message_id
+        data['id_msg_list'] = id_msg_list
         data["markup"] = markup
 
 
@@ -291,8 +331,16 @@ async def show_user_info(call: types.CallbackQuery, state: FSMContext):
     text += f"Фамилия и Имя: {user_info[0]['card_fio']}\n"
     text += f"Номер карты: {user_info[0]['card_number']}\n"
     text += f"Дата рождения: {user_info[0]['birthday']}\n"
-    text += f"Пригласил к нам: {plural_form(count_users, 'человек')}\n"
+    text += f"Пришло к нам по рекомендации: {plural_form(count_users, 'человек')}\n"
     text += f"Номер телефона: {user_info[0]['card_phone']}\n"
 
-    await call.message.edit_text(text=text)
+    msg = await call.message.edit_text(text=text)
     await call.message.edit_reply_markup(data["markup"])
+
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+    id_msg_list.append(msg.message_id)
+
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
+

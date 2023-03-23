@@ -1,5 +1,8 @@
-# TODO: Редактирование забронированных столиков админом на выбранную дату
-# редактировать поступившие сегодня заявки
+
+#TODO: Редактирование забронированных столиков админом на выбранную дату, редактировать поступившие сегодня заявки
+
+#TODO:рассылка уведомления о времени бронирования столика за час
+#TODO: Проверка пользователем брони столика
 from datetime import datetime, timezone
 
 from aiogram.dispatcher import FSMContext
@@ -61,7 +64,7 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
     """Обработка данных и вывод сообщения с кнопками администратору"""
     result = await db.get_order_hall_data(id=int(call_data[1]))
 
-    res = datetime.now(timezone.utc) - result[0]['updated_at']
+    res = datetime.now() - result[0]['updated_at']
     user_wait = "Гость ждал: "
 
     if res.days == 0:
@@ -95,7 +98,7 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
                                text=f"Ваша запись подтвердждена администрацией. Ваш столик: {tableNumber}. Ждем вас :)")
     # Обновить статус заявки в БД
     await db.update_order_hall_status(id=int(call_data[1]), order_status=True, admin_answer=call_data[2],
-                                      updated_at=datetime.now(timezone.utc), admin_id=admin_id,
+                                      updated_at=datetime.now(), admin_id=admin_id,
                                       admin_name=f'@{adminUsername}', table_number=tableNumber)
 
 

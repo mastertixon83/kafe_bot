@@ -41,9 +41,11 @@ async def cancel(message: types.Message, state=FSMContext):
         else:
             await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id - 1)
 
-    elif (re.search(r"ConfigAdmins:config_admins_", current_state) or re.search(r"ConfigBlackList:config_blacklist",
-                                                                                current_state) or re.search(
-        r"ConfigAdmins:config_main", current_state) or re.search(r"Mailings", current_state)):
+    elif (re.search(r"ConfigAdmins:config_admins_", current_state)
+          or re.search(r"ConfigBlackList:config_blacklist", current_state)
+          or re.search(r"ConfigAdmins:config_main", current_state)
+          or re.search(r"Mailings", current_state)
+          or re.search(r"Analytics:main", current_state)):
         if data['id_msg_list']:
             for id_msg in data['id_msg_list']:
                 try:
@@ -188,7 +190,7 @@ async def reg_loyal_card(message: Message, state: FSMContext):
 async def ask_question(message: Message, state: FSMContext):
     """Задайте нам вопрос"""
     await Question.ask_questions.set()
-    await message.answer(text="Задайте нам вопрос", reply_markup=cancel_btn)
+    await message.answer(text="Задайте Ваш вопрос", reply_markup=cancel_btn)
 
 
 @dp.message_handler(content_types=["text"], state=Question.ask_questions)

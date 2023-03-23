@@ -1,4 +1,4 @@
-# TODO: Проверка на существование пользователя в БД на людбой стадии, если нет, то добавить его в БД
+#TODO: Написать инструкцию по пользованию ботом
 from keyboards.inline.dating_ikb import user_gender_ikb, user_work_ikb
 from loader import dp, bot, db
 
