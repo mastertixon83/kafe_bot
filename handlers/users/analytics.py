@@ -1,5 +1,6 @@
-#TODO: смотреть заявки на доставку, которые были созданы сегодня
-#TODO: статистика по забраным призам
+# TODO: смотреть заявки на доставку, которые были созданы сегодня
+# TODO: статистика по забраным призам
+# TODO: Отправит Excel файл
 from datetime import datetime, timezone, timedelta
 import csv
 
@@ -29,6 +30,39 @@ def plural_form(n, word):
         return f"{n} {word}а"
     else:
         return f"{n} {word}"
+
+
+def data_preparation():
+    """Подготовка дат для запроса"""
+    # За сегодня
+    start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    end_date = start_date + timedelta(days=1)
+
+    # За неделю
+    today_week = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    start_date_week = today_week - timedelta(days=today_week.weekday() + 4)
+    end_date_week = start_date_week + timedelta(days=7)
+
+    # За предыдущий месяц
+    today_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    start_date_month = (today_month - timedelta(days=1)).replace(day=1)
+    end_date_month = today_month
+
+    # За месяц
+    today_prev_month = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    start_date_prev_month = today_prev_month.replace(day=1)
+    end_date_prev_month = today_prev_month + timedelta(days=1)
+
+    return {
+        "start_date": start_date,
+        "end_date": end_date,
+        "start_date_week": start_date_week,
+        "end_date_week": end_date_week,
+        "start_date_month": start_date_month,
+        "end_date_month": end_date_month,
+        "start_date_prev_month": start_date_prev_month,
+        "end_date_prev_month": end_date_prev_month
+    }
 
 
 @dp.callback_query_handler(text=["excel_users"], state=Analytics.main)
@@ -93,6 +127,7 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
 
         writer.writerows(result)
 
+
 @dp.message_handler(Text(contains=["Пользователи"]), state=Analytics.main)
 async def analytics_users(message: types.Message, state: FSMContext):
     """Ловлю нажатие на кнопку Пользователи"""
@@ -127,34 +162,22 @@ async def analytics_mailings(message: types.Message, state: FSMContext):
         "shipping": "🚚 Закажите доставку",
         "loyal_card": "💳 Владельцам карт лояльности"}
     text = ""
+    kwargs = data_preparation()
     for item in type_mailing_list:
         # За сегодня
-        start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        end_date = start_date + timedelta(days=1)
-        today_count = len(await db.get_tasks_mailing(type_mailing=item, start_date=start_date, end_date=end_date))
-
+        today_count = len(
+            await db.get_tasks_mailing(type_mailing=item, start_date=kwargs['start_date'], end_date=kwargs['end_date']))
         # За неделю
-        today_week = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        start_date_week = today_week - timedelta(days=today_week.weekday() + 4)
-        end_date_week = start_date_week + timedelta(days=7)
         week_count = len(
-            await db.get_tasks_mailing(type_mailing=item, start_date=start_date_week, end_date=end_date_week))
-
+            await db.get_tasks_mailing(type_mailing=item, start_date=kwargs['start_date_week'], end_date=kwargs['end_date_week']))
         # За предыдущий месяц
-        today_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        start_date_month = (today_month - timedelta(days=1)).replace(day=1)
-        end_date_month = today_month
         month_count = len(
-            await db.get_tasks_mailing(type_mailing=item, start_date=start_date_month, end_date=end_date_month))
-
+            await db.get_tasks_mailing(type_mailing=item, start_date=kwargs['start_date_month'], end_date=kwargs['end_date_month']))
         # За месяц
-        today_prev_month = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-        start_date_prev_month = today_prev_month.replace(day=1)
-        end_date_prev_month = today_prev_month + timedelta(days=1)
         prev_month_count = len(
             await db.get_tasks_mailing(type_mailing=item,
-                                       start_date=start_date_prev_month.replace(day=1) - timedelta(days=1),
-                                       end_date=end_date_prev_month))
+                                       start_date=kwargs['start_date_prev_month'].replace(day=1) - timedelta(days=1),
+                                       end_date=kwargs['end_date_prev_month']))
 
         text += f"<b>{type_mailing_dict[item]}</b>\n"
         text += f" За сегодня: {today_count}\n"
@@ -177,12 +200,13 @@ async def analytics_personal(message: types.Message, state: FSMContext):
     """Ловлю нажатие на кнопку Статистика вызовов персоналов"""
     await message.delete()
     # За сегодня
+    kwargs = data_preparation()
     start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     end_date = start_date + timedelta(days=1)
     who1 = "Официанта"
     who2 = "Кальянного мастера"
-    today_count1 = len(await db.get_personal_request_today(personal=who1, start_date=start_date, end_date=end_date))
-    today_count2 = len(await db.get_personal_request_today(personal=who2, start_date=start_date, end_date=end_date))
+    today_count1 = len(await db.get_personal_request_today(personal=who1, start_date=kwargs['start_date'], end_date=kwargs['end_date']))
+    today_count2 = len(await db.get_personal_request_today(personal=who2, start_date=kwargs['start_date'], end_date=kwargs['end_date']))
 
     text = "<b>За сегодня вызывали персонал</b>\n"
     text += f"{who1}: {plural_form(today_count1, 'раз')}\n"
@@ -202,29 +226,19 @@ async def analytics_hall_reservation(message: types.Message, state: FSMContext):
     """Ловлю нажатие на кнопку Статистика бронирований"""
     await message.delete()
     # За сегодня
-    start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    end_date = start_date + timedelta(days=1)
-    today_count = len(await db.get_approved_orders_hall(start_date=start_date, end_date=end_date))
+    kwargs = data_preparation()
+    today_count = len(await db.get_approved_orders_hall(start_date=kwargs['start_date'], end_date=kwargs['end_date']))
 
     # За неделю
-    today_week = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    start_date_week = today_week - timedelta(days=today_week.weekday() + 4)
-    end_date_week = start_date_week + timedelta(days=7)
-    week_count = len(await db.get_approved_orders_hall(start_date=start_date_week, end_date=end_date_week))
+    week_count = len(await db.get_approved_orders_hall(start_date=kwargs['start_date_week'], end_date=kwargs['end_date_week']))
 
     # За предыдущий месяц
-    today_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    start_date_month = (today_month - timedelta(days=1)).replace(day=1)
-    end_date_month = today_month
-    month_count = len(await db.get_approved_orders_hall(start_date=start_date_month, end_date=end_date_month))
+    month_count = len(await db.get_approved_orders_hall(start_date=kwargs['start_date_month'], end_date=kwargs['end_date_month']))
 
     # За месяц
-    today_prev_month = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    start_date_prev_month = today_prev_month.replace(day=1)
-    end_date_prev_month = today_prev_month + timedelta(days=1)
     prev_month_count = len(
-        await db.get_approved_orders_hall(start_date=start_date_prev_month.replace(day=1) - timedelta(days=1),
-                                          end_date=end_date_prev_month))
+        await db.get_approved_orders_hall(start_date=kwargs['start_date_prev_month'].replace(day=1) - timedelta(days=1),
+                                          end_date=kwargs['end_date_prev_month']))
 
     total = len(await db.get_all_approved_orders_hall())
 
@@ -249,30 +263,20 @@ async def analytics_hall_reservation(message: types.Message, state: FSMContext):
 async def analytics_shipping(message: types.Message, state: FSMContext):
     """Ловлю нажатие на кнопку Статистика доставки"""
     await message.delete()
+    kwargs = data_preparation()
     # За сегодня
-    start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    end_date = start_date + timedelta(days=1)
-    today_count = len(await db.get_approved_shipping(start_date=start_date, end_date=end_date))
+    today_count = len(await db.get_approved_shipping(start_date=kwargs['start_date'], end_date=kwargs['end_date']))
 
     # За неделю
-    today_week = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    start_date_week = today_week - timedelta(days=today_week.weekday() + 4)
-    end_date_week = start_date_week + timedelta(days=7)
-    week_count = len(await db.get_approved_shipping(start_date=start_date_week, end_date=end_date_week))
+    week_count = len(await db.get_approved_shipping(start_date=kwargs['start_date_week'], end_date=kwargs['end_date_week']))
 
     # За предыдущий месяц
-    today_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    start_date_month = (today_month - timedelta(days=1)).replace(day=1)
-    end_date_month = today_month
-    month_count = len(await db.get_approved_shipping(start_date=start_date_month, end_date=end_date_month))
+    month_count = len(await db.get_approved_shipping(start_date=kwargs['start_date_month'], end_date=kwargs['end_date_month']))
 
     # За месяц
-    today_prev_month = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    start_date_prev_month = today_prev_month.replace(day=1)
-    end_date_prev_month = today_prev_month + timedelta(days=1)
     prev_month_count = len(
-        await db.get_approved_shipping(start_date=start_date_prev_month.replace(day=1) - timedelta(days=1),
-                                       end_date=end_date_prev_month))
+        await db.get_approved_shipping(start_date=kwargs['start_date_prev_month'].replace(day=1) - timedelta(days=1),
+                                       end_date=kwargs['end_date_prev_month']))
 
     total = len(await db.get_all_approved_shipping())
 
@@ -343,4 +347,3 @@ async def show_user_info(call: types.CallbackQuery, state: FSMContext):
 
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
-
