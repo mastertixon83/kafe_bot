@@ -31,7 +31,7 @@ async def standard_mailing(message: types.Message, state: FSMContext):
 
     if "Обычная рассылка" in message.text.strip():
         type_mailing = "standard"
-        users = await db.get_all_users()
+        users = await db.get_all_nb_users()
 
     elif "Предложение для именинников" in message.text.strip():
         type_mailing = "birthday"
@@ -43,11 +43,11 @@ async def standard_mailing(message: types.Message, state: FSMContext):
 
     elif "Призыв к бронированию" in message.text.strip():
         type_mailing = "hall_reservation"
-        users = await db.get_all_users()
+        users = await db.get_all_nb_users()
 
     elif "Закажите доставку" in message.text.strip():
         type_mailing = "shipping"
-        users = await db.get_all_users()
+        users = await db.get_all_nb_users()
 
     elif "Владельцам карт лояльности" in message.text.strip():
         type_mailing = "loyal_card"
@@ -223,6 +223,7 @@ async def standard_mailing_date_time(message: types.Message, state: FSMContext):
     users = data["users"]
 
     try:
+        #Отключение всех рассылок данного типа, чтобы не размножались
         await db.update_before_adding(type_mailing=type_mailing)
 
         task_id = await db.add_new_task(admin_name=admin_name, type_mailing=type_mailing, picture=picture,

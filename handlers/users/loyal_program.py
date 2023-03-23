@@ -88,7 +88,8 @@ async def sum_approved_users(user_id):
 
 @dp.message_handler(Text(contains="Пригласить друга"))
 async def invite_friend(message: Message):
-    """Нажатие на кнопку пригласит друга"""
+    """Нажатие на кнопку пригласить друга"""
+    await db.update_last_activity(user_id=message.from_user.id, button='Прогласить друга')
     user_id = message.from_user.id
 
     info, referral_id, approved_users, all_invited_users = await sum_approved_users(user_id=user_id)
@@ -129,6 +130,7 @@ async def invite_friend(message: Message):
 @dp.message_handler(Text(contains="Мои подарки"), state="*")
 async def get_active_codes(message: Message):
     """Нажатие на кнопку Мои подарки"""
+    await db.update_last_activity(user_id=message.from_user.id, button='Мои подарки')
     # TODO: Протестить получение и обмен кодов
     user_id = message.from_user.id
     codes = await db.get_active_codes_user(user_id)
@@ -152,7 +154,8 @@ async def get_active_codes(message: Message):
 # Использовать призовые коды
 @dp.callback_query_handler(text_contains=["prize_code"], state="*")
 async def use_prize_code(call, state: FSMContext):
-    """Нажатие на кноаку использовать призовые коды"""
+    """Нажатие на кнопку использовать призовые коды"""
+    await db.update_last_activity(user_id=call.message.from_user.id, button='Использовать призовые коды')
     await UsePrizeCode.use_prize.set()
     pc_info = await db.get_code_prize_info(int(call.data.split('-')[1]))
 
@@ -177,6 +180,7 @@ async def use_prize_code(call, state: FSMContext):
 @dp.message_handler(content_types=["text"], state=UsePrizeCode.use_prize)
 async def use_prize_code_waiter_call(message: types.Message, state: FSMContext):
     """Ловлю номер столика для вызова официанта, использование кодов"""
+    await db.update_last_activity(user_id=message.from_user.id, button='Испольщвание кодов номер столика')
     data = await state.get_data()
     await state.finish()
 
@@ -192,6 +196,7 @@ async def use_prize_code_waiter_call(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(text_contains=["get_prize"])
 async def get_user_prize(call):
     """Ловлю нажатие на кнопку получить приз"""
+    await db.update_last_activity(user_id=call.message.from_user.id, button='Получит приз')
     await call.answer(cache_time=60)
     cb_data = call.data.split('-')
     user_id = int(cb_data[1])
@@ -221,6 +226,7 @@ async def get_user_prize(call):
 @dp.message_handler(Text(contains="Оформить карту"), state="*")
 async def reg_loyal_card(message: Message, state: FSMContext):
     """Ловлю фамилию и имя"""
+    await db.update_last_activity(user_id=message.from_user.id, button='Оформление карты ФИ')
     info = await db.get_user_info(message.from_user.id)
     await CardLoyalReg.fio.set()
 
@@ -247,6 +253,7 @@ async def reg_loyal_card(message: Message, state: FSMContext):
 @dp.message_handler(content_types=["text"], state=CardLoyalReg.fio)
 async def reg_loyal_card_fio(message: types.Message, state: FSMContext):
     """Ловлю дату рожддения"""
+    await db.update_last_activity(user_id=message.from_user.id, button='Оформление карты дата рождения')
     await CardLoyalReg.birthday.set()
     async with state.proxy() as data:
         data["user_id"] = message.from_user.id
@@ -261,6 +268,7 @@ async def reg_loyal_card_fio(message: types.Message, state: FSMContext):
 @dp.message_handler(content_types=["text"], state=CardLoyalReg.birthday)
 async def reg_loyal_card_birthday(message: types.Message, state: FSMContext):
     """Ловлю номер телефона"""
+    await db.update_last_activity(user_id=message.from_user.id, button='Оформление карты номер телефона')
     try:
         data = message.text.split(".")
         data_cur = datetime.now()
@@ -296,6 +304,7 @@ async def reg_loyal_card_birthday(message: types.Message, state: FSMContext):
 @dp.message_handler(content_types=["contact", "text"], state=CardLoyalReg.phone)
 async def reg_loyal_card_phone(message: types.Message, state: FSMContext):
     """Проверка и подтверждение данных"""
+    await db.update_last_activity(user_id=message.from_user.id, button='Оформление карты проверка данных')
     data = await state.get_data()
 
     async with state.proxy() as data:
@@ -328,6 +337,7 @@ async def reg_loyal_card_phone(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(text=["approve_order_user", "cancel_order_user"], state=CardLoyalReg.approve)
 async def reg_loyal_card_approve(call, state: FSMContext):
     """Ловлю ответ на подтверждение изменение данных от клиента"""
+    await db.update_last_activity(user_id=call.message.from_user.id, button='Оформление карты подтверждение данных')
     await call.answer(cache_time=60)
 
     if call.data == "approve_order_user":

@@ -4,6 +4,7 @@ menuUser = ReplyKeyboardMarkup(
     keyboard=[
         [
             KeyboardButton(text="🏚 О ресторане"),
+            KeyboardButton(text="👍 Отзывы"),
         ],
         [
             KeyboardButton(text="📋 Меню")
@@ -26,11 +27,11 @@ menuUser = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
-
 menuAdmin = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="🏚 О ресторане")
+            KeyboardButton(text="🏚 О ресторане"),
+            KeyboardButton(text="👍 Отзывы"),
         ],
         [
             KeyboardButton(text="📋 Меню"),
@@ -43,7 +44,7 @@ menuAdmin = ReplyKeyboardMarkup(
             KeyboardButton(text="🚚 Оформить заказ на доставку")
         ],
         [
-            KeyboardButton(text="👍 Программа лояльности"),
+            KeyboardButton(text="💳 Программа лояльности"),
             KeyboardButton(text="🚶 Пригласить друга")
         ],
         [
@@ -57,7 +58,6 @@ menuAdmin = ReplyKeyboardMarkup(
     ],
     resize_keyboard=True
 )
-
 
 menuPersonal = ReplyKeyboardMarkup(
     keyboard=[
@@ -99,19 +99,28 @@ send_phone_cancel = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+send_phone = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton("📲 Отправить свой контакт", request_contact=True)]
+    ],
+    resize_keyboard=True
+)
+
 menu_admin_config = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton("Администраторы бота")],
         [
             KeyboardButton("Список нарушителей")
         ],
+        [KeyboardButton('Отключить все активные рассылки')],
         [KeyboardButton("Редактировать меню")],
+        [KeyboardButton("Редактировать отзывы")],
         [KeyboardButton("⬅ Главное меню")]
     ]
 )
 
 newsletter_kbd = ReplyKeyboardMarkup(
-    keyboard = [
+    keyboard=[
         [KeyboardButton("📨 Обычная рассылка")],
         # [KeyboardButton("📝 Анкетирование (Опрос)")],
         [KeyboardButton("🎁 Предложение для именинников")],
@@ -120,6 +129,18 @@ newsletter_kbd = ReplyKeyboardMarkup(
         [KeyboardButton("💳 Владельцам карт лояльности")],
         # [KeyboardButton("👥 Группе пользователей")],
         # [KeyboardButton("👤 Конкретным пользователям")],
+        [KeyboardButton("⬅ Главное меню")]
+    ]
+)
+
+analytics_kbd = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton("Пользователи")],
+        [KeyboardButton("Рассылки")],
+        [KeyboardButton("Статистика вызовова персонала")],
+        [KeyboardButton("Статистика бронирований")],
+        [KeyboardButton("Статистика доставки")],
+        [KeyboardButton("Участники программы лояльности")],
         [KeyboardButton("⬅ Главное меню")]
     ]
 )

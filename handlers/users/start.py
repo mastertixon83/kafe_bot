@@ -16,9 +16,10 @@ db = DBCommands()
 
 
 @dp.message_handler(commands=['start'], state="*")
-# @dp.message_handler(commands=['send_article'], state='*')
 async def bot_start(message: types.Message, state: FSMContext):
     user_info = await db.get_user_info(message.from_user.id)
+    user_id = str(message.from_user.id)
+
     if not user_info:
         if message.from_user.username == None:
             text = "Мы рады преветствовать Вас в нашем чат-боте.\n" \
@@ -44,15 +45,20 @@ async def bot_start(message: types.Message, state: FSMContext):
         await message.answer(text=text, reply_markup=user_gender_ikb)
         async with state.proxy() as data:
             data['user_id'] = user_id
+            data['args'] = message.get_args()
 
     else:
-        if id in admins:
+        if user_id in admins:
             markup = menuAdmin
         else:
             markup = menuUser
 
         await message.answer("Глвное меню", reply_markup=markup)
 
+        try:
+            await db.update_last_activity(user_id=message.from_user.id, button='Команда старт')
+        except Exception as _ex:
+            pass
 
 @dp.callback_query_handler(text=["ug_female", "ug_male"], state=Dating.user_gender)
 async def user_gender(call: types.CallbackQuery, state: FSMContext):
@@ -71,7 +77,6 @@ async def user_gender(call: types.CallbackQuery, state: FSMContext):
     text += "Расскажите чем Вы занимаетесь"
     await call.message.edit_text(text=text)
     msg = await call.message.edit_reply_markup(reply_markup=user_work_ikb)
-    print(f"{msg.text} - {msg.message_id}")
 
 
 @dp.callback_query_handler(text=["uw_student", "uw_busines", "uw_employee", "uw_freelancer"], state=Dating.user_work)
@@ -90,9 +95,9 @@ async def user_work(call: types.CallbackQuery, state: FSMContext):
         data['employment'] = employment
 
     data = await state.get_data()
-
+    args = data['args']
     try:
-        id_user = await db.add_new_user(referral=call.message.get_args(), gender=data['gender'],
+        id_user = await db.add_new_user(referral=args, gender=data['gender'],
                                         employment=data['employment'])
     except:
         id_user = await db.add_new_user(gender=data['gender'], employment=data['employment'])
@@ -100,7 +105,7 @@ async def user_work(call: types.CallbackQuery, state: FSMContext):
     try:
         await bot.delete_message(chat_id=call.message.from_user.id, message_id=data['msg_id'])
     except Exception as _ex:
-        print(_ex)
+        pass
 
     text = "Отлично! Для получения скидки 10% остался лишь один шаг. Перейдите в Программу лояльности и оформите карту лояльности 💳"
     if id in admins:

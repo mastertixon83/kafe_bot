@@ -22,6 +22,8 @@ async def send_birthday_cron(bot, **kwargs):
     target_data = current_data + delta_u
 
     task_info = await db.get_task_birthday()
+    await db.update_for_birthday_task_error(task_id=task_info[0]['id'])
+
     if task_info:
         users = await db.get_birthday_users(target_data=target_data)
         if users:

@@ -9,11 +9,20 @@ from loader import db
 
 class DBCommands:
     pool: Connection = db
+
+    ### Отзывы
+    ADD_NEW_REVIEW = "INSERT INTO review(text, username)  VALUES ($1, $2) RETURNING id"
+    GET_APPROVED_REVIEWS = "SELECT * FROM review WHERE status = TRUE ORDER BY updated_at DESC"
+    UPDATE_STATUS_REVIEW = "UPDATE review SET status = TRUE WHERE id = $1"
+    DEACTIVATE_REVIEW = "UPDATE review SET status = FALSE WHERE id = $1"
+
     ###  Добавление нового пользователя с рефералом и без ###
     ADD_NEW_USER_REFERRAL = "INSERT INTO users(user_id, username, full_name, referral, gender, employment) " \
                             "VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
     ADD_NEW_USER = "INSERT INTO users(user_id, username, full_name, gender, employment) VALUES ($1, $2, $3, $4, $5) RETURNING id"
-    GET_ALL_USERS = "SELECT user_id, administrator FROM users WHERE ban_status=FALSE"
+    GET_ALL_NB_USERS = "SELECT user_id, administrator FROM users WHERE ban_status=FALSE"
+    GET_ALL_USERS = "SELECT * FROM users"
+    UPDATE_LAST_ACTIVITY = "UPDATE users SET last_activity = $2 WHERE user_id = $1"
 
     ### Удаление пользователя в черный список
     UPDATE_BLACKLIST_STATUS = "UPDATE users SET ban_status = $3, reason_for_ban = $2 WHERE id = $1"
@@ -47,22 +56,26 @@ class DBCommands:
     GET_APPROVED_ORDERS_ON_DATA = "SELECT * FROM orders_hall WHERE (data_reservation = $1 AND order_status=true AND admin_answer = 'approved') ORDER BY table_number"
 
     ### Заявка на доставку
-    ### Добавление новой заявки
     ADD_NEW_SHIPPING_ORDER = "INSERT INTO shipping (tpc, number_of_devices, address, phone, " \
                              "data_reservation, time_reservation, final_summa, pay_method, user_id, user_name)" \
                              "VALUES ($1::jsonb, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id"
     ### Корзина
     ADD_CART = "INSERT INTO cart (item_id, item_count, user_id, title, price) VALUES ($1, $2, $3, $4, $5) RETURNING id"
     UPDATE_CART = "UPDATE cart SET item_count = $1, title = $4, price = $5 WHERE item_id = $2 AND user_id = $3 RETURNING id"
+    DELETE_ITEM_FROM_CAR = "DELETE FROM cart WHERE item_id = $1"
+    GET_USER_CART = "SELECT * FROM cart WHERE user_id = $1"
     DELETE_CART = "DELETE FROM cart WHERE user_id = $1"
     CART_INFO = "SELECT * FROM cart WHERE user_id = $1 ORDER BY title"
     GET_CART_PRODUCTS_INFO = "SELECT * FROM items_menu WHERE id = any($1::int[]) ORDER BY id"
 
-    ### Обновление заявки администратором
+    ### Обновление заявки на доставку администратором
     UPDATE_SHIPPING_ORDER_STATUS = "UPDATE shipping SET order_status = false, admin_name = $2, admin_id = $3, admin_answer = $4 WHERE id = $1"
 
-    ### Административная часть
-    ### Редактирование меню
+    ### Персонал
+    ADD_PERSONAL_REQUEST = "INSERT INTO personal (personal, table_number, comment) VALUES ($1, $2, $3) RETURNING id"
+
+    ### Настройки
+        ### Редактирование меню
     GET_ALL_CATEGORIES = "SELECT * FROM category_menu ORDER BY position"
     GET_ALL_ITEMS_IN_CATEGORY = "SELECT * FROM items_menu WHERE category_id = $1"
 
@@ -91,7 +104,44 @@ class DBCommands:
     GET_TASK_INFO = "SELECT * FROM task WHERE id=$1"
     GET_TASK_BIRTHDAY = "SELECT * FROM task WHERE type_mailing = 'birthday' and status = 'waiting'"
     GET_BIRTHDAY_USERS = "SELECT * FROM users WHERE EXTRACT(DAY FROM birthday) = $1 AND EXTRACT(MONTH FROM birthday) = $2;"
-    GET_LOYAL_CARD_USERS = "SELECT * FROM users WHERE card_status = TRUE"
+    GET_LOYAL_PROGRAM_PARTICIPANTS = "SELECT * FROM users WHERE card_status = TRUE"
+    UPDATE_FOR_BIRTHDAY_TASK_ERROR = "UPDATE task SET error = 'No errors' WHERE id = $1"
+
+        ### Настройки рассылок
+    OFF_ALL_TASK = "UPDATE task set status = 'off' WHERE status = 'waiting'"
+
+    ### Аналитика
+    GET_APPROVED_ORDERS_HALL = "SELECT * FROM orders_hall WHERE admin_answer = 'approved' and updated_at >= $1 AND updated_at < $2"
+    GET_ALL_APPRODEV_ORDERS_HALL = "SELECT * FROM orders_hall WHERE admin_answer = 'approved'"
+
+    GET_APPROVED_SHIPPING = "SELECT * FROM shipping WHERE admin_answer = 'admin_approve_shipping' and updated_at >= $1 AND updated_at < $2"
+    GET_ALL_APPRODEV_SHIPPING = "SELECT * FROM shipping WHERE admin_answer = 'admin_approve_shipping'"
+
+    GET_PERSONAL_REQUEST_TODAY = "SELECT * FROM personal WHERE personal = $1 and created_at >= $2 AND created_at < $3"
+
+    GET_TASKS_MAILING = "SELECT * FROM task WHERE type_mailing = $1 and updated_at >= $2 AND updated_at < $3"
+
+    ### Отзывы
+    async def add_new_review(self, text, username):
+        """Добавление нового отзыва"""
+        command = self.ADD_NEW_REVIEW
+        args = text, username
+        return await self.pool.fetch(command, *args)
+
+    async def get_approved_reviews(self):
+        """Выбор одобренных отзывов"""
+        command = self.GET_APPROVED_REVIEWS
+        return await self.pool.fetch(command)
+
+    async def update_status_review(self, id):
+        """Одобрение отзыва"""
+        command = self.UPDATE_STATUS_REVIEW
+        await self.pool.fetch(command, int(id))
+
+    async def deactivate_review(self, id):
+        """Отключение отзыва"""
+        command = self.DEACTIVATE_REVIEW
+        await self.pool.fetch(command, int(id))
 
     ###  Пользователи
     async def add_new_user(self, referral=None, gender="", employment=""):
@@ -247,6 +297,13 @@ class DBCommands:
         args = id, admin_name, admin_id, admin_answer
         await self.pool.fetch(command, *args)
 
+    ### Вызов персонала
+    async def add_personal_request(self, who, table_number, comment):
+        """Вызов персонала, новая заявка"""
+        command = self.ADD_PERSONAL_REQUEST
+        args = who, table_number, comment
+        return await self.pool.fetch(command, *args)
+
     ### Административная часть
     async def get_all_categories(self):
         """Выборка всех категорий меню"""
@@ -263,7 +320,7 @@ class DBCommands:
     async def get_item_info(self, id):
         """Выборка информации по конкретному блюду"""
         command = self.GET_ITEM_INFO
-        info = await self.pool.fetch(command, id)
+        info = await self.pool.fetch(command, int(id))
         return info
 
     async def get_all_items_in_category(self, category_id):
@@ -331,6 +388,17 @@ class DBCommands:
         cart_id = await self.pool.fetch(command, *args)
         return cart_id
 
+    async def delete_item_From_cart(self, item_id):
+        """Удаление блюда из корзины при счетчике = 0"""
+        command = self.DELETE_ITEM_FROM_CAR
+        await self.pool.fetch(command, item_id)
+
+    async def get_user_cart(self, user_id):
+        """Показать корзину"""
+        command = self.GET_USER_CART
+        cart = await self.pool.fetch(command, str(user_id))
+        return cart
+
     async def delete_cart(self, user_id):
         """Удаление корзины пользователя"""
         command = self.DELETE_CART
@@ -363,6 +431,11 @@ class DBCommands:
         command = self.ADD_ADMIN_STATUS_FOR_USER
         return await self.pool.fetch(command, username)
 
+    async def off_all_tasks(self):
+        """Отключение всех активных рассылок"""
+        command = self.OFF_ALL_TASK
+        await self.pool.fetch(command)
+
     ### Рассылки
     async def add_new_task(self, admin_name, type_mailing, picture, message, status, execution_date, error):
         """Добавление нового задания в очередь"""
@@ -375,6 +448,7 @@ class DBCommands:
         """Обновление задачи перед добавлением новой"""
         command = self.UPDATE_BEFORE_ADDING
         await self.pool.fetch(command, type_mailing)
+
     async def update_task(self, status, error, task_id):
         """Обновление задания"""
         command = self.UPDATE_TASK
@@ -393,10 +467,32 @@ class DBCommands:
         command = self.GET_TASK_BIRTHDAY
         return await self.pool.fetch(command)
 
-    async def get_all_users(self):
+    async def get_all_nb_users(self):
         """Выбор всех пользователей, которые не забанены"""
-        command = self.GET_ALL_USERS
+        command = self.GET_ALL_NB_USERS
         return await self.pool.fetch(command)
+
+    async def get_all_users(self):
+        """Выбор всех пользователей"""
+        command = self.GET_ALL_USERS
+        users = await self.pool.fetch(command)
+        return users
+
+    async def get_loyal_program_participants(self):
+        """Выбор участников программы лояльности"""
+        command = self.GET_LOYAL_PROGRAM_PARTICIPANTS
+        return await self.pool.fetch(command)
+
+    async def update_for_birthday_task_error(self, task_id):
+        """Обновление времени отправки для рассылки именинников"""
+        command = self.UPDATE_FOR_BIRTHDAY_TASK_ERROR
+        await self.pool.fetch(command, task_id)
+
+    async def update_last_activity(self, user_id, button):
+        """Обновоение даты и времени последней активности пользователя"""
+        command = self.UPDATE_LAST_ACTIVITY
+        args = str(user_id), button
+        await self.pool.fetch(command, *args)
 
     async def get_birthday_users(self, target_data):
         """Выбор именинников"""
@@ -406,7 +502,37 @@ class DBCommands:
         users = await self.pool.fetch(command, *args)
         return users
 
-    async def get_loyal_card_users(self):
-        """Выбор дежателей карты лояльности"""
-        command = self.GET_LOYAL_CARD_USERS
+    async def get_approved_orders_hall(self, start_date, end_date):
+        """Выбор подтвержденных бронирований за сегодня, неделю, месяц, прошлый месяц"""
+        command = self.GET_APPROVED_ORDERS_HALL
+        args = start_date, end_date
+        orders = await self.pool.fetch(command, *args)
+        return orders
+
+    async def get_all_approved_orders_hall(self):
+        """Выбор всех бронирований подтвержденных администратором"""
+        command = self.GET_ALL_APPRODEV_ORDERS_HALL
         return await self.pool.fetch(command)
+
+    async def get_approved_shipping(self, start_date, end_date):
+        """Выбор доставок подтвержденных администратором за сегодня, за неделю, за месяц, за предыдущий месяц"""
+        command = self.GET_APPROVED_SHIPPING
+        args = start_date, end_date
+        return await self.pool.fetch(command, *args)
+
+    async def get_all_approved_shipping(self):
+        """Выбор все подтвержденных администратором доставок"""
+        command = self.GET_ALL_APPRODEV_SHIPPING
+        return await self.pool.fetch(command)
+
+    async def get_personal_request_today(self, personal, start_date, end_date):
+        """Выбор заявок вызова персонала"""
+        command = self.GET_PERSONAL_REQUEST_TODAY
+        args = personal, start_date, end_date
+        return await self.pool.fetch(command, *args)
+
+    async def get_tasks_mailing(self, type_mailing, start_date, end_date):
+        """Выбор подписок для статистики"""
+        command = self.GET_TASKS_MAILING
+        args = type_mailing, start_date, end_date
+        return await self.pool.fetch(command, *args)

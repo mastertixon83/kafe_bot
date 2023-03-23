@@ -246,7 +246,6 @@ async def edit_item(callback: types.CallbackQuery, item_id, category_id, action,
     text += f"Цена: {item[0]['price']}\n\n"
     text += "<b>ШАГ [1/4]</b>Введите название блюда"
     await callback.message.edit_text(text=text)
-    # await bot.edit_message_text(text=text, chat_id=callback.message.from_user.id, message_id=data['message_id'])
 
 
 async def new_item(callback: types.CallbackQuery, action, category_id, **kwargs):
@@ -355,7 +354,7 @@ async def edit_menu_item_description(message: types.Message, state: FSMContext):
     info = await db.get_category_info(id=int(category_id))
 
     markup = await items_in_category_keyboard(int(category_id))
-    text = f"Выбрана категория <b>{info[0]['title']}</b> \nКкое блюдо будем редактировать?"
+    text = f"Выбрана категория <b>{info[0]['title']}</b> \nКакое блюдо будем редактировать?"
     await message.delete()
     await bot.edit_message_text(text=text, chat_id=message.from_user.id, message_id=data['message_id'], reply_markup=markup)
 

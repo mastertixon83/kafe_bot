@@ -12,5 +12,7 @@ from .show_menu import dp
 from .config import dp
 from .user_order_shipping import dp
 from .mailings import dp
+from .analytics import dp
+from .admin_edit_reviews import dp
 
 __all__ = ["dp"]

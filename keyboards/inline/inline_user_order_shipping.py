@@ -14,7 +14,7 @@ def make_callback_data(level, category_id="0", item_id="0", user_id="0",action="
 
 
 ### Построение клавиатуры с категориями
-async def categories_keyboard():
+async def categories_keyboard(user_id):
     CURRENT_LEVEL = 1
     markup = InlineKeyboardMarkup()
 
@@ -39,6 +39,14 @@ async def categories_keyboard():
     markup.row(
         InlineKeyboardButton(text="✅ Оформить доставку", callback_data=make_callback_data(level=3, what="ordering")),
         InlineKeyboardButton(text="Главное меню", callback_data=make_callback_data(level=-1, what="exit"))
+    )
+    cart = await db.get_user_cart(user_id=user_id)
+    sum = 0
+    for item in cart:
+        sum += item['price'] * item['item_count']
+
+    markup.row(
+        InlineKeyboardButton(text=f"🛒 Корзина - Заказ на {sum}", callback_data=make_callback_data(level=999, what="cart"))
     )
 
     return markup

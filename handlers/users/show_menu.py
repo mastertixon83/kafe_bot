@@ -12,6 +12,7 @@ db = DBCommands()
 @dp.callback_query_handler(menu_cd_show.filter())
 async def out_categories(call: CallbackQuery, callback_data: dict):
     """Обработчик нажатий на кнопки меню"""
+    await db.update_last_activity(user_id=call.message.from_user.id, button='Показать меню')
     category_id = callback_data['category_id']
     message_id = callback_data['message_id']
 
