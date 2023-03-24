@@ -51,9 +51,9 @@ class DBCommands:
                          "VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id"
 
     GET_ORDER_HALL_DATA = "SELECT * FROM orders_hall WHERE id = $1"
-    UPDATE_ORDER_HALL_STATUS = "UPDATE orders_hall SET order_status = $2, admin_answer = $3, updated_at = $4, admin_id = $5, admin_name = $6, table_number = $7 WHERE id = $1"
+    UPDATE_ORDER_HALL_STATUS = "UPDATE orders_hall SET order_status = $2, admin_answer = $3, admin_id = $4, admin_name = $5, table_number = $6 WHERE id = $1"
     # GET_APPROVED_ORDERS_ON_DATA = "SELECT data_reservation, time_reservation, table_number FROM orders_hall WHERE data_reservation = $1 AND (order_status=true AND admin_answer = 'approved') ORDER BY table_number"
-    GET_APPROVED_ORDERS_ON_DATA = "SELECT * FROM orders_hall WHERE (data_reservation = $1 AND order_status=true AND admin_answer = 'approved') ORDER BY table_number"
+    GET_APPROVED_ORDERS_ON_DATA = "SELECT * FROM orders_hall WHERE (data_reservation = $1 AND order_status=true AND admin_answer = 'approve') ORDER BY table_number"
 
     ### Заявка на доставку
     ADD_NEW_SHIPPING_ORDER = "INSERT INTO shipping (tpc, number_of_devices, address, phone, " \
@@ -111,11 +111,12 @@ class DBCommands:
     OFF_ALL_TASK = "UPDATE task set status = 'off' WHERE status = 'waiting'"
 
     ### Аналитика
-    GET_APPROVED_ORDERS_HALL = "SELECT * FROM orders_hall WHERE admin_answer = 'approved' and updated_at >= $1 AND updated_at < $2"
-    GET_ALL_APPRODEV_ORDERS_HALL = "SELECT * FROM orders_hall WHERE admin_answer = 'approved'"
+    GET_APPROVED_ORDERS_HALL = "SELECT * FROM orders_hall WHERE admin_answer = 'approve' and updated_at >= $1 AND updated_at < $2"
+    GET_ALL_APPROVED_ORDERS_HALL = "SELECT * FROM orders_hall WHERE admin_answer = 'approve'"
+    GET_ALL_ORDER_HALL_MADE_TODAY = "SELECT * FROM orders_hall WHERE created_at = $1"
 
-    GET_APPROVED_SHIPPING = "SELECT * FROM shipping WHERE admin_answer = 'admin_approve_shipping' and updated_at >= $1 AND updated_at < $2"
-    GET_ALL_APPROVED_SHIPPING = "SELECT * FROM shipping WHERE admin_answer = 'admin_approve_shipping'"
+    GET_APPROVED_SHIPPING = "SELECT * FROM shipping WHERE admin_answer = 'approve' and updated_at >= $1 AND updated_at < $2"
+    GET_ALL_APPROVED_SHIPPING = "SELECT * FROM shipping WHERE admin_answer = 'approve'"
     GET_SHIPPING_ORDER_MADE_TODAY = "SELECT * FROM shipping WHERE created_at = $1"
 
     GET_PERSONAL_REQUEST_TODAY = "SELECT * FROM personal WHERE personal = $1 and created_at >= $2 AND created_at < $3"
@@ -271,11 +272,11 @@ class DBCommands:
         data = await self.pool.fetch(command, dataReservation)
         return data
 
-    async def update_order_hall_status(self, id, order_status, admin_answer, updated_at, admin_id, admin_name,
+    async def update_order_hall_status(self, id, order_status, admin_answer, admin_id, admin_name,
                                        table_number):
         """Обновление статуса заявки на бронирование столика"""
         command = self.UPDATE_ORDER_HALL_STATUS
-        await self.pool.fetch(command, int(id), order_status, admin_answer, updated_at, str(admin_id), admin_name,
+        await self.pool.fetch(command, int(id), order_status, admin_answer, str(admin_id), admin_name,
                               table_number)
 
     ### Доставка
@@ -512,8 +513,13 @@ class DBCommands:
 
     async def get_all_approved_orders_hall(self):
         """Выбор всех бронирований подтвержденных администратором"""
-        command = self.GET_ALL_APPRODEV_ORDERS_HALL
+        command = self.GET_ALL_APPROVED_ORDERS_HALL
         return await self.pool.fetch(command)
+
+    async def get_all_order_dall_made_today(self, date):
+        """Выбор всех бронирований сделанных сегодня"""
+        command = self.GET_ALL_ORDER_HALL_MADE_TODAY
+        return await self.pool.fetch(command, date)
 
     async def get_approved_shipping(self, start_date, end_date):
         """Выбор доставок подтвержденных администратором за сегодня, за неделю, за месяц, за предыдущий месяц"""
@@ -522,7 +528,7 @@ class DBCommands:
         return await self.pool.fetch(command, *args)
 
     async def get_all_approved_shipping(self):
-        """Выбор все подтвержденных администратором доставок"""
+        """Выбор всех подтвержденных администратором доставок"""
         command = self.GET_ALL_APPROVED_SHIPPING
         return await self.pool.fetch(command)
 

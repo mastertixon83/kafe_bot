@@ -42,6 +42,18 @@ async def waiter_go(message: types.Message, state: FSMContext):
     """Ловлю комментарий от пользователя"""
     await db.update_last_activity(user_id=message.from_user.id, button='Вызов персонала комментарий')
     cur_state = await state.get_state()
+
+    separator = ""
+    if "." in message.text:
+        separator = '.'
+    elif "," in message.text:
+        separator = ","
+    elif " " in message.text:
+        separator = " "
+    else:
+        await message.answer(text="Введите комментарий корректно. (Например: стол 1, принесите счет)")
+        return
+
     if cur_state == 'StaffCall:waiter':
         text = "Официант уже на пути к Вам"
         personal = 'Официанта'
@@ -57,15 +69,8 @@ async def waiter_go(message: types.Message, state: FSMContext):
     await message.answer(text, reply_markup=markup, parse_mode=types.ParseMode.HTML)
     await state.finish()
 
-    separator = ""
-    if "." in message.text:
-        separator = '.'
-    elif "," in message.text:
-        separator = ","
-    elif " " in message.text:
-        separator = " "
-
     table_comment = message.text.split(separator)
+
     text = f'{table_comment[0]} (@{message.from_user.username}) вызвал {personal} \n\n' \
            f'Комментарий: {table_comment[1]}'
 

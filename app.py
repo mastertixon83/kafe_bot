@@ -32,15 +32,6 @@ async def on_startup(dp):
     # BOT_TOKEN=5664820788:AAEfWKPVB8myVcLkpdNKpurc1mY5yogUzuc
     notification_time = config.BIRTHDAY_NOTIFICATION_TIME.split(":")
 
-    # scheduler.add_job(apsched.planer_main, trigger='interval', minutes=3, id='main', kwargs={'bot': dp.bot})
-    # job = scheduler.add_job(apsched.send_birthday_cron, trigger='data', day="*", hour=notification_time[0],
-    #                    minute=notification_time[1], args=(dp.bot,))
-    # print(job.next_run_time)
-
-    # job = scheduler.add_job(
-    #     apsched.send_birthday_cron, 'date', run_date=datetime.datetime(*run_dt), id="birthday", kwargs={'bot': dp.bot, }
-    # )
-    # 03:00
     scheduler.add_job(apsched.send_birthday_cron, 'cron', hour=str(notification_time[0]),
                       minute=str(notification_time[1]), kwargs={'bot': dp.bot})
 

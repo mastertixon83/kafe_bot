@@ -3,6 +3,7 @@ from datetime import timedelta
 
 from aiogram import Bot
 
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from data import config
 from data.config import admins
 from loader import db, scheduler
@@ -28,12 +29,18 @@ async def send_birthday_cron(bot, **kwargs):
         users = await db.get_birthday_users(target_data=target_data)
         if users:
             picture = task_info[0]['picture']
-            caption = task_info[0]['message']
+            text = task_info[0]['message']
 
             try:
                 for user in users:
                     if user['administrator'] != True:
-                        await bot.send_photo(chat_id=user['user_id'], photo=picture, caption=caption)
+                        markup = InlineKeyboardMarkup(
+                            inline_keyboard=[
+                                [InlineKeyboardButton(text="Забронировать столик", callback_data="hall_reservation_mailings")]
+                            ]
+                        )
+                        await bot.send_photo(chat_id=user['user_id'], photo=picture)
+                        await bot.send_message(chat_id=user['user_id'], text=text, reply_markup=markup)
                         time.sleep(2)
 
             except Exception as _ex:
@@ -49,22 +56,42 @@ async def send_message_date(bot, **kwargs):
     type_mailing = kwargs.get('type_mailing')
     task_info = await db.get_task_info(task_id=int(task_id))
     picture = task_info[0]['picture']
-    caption = task_info[0]['message']
-    try:
-        for user in users:
-            if user['administrator'] != True:
-                await bot.send_photo(chat_id=int(user['user_id']), photo=picture, caption=caption)
-                time.sleep(2)
-            # await bot.send_photo(chat_id=user['user_id'], photo=picture, caption=caption)
-        # await bot.send_message(chat_id=553603641, text='date')
-        if type_mailing != 'birthday':
-            status = 'performed'
-        else:
-            status = 'waiting'
-        error = 'No Errors'
-    except Exception as _ex:
-        status = 'Error'
-        error = _ex
+    text = task_info[0]['message']
+
+    for user in users:
+        if user['administrator'] != True:
+            try:
+                if type_mailing in ["birthday", "hall_reservation"]:
+                    markup = InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [InlineKeyboardButton(text="Забронировать столик",
+                                                  callback_data="hall_reservation_mailings")]
+                        ]
+                    )
+                    await bot.send_photo(chat_id=user['user_id'], photo=picture)
+                    await bot.send_message(chat_id=user['user_id'], text=text, reply_markup=markup)
+
+                elif type_mailing == "shipping":
+                    markup = InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [InlineKeyboardButton(text="Заказать доставку",
+                                                  callback_data="order_shipping_mailings")]
+                        ]
+                    )
+                    await bot.send_photo(chat_id=user['user_id'], photo=picture)
+                    await bot.send_message(chat_id=user['user_id'], text=text, reply_markup=markup)
+                else:
+                    await bot.send_photo(chat_id=int(user['user_id']), photo=picture, caption=text)
+                    time.sleep(2)
+                error = 'No Errors'
+            except Exception as _ex:
+                status = 'Error'
+                error = _ex
+    if type_mailing != 'birthday':
+        status = 'performed'
+    else:
+        status = 'waiting'
+
     await db.update_task(status=status, error=error, task_id=int(task_id))
 
 

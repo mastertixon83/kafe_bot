@@ -14,7 +14,7 @@ menuUser = ReplyKeyboardMarkup(
             KeyboardButton(text="🍽 Забронировать стол"),
         ],
         [
-            KeyboardButton(text="🚚 Оформить заказ на доставку")
+            KeyboardButton(text="🚚 Заказать доставку")
         ],
         [
             KeyboardButton(text="👍 Программа лояльности"),
@@ -41,7 +41,7 @@ menuAdmin = ReplyKeyboardMarkup(
             KeyboardButton(text="🍽 Забронировать стол")
         ],
         [
-            KeyboardButton(text="🚚 Оформить заказ на доставку")
+            KeyboardButton(text="🚚 Заказать доставку")
         ],
         [
             KeyboardButton(text="💳 Программа лояльности"),

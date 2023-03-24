@@ -1,3 +1,5 @@
+#TODO: Добавить в текст эмодзи аппетитных
+#TODO: Добавить гпс для указания адреса через карту
 import json
 import re
 import time
@@ -494,8 +496,8 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
         markup = InlineKeyboardMarkup()
 
         markup.add(
-            InlineKeyboardButton(text="Взять в работу", callback_data=f"admin_approve_shipping-{order_id}-"),
-            InlineKeyboardButton(text="Отмена", callback_data=f"admin_cancel_shipping-{order_id}")
+            InlineKeyboardButton(text="Взять в работу", callback_data=f"admin_shipping_approve-{order_id}-"),
+            InlineKeyboardButton(text="Отмена", callback_data=f"admin_shipping_cancel-{order_id}")
         )
         markup.row(
             InlineKeyboardButton("Написать гостю в ЛС", callback_data=f"shipping_write_to_pm-{order_id}",
@@ -514,7 +516,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
         await call.message.answer(text=text, reply_markup=menuUser)
 
 
-@dp.callback_query_handler(text_contains=["shipping"])
+@dp.callback_query_handler(text_contains=["admin_shipping"])
 async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContext):
     """Ловлю от администратора ответ о заявке"""
     ikb = call.message.reply_markup.inline_keyboard.copy()
@@ -525,4 +527,4 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
     data = call.data.split('-')
 
     await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,
-                                          admin_id=str(call.from_user.id), admin_answer=data[0])
+                                          admin_id=str(call.from_user.id), admin_answer=data[0].split("_")[-1])

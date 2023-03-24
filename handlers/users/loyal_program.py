@@ -156,7 +156,6 @@ async def invite_friend(message: Message):
 async def get_active_codes(message: Message):
     """Нажатие на кнопку Мои подарки"""
     await db.update_last_activity(user_id=message.from_user.id, button='Мои подарки')
-    # TODO: Протестить получение и обмен кодов
     user_id = message.from_user.id
     codes = await db.get_active_codes_user(user_id)
 
@@ -242,7 +241,7 @@ async def get_user_prize(call):
         text += f"{code_info[0]['code']} - {code_info[0]['code_description']} \n\n "
         prizes -= 1
 
-    text += f"Используйте их из меню Программа лояльности - Мои Коды"
+    text += f"Используйте их из меню Программа лояльности - Мои Подарки"
 
     await call.message.answer(text=text, reply_markup=menuUser)
 
@@ -343,14 +342,14 @@ async def reg_loyal_card_phone(message: types.Message, state: FSMContext):
 
     await CardLoyalReg.approve.set()
 
-    text = "Проверь введенные данные:\n\n"
-    text += f"Твои имя и фамилия: {data['card_fio']}\n"
-    text += f"Твой день рождения: {data['birthday'].strftime('%m-%d-%Y')}\n"
-    text += f"Твой номер телефона: {data['phone_number']}\n"
+    text = "Проверьте введенные данные:\n\n"
+    text += f"Ваши имя и фамилия: {data['card_fio']}\n"
+    text += f"Ваша дата рождения: {data['birthday'].strftime('%m-%d-%Y')}\n"
+    text += f"Ваш номер телефона: {data['phone_number']}\n"
 
     await message.answer(text)
 
-    await message.answer("Если всё правильно, подтверди", reply_markup=user_inline_approve)
+    await message.answer("Если всё правильно, подтвердите", reply_markup=user_inline_approve)
 
     async with state.proxy() as data:
         data["msg_id"] = message.message_id

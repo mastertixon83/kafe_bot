@@ -298,4 +298,3 @@ async def username_ban_reason(message: types.Message, state: FSMContext):
 async def config_mailings(message: types.Message, state: FSMContext):
     """Управление рассылками, включенние/отключение"""
     await db.off_all_tasks()
-    await bot.answer_callback_query()

@@ -1,3 +1,5 @@
+from typing import Union
+
 from handlers.users.user_order_shipping import build_category_keyboard
 from loader import dp, bot
 import re
@@ -141,15 +143,20 @@ async def ansver_menu(message: Message):
     await message.answer(text=text, reply_markup=menuPersonal)
 
 
+@dp.callback_query_handler(text=["hall_reservation_mailings"], state="*")
 @dp.message_handler(Text(contains="Забронировать стол"), state=None)
-async def table_reservation(message: types.Message, state: FSMContext):
+async def table_reservation(message: Union[types.Message, types.CallbackQuery], state: FSMContext):
     """Обработчик нажатия на кнопку Забронировать стол"""
     await db.update_last_activity(user_id=message.from_user.id, button='Забронировать стол')
     await TableReservation.data.set()
 
     date = datetime.now().strftime('%d.%m.%Y')
     text = f"<b>Шаг [1/5]</b>\n\n Введите дату в формате ДД.ММ.ГГГГ, сегодня {date}"
-    await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
+    if isinstance(message, types.Message):
+        await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
+    elif isinstance(message, types.CallbackQuery):
+        call = message
+        await call.message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
 
     async with state.proxy() as data:
         data["chat_id"] = str(message.chat.id)
@@ -158,18 +165,32 @@ async def table_reservation(message: types.Message, state: FSMContext):
         data['full_name'] = message.from_user.full_name
 
 
-@dp.message_handler(Text(contains="Оформить заказ на доставку"), state=None)
-async def show_menu_order_shipping(message: types.Message, state: FSMContext):
+@dp.callback_query_handler(text=["order_shipping_mailings"], state="*")
+@dp.message_handler(Text(contains="Зказать доставку"), state=None)
+async def show_menu_order_shipping(message: Union[types.Message, types.CallbackQuery], state: FSMContext):
     """Обработчик нажатия на кнопку Оформить заказ на доставку"""
-    await db.update_last_activity(user_id=message.from_user.id, button='Оформит доставку')
-    await message.delete()
-    await db.delete_cart(str(message.chat.id))
-    await message.answer('Оформление заказа на доставку', reply_markup=ReplyKeyboardRemove())
+
+    if isinstance(message, types.Message):
+        await db.update_last_activity(user_id=message.from_user.id, button='Оформить доставку')
+        await db.delete_cart(str(message.chat.id))
+        await message.delete()
+        await message.answer('Оформление заказа на доставку', reply_markup=ReplyKeyboardRemove())
+        message_id = message.message_id + 2
+        user_id = message.from_user.id
+
+    elif isinstance(message, types.CallbackQuery):
+        call = message
+        await db.update_last_activity(user_id=call.message.from_user.id, button='Оформить доставку')
+        await db.delete_cart(str(call.message.chat.id))
+        await call.message.edit_text('Оформление заказа на доставку')
+        message_id = call.message.message_id + 2
+        user_id = call.message.from_user.id
+
     await build_category_keyboard(message)
 
     async with state.proxy() as data:
-        data["message_id"] = message.message_id + 2
-        data["chat_id"] = message.from_user.id
+        data["message_id"] = message_id
+        data["chat_id"] = user_id
 
 
 @dp.message_handler(Text(contains="Программа лояльности"), state=None)
@@ -188,6 +209,7 @@ async def reg_loyal_card(message: Message, state: FSMContext):
 
 @dp.message_handler(Text(contains="Задайте нам вопрос"), state="*")
 async def ask_question(message: Message, state: FSMContext):
+    #TODO: Ответ от администратора чеоез бота
     """Задайте нам вопрос"""
     await Question.ask_questions.set()
     await message.answer(text="Задайте Ваш вопрос", reply_markup=cancel_btn)

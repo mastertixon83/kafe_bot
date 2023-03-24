@@ -1,6 +1,5 @@
-# TODO: смотреть заявки на доставку, которые были созданы сегодня
 # TODO: статистика по забраным призам
-# TODO: Отправит Excel файл
+# TODO: Отправить Excel файл
 import json
 from datetime import datetime, timezone, timedelta
 import csv
@@ -98,8 +97,8 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
              card_phone, card_number, card_status, birthday, prize, balance, administrator, director, ban_status,
              reason_for_ban]
         )
-
-    with open(f"result_{curr_dt}.csv", "a") as file:
+# TODO: Разобраться с кодировкий файла и выгрузкой в Excel
+    with open(f"result_{curr_dt}.csv", "a", encoding="utf-8") as file:
         writer = csv.writer(file)
 
         writer.writerow(
@@ -127,6 +126,10 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
         )
 
         writer.writerows(result)
+
+    with open(f"result_{curr_dt}.csv", 'rb') as f:
+        # await bot.send_document(chat_id=call.message.chat.id, document=f, filename=f"result_{curr_dt}.csv", thumb=None, caption='')
+        await bot.send_document(chat_id=call.message.chat.id, document=f, caption=f"result_{curr_dt}.csv", thumb=None)
 
 
 @dp.message_handler(Text(contains=["Пользователи"]), state=Analytics.main)
@@ -257,13 +260,80 @@ async def analytics_hall_reservation(message: types.Message, state: FSMContext):
     text += f'{"-" * 50}\n'
     text += f"Всего: {total}\n"
 
-    msg = await message.answer(text=text)
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Показать бронирования сделанные сегодня (все)", callback_data="a_order_hall")]
+        ]
+    )
+
+    msg = await message.answer(text=text, reply_markup=markup)
 
     data = await state.get_data()
     id_msg_list = data['id_msg_list']
     id_msg_list.append(msg.message_id)
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
+
+
+@dp.callback_query_handler(text=["a_order_hall"], state=Analytics.main)
+async def get_order_hall_made_today(call: types.CallbackQuery, state: FSMContext):
+    """Выборка бронирований столиков сделанных сегодня"""
+    orders = await db.get_all_order_dall_made_today(date=datetime.now().date())
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+
+    for item in orders:
+        text = f"Бронирование столика на {item['data_reservation']} {item['time_reservation']}\n"
+        text += f"от @{item['username']}\n"
+        text += f"Телофон: {item['phone']}\n"
+        text += f"Кол-во человек: {item['number_person']}\n"
+        text += f"Комментарий: {item['comment']}\n"
+
+        if item['admin_answer'] == "approve":
+            markup = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="Отменить", callback_data=f"aa_hall_cancel-{item['id']}")]
+                ]
+            )
+        elif item['admin_answer'] == None or item['admin_answer'] == 'cancel':
+            markup = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [
+                        InlineKeyboardButton(text="Взять в работу", callback_data=f"aa_hall_approve-{item['id']}")
+                    ]
+                ]
+            )
+        msg = await call.message.answer(text=text, reply_markup=markup)
+        id_msg_list.append(msg.message_id)
+
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
+
+
+@dp.callback_query_handler(text_contains=["aa_hall_"], state=Analytics.main)
+async def approve_order_hall_made_today(call: types.CallbackQuery, state: FSMContext):
+    """Подтверждение/Отмена бронирования администратором"""
+
+    data = call.data.split('-')
+    if 'approve' in data[0]:
+        markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="Отменить", callback_data=f"aa_shipping_rejected-{data[1]}")]
+            ]
+        )
+    elif 'rejected' in data[0]:
+        markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="Взять в работу", callback_data=f"aa_shipping_approve-{data[1]}")
+                ]
+            ]
+        )
+
+    await call.message.edit_reply_markup(markup)
+    await db.update_order_hall_status(id=int(data[1]), order_status=True, admin_answer=data[0].split("_")[-1],
+                                      admin_id=str(call.from_user.id), admin_name=call.from_user.username,
+                                      table_number=0)
 
 
 @dp.message_handler(Text(contains=["Статистика доставки"]), state=Analytics.main)
@@ -299,7 +369,7 @@ async def analytics_shipping(message: types.Message, state: FSMContext):
 
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Показать заявки сделанные сегодня", callback_data="a_shipping_order")]
+            [InlineKeyboardButton(text="Показать заявки сделанные сегодня (все)", callback_data="a_shipping_order")]
         ]
     )
 
@@ -312,13 +382,12 @@ async def analytics_shipping(message: types.Message, state: FSMContext):
         data['id_msg_list'] = id_msg_list
 
 
-@dp.callback_query_handler(text_contains=["a_shipping_order"], state=Analytics.main)
+@dp.callback_query_handler(text=["a_shipping_order"], state=Analytics.main)
 async def get_shipping_order_made_today(call: types.CallbackQuery, state: FSMContext):
     """Выборка заявок на доставку сделанных сегодня"""
     orders = await db.get_shipping_order_made_today(date=datetime.now().date())
     data = await state.get_data()
     id_msg_list = data['id_msg_list']
-
 
     for item in orders:
         text = f"Заявка на {item['data_reservation']} {item['time_reservation']}\n"
@@ -332,18 +401,17 @@ async def get_shipping_order_made_today(call: types.CallbackQuery, state: FSMCon
             text += f"{title['title']} - {title['count']}\n"
         text += f'{"-" * 50}\n'
         text += f"Итого: {item['final_summa']} тенге"
-        if item['admin_answer']:
+        if item['admin_answer'] == "approve":
             markup = InlineKeyboardMarkup(
                 inline_keyboard=[
-                    [InlineKeyboardButton(text="Отменить", callback_data="a_cancel_shipping")]
+                    [InlineKeyboardButton(text="Отменить", callback_data=f"aa_shipping_cancel-{item['id']}")]
                 ]
             )
-        else:
+        elif item['admin_answer'] == 'cancel':
             markup = InlineKeyboardMarkup(
                 inline_keyboard=[
                     [
-                        InlineKeyboardButton(text="Взять в работу", callback_data="a_approve_shipping"),
-                        InlineKeyboardButton(text="Отменить", callback_data="a_cancel_shipping")
+                        InlineKeyboardButton(text="Взять в работу", callback_data=f"aa_shipping_approve-{item['id']}")
                     ]
                 ]
             )
@@ -352,6 +420,31 @@ async def get_shipping_order_made_today(call: types.CallbackQuery, state: FSMCon
 
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
+
+
+@dp.callback_query_handler(text_contains=["aa_shipping_"], state=Analytics.main)
+async def approve_shipping_order_made_today(call: types.CallbackQuery, state: FSMContext):
+    """Подтверждение/Отмена заявки администратором"""
+
+    data = call.data.split('-')
+    if 'approve' in data[0]:
+        markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="Отменить", callback_data=f"aa_shipping_cancel-{data[1]}")]
+            ]
+        )
+    elif 'cancel' in data[0]:
+        markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(text="Взять в работу", callback_data=f"aa_shipping_approve-{data[1]}")
+                ]
+            ]
+        )
+
+    await call.message.edit_reply_markup(markup)
+    await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,
+                                          admin_id=str(call.from_user.id), admin_answer=data[0].split("_")[-1])
 
 
 @dp.message_handler(Text(contains=["Участники программы лояльности"]), state=Analytics.main)

@@ -132,11 +132,10 @@ async def standard_mailing_text(message: types.Message, state: FSMContext):
     message_text = message.text.strip()
     data = await state.get_data()
 
-    markup = InlineKeyboardMarkup()
-    markup.add(
-        InlineKeyboardButton(text="📅 Указать дату", callback_data="delayed_mailing"),
-        InlineKeyboardButton(text="📤 Отправить немедленно", callback_data="send_immediately")
-    )
+    markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📅 Указать дату", callback_data="delayed_mailing")],
+        [InlineKeyboardButton(text="📤 Отправить немедленно", callback_data="send_immediately")]
+    ])
     if data["type_mailing"] == "birthday":
         markup.row(InlineKeyboardButton(text="💾 Сохранить", callback_data="save_task"))
 
@@ -167,7 +166,7 @@ async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
     if (call.data == "send_immediately") or (call.data == "save_task"):
         # Отпраивть немедленно
         date = datetime.now()
-        minute_later = date + timedelta(minutes=1)
+        minute_later = date + timedelta(seconds=5)
 
         await db.update_before_adding(type_mailing=type_mailing)
 

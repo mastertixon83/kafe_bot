@@ -1,7 +1,7 @@
 #TODO: Написать инструкцию по пользованию ботом
 #TODO: !!!Сделать логирование
 #TODO: !!!Добавить исключения
-#TODO: !!!Разобраться со временем и датой в БД
+
 from keyboards.inline.dating_ikb import user_gender_ikb, user_work_ikb
 from loader import dp, bot, db
 
@@ -45,10 +45,12 @@ async def bot_start(message: types.Message, state: FSMContext):
         text += 'Я виртуальный помошник ресторана "Долма"\n\n'
         text += "Давайте познакомимся поближе\n"
         text += "Кто вы?"
-        await message.answer(text=text, reply_markup=user_gender_ikb)
+        msg = await message.answer(text=text, reply_markup=user_gender_ikb)
+
         async with state.proxy() as data:
             data['user_id'] = user_id
             data['args'] = message.get_args()
+            data['msg_id'] = msg.message_id
 
     else:
         if user_id in admins:
@@ -98,11 +100,13 @@ async def user_work(call: types.CallbackQuery, state: FSMContext):
         data['employment'] = employment
 
     data = await state.get_data()
+
     args = data['args']
     try:
         id_user = await db.add_new_user(referral=args, gender=data['gender'],
                                         employment=data['employment'])
-    except:
+    except Exception as _ex:
+        print(_ex)
         id_user = await db.add_new_user(gender=data['gender'], employment=data['employment'])
 
     try:

@@ -1,5 +1,5 @@
 
-#TODO: Редактирование забронированных столиков админом на выбранную дату, редактировать поступившие сегодня заявки
+#TODO: Редактирование забронированных столиков админом на выбранную дату
 
 #TODO:рассылка уведомления о времени бронирования столика за час
 #TODO: Проверка пользователем брони столика
@@ -16,6 +16,7 @@ from keyboards.inline.inline_buttons import admin_inline_staff, admin_inline_sen
 from keyboards.default.menu import menuUser, menuAdmin, \
     send_phone_cancel, cancel_btn
 from states.restoran import TableReservation, TableReservationAdmin
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from utils.db_api.db_commands import DBCommands
 
 from aiogram.dispatcher.filters import Text
@@ -44,7 +45,7 @@ async def build_tables_ikb_on_data(data, order_id):
             d = next(filter(lambda d: d.get(key) == val, tList), None)
             if d == None:
                 admin_inline_staff.inline_keyboard[i][j][
-                    "callback_data"] = f"{data['chat_id']}-{order_id}-approved-free-{tableNumber}"
+                    "callback_data"] = f"{data['chat_id']}-{order_id}-approve-free-{tableNumber}"
                 admin_inline_staff.inline_keyboard[i][j]['text'] = f"Стол N{tableNumber}"
 
             else:
@@ -77,7 +78,7 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
         text = f"<b>Бронь пользователя</b> @{result[0]['username']} <b>отменена (Полный зал)</b>\n"
     elif call_data[2] == 'rejected':
         text = f"<b>Бронь пользователя</b> @{result[0]['username']} <b>отменена</b>\n"
-    elif call_data[2] == 'approved':
+    elif call_data[2] == 'approve':
         text = f"<b>Бронь пользователя</b> @{result[0]['username']} <b>подтверждена</b>\n"
 
     text += f"(Администратор: @{adminUsername})\n\n"
@@ -93,13 +94,19 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
     if call_data[2] in ['rejected', 'foolrest']:
         await bot.send_message(chat_id=call_data[0],
                                text="К сожалению, все столы забронированы.😞 Если что-то измениться, мы свяжемся с Вами позже 🤝")
-    elif call_data[2] == 'approved':
+    elif call_data[2] == 'approve':
+        #TODO: кнопка отмены резервации столика
+
+        # makrup = InlineKeyboardMarkup(
+        #     inline_keyboard=[
+        #         [InlineKeyboardButton(text="Отменить заявку", callback_data="hall_reject")]
+        #     ]
+        # )
         await bot.send_message(chat_id=call_data[0],
                                text=f"Ваша запись подтвердждена администрацией. Ваш столик: {tableNumber}. Ждем вас :)")
     # Обновить статус заявки в БД
     await db.update_order_hall_status(id=int(call_data[1]), order_status=True, admin_answer=call_data[2],
-                                      updated_at=datetime.now(), admin_id=admin_id,
-                                      admin_name=f'@{adminUsername}', table_number=tableNumber)
+                                      admin_id=admin_id, admin_name=f'@{adminUsername}', table_number=tableNumber)
 
 
 @dp.message_handler(content_types=["text"], state=TableReservation.data)
@@ -291,7 +298,7 @@ async def table_reservation_check_data(call, state: FSMContext):
         await TableReservation.data.set()
 
 
-@dp.callback_query_handler(text_contains="approved-free")
+@dp.callback_query_handler(text_contains="approve-free")
 async def table_reservation_admin(call):
     """Подтверждение заявки администратором"""
     await call.answer(cache_time=60)

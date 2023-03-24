@@ -36,7 +36,6 @@ async def edit_reviews(message: types.Message, state: FSMContext):
         )
 
 
-
 @dp.callback_query_handler(text_contains="edit_review", state="*")
 async def delete_review(call: types.CallbackQuery, state: FSMContext):
     """Удаление отзыва с доски"""
