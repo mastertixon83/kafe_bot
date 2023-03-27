@@ -4,21 +4,21 @@ menuUser = ReplyKeyboardMarkup(
     keyboard=[
         [
             KeyboardButton(text="🏚 О ресторане"),
-            KeyboardButton(text="👍 Отзывы"),
         ],
         [
+            KeyboardButton(text="🚚 Доставка"),
             KeyboardButton(text="📋 Меню")
+        ],
+        [
+            KeyboardButton(text="💳 Программа лояльности"),
         ],
         [
             KeyboardButton(text="🔔 Вызов персонала"),
             KeyboardButton(text="🍽 Забронировать стол"),
         ],
         [
-            KeyboardButton(text="🚚 Заказать доставку")
-        ],
-        [
-            KeyboardButton(text="👍 Программа лояльности"),
-            KeyboardButton(text="🚶 Пригласить друга")
+            KeyboardButton(text="👍 Отзывы"),
+            KeyboardButton(text="💥 Акции"),
         ],
         [
             KeyboardButton(text="❓ Задайте нам вопрос")
@@ -29,23 +29,26 @@ menuUser = ReplyKeyboardMarkup(
 
 menuAdmin = ReplyKeyboardMarkup(
     keyboard=[
-        [
+[
             KeyboardButton(text="🏚 О ресторане"),
-            KeyboardButton(text="👍 Отзывы"),
         ],
         [
-            KeyboardButton(text="📋 Меню"),
-        ],
-        [
-            KeyboardButton(text="🔔 Вызов персонала"),
-            KeyboardButton(text="🍽 Забронировать стол")
-        ],
-        [
-            KeyboardButton(text="🚚 Заказать доставку")
+            KeyboardButton(text="🚚 Доставка"),
+            KeyboardButton(text="📋 Меню")
         ],
         [
             KeyboardButton(text="💳 Программа лояльности"),
-            KeyboardButton(text="🚶 Пригласить друга")
+        ],
+        [
+            KeyboardButton(text="🔔 Вызов персонала"),
+            KeyboardButton(text="🍽 Забронировать стол"),
+        ],
+        [
+            KeyboardButton(text="👍 Отзывы"),
+            KeyboardButton(text="💥 Акции"),
+        ],
+        [
+            KeyboardButton(text="❓ Задайте нам вопрос")
         ],
         [
             KeyboardButton(text="📩 Сделать рассылку подписчикам")
@@ -78,6 +81,7 @@ menuLoyality = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton("💳 Оформить карту")],
         [KeyboardButton("🎁 Мои подарки")],
+        [KeyboardButton("🚶 Пригласить друга")],
         [KeyboardButton("⬅ Главное меню")]
     ],
     resize_keyboard=True

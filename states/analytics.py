@@ -9,3 +9,5 @@ class Analytics(StatesGroup):
     shipping_statistic = State()
     hall_reservation__statistic = State()
     loyal_program_participants_statistic = State()
+    hall_reservation_statistic_data = State()
+    hall_reservation_statistic_table = State()

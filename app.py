@@ -8,7 +8,7 @@ from handlers import dp
 from data import config
 from handlers.users import apsched
 
-from loader import scheduler
+from loader import scheduler, logger
 
 from utils.notify_admins import on_startup_notify, on_shutdown_notify
 from utils.set_bot_commands import set_default_commands
@@ -37,10 +37,12 @@ async def on_startup(dp):
 
 
 if __name__ == '__main__':
+    try:
+        dp.middleware.setup(middlewares.BlacklistMiddleware())
 
-    dp.middleware.setup(middlewares.BlacklistMiddleware())
+        if not os.path.isdir("media"):
+            os.mkdir("media")
 
-    if not os.path.isdir("media"):
-        os.mkdir("media")
-
-    executor.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown)
+        executor.start_polling(dp, on_startup=on_startup, on_shutdown=on_shutdown)
+    except Exception as _ex:
+        logger.error(_ex)

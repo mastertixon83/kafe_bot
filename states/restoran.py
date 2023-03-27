@@ -8,6 +8,7 @@ class TableReservation(StatesGroup):
     phone = State()
     comment = State()
     check = State()
+    user_cancel_order = State()
 
 
 class TableReservationAdmin(StatesGroup):

@@ -1,12 +1,16 @@
-# TODO: статистика по забраным призам
-# TODO: Отправить Excel файл
+# TODO: Удаление карты лояльности
 import json
+import re
+import time
 from datetime import datetime, timezone, timedelta
 import csv
+import openpyxl
+
+from io import BytesIO
 
 from aiogram.dispatcher import FSMContext
 
-from loader import dp, bot, db
+from loader import dp, bot, db, logger
 from aiogram import types
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
@@ -19,9 +23,6 @@ from data.config import admins
 import logging
 
 db = DBCommands()
-
-logging.basicConfig(format=u'%(filename)s [LINE:%(lineno)d] #%(levelname)-8s [%(asctime)s] %(message)s',
-                    level=logging.INFO)
 
 
 def plural_form(n, word):
@@ -69,10 +70,10 @@ def data_preparation():
 async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
     """Выгрузка пользователей в Excel файл"""
     all_users_info = await db.get_all_users()
-    curr_dt = datetime.now().strftime("%d_%m_%Y %H:%M")
     result = []
+
     for user in all_users_info:
-        created_at = user["created_at"]
+        created_at = user["created_at"].date()
         user_id = user["user_id"]
         username = user["username"]
         full_name = user["full_name"]
@@ -93,43 +94,71 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
         reason_for_ban = user["reason_for_ban"]
 
         result.append(
-            [created_at, user_id, username, full_name, gender, employment, referral, referral_id, card_fio,
-             card_phone, card_number, card_status, birthday, prize, balance, administrator, director, ban_status,
-             reason_for_ban]
+            [created_at, birthday, user_id, username, full_name, gender, employment, card_phone, card_number, card_fio,
+             card_status, prize, balance, referral, referral_id,
+             administrator, director, ban_status, reason_for_ban]
         )
-# TODO: Разобраться с кодировкий файла и выгрузкой в Excel
-    with open(f"result_{curr_dt}.csv", "a", encoding="utf-8") as file:
-        writer = csv.writer(file)
+    # TODO: Разобраться с кодировкий файла и выгрузкой в Excel
+    book = openpyxl.Workbook()
+    book.remove(book.active)
+    book.create_sheet("Пользователи")
+    sheet = book['Пользователи']
 
-        writer.writerow(
-            (
-                "Дата регистрации",
-                "User_id",
-                "Username",
-                "Full_name",
-                "Пол",
-                "Вид занятости",
-                "Referral",
-                "Referral_id",
-                "Фамилия Имя на карте",
-                "Номер телефона",
-                "Номер карты",
-                "Статус карты",
-                "День рождения",
-                "Призовые коды",
-                "Использовано призовых кодов",
-                "Администратор",
-                "Директор",
-                "Статус бана",
-                "Причина бана",
-            )
-        )
+    sheet.cell(row=1, column=1).value = "Дата регистрации"
+    sheet.cell(row=1, column=2).value = "День рождения"
+    sheet.cell(row=1, column=3).value = "User_id"
+    sheet.cell(row=1, column=4).value = "Username"
+    sheet.cell(row=1, column=5).value = "Full_name"
+    sheet.cell(row=1, column=6).value = "Пол"
+    sheet.cell(row=1, column=7).value = "Вид занятости"
+    sheet.cell(row=1, column=8).value = "Номер телефона"
+    sheet.cell(row=1, column=9).value = "Номер карты"
+    sheet.cell(row=1, column=10).value = "Фамилия Имя на карте"
+    sheet.cell(row=1, column=11).value = "Статус карты"
+    sheet.cell(row=1, column=12).value = "Призовые коды"
+    sheet.cell(row=1, column=13).value = "Использовано призовых кодов"
+    sheet.cell(row=1, column=14).value = "Referral_id"
+    sheet.cell(row=1, column=15).value = "Referral"
+    sheet.cell(row=1, column=16).value = "Администратор"
+    sheet.cell(row=1, column=17).value = "Директор"
+    sheet.cell(row=1, column=18).value = "Статус бана"
+    sheet.cell(row=1, column=19).value = "Причина бана"
 
-        writer.writerows(result)
+    for i, item in enumerate(result, start=2):
+        sheet.cell(row=i, column=1).value = item[0]
+        sheet.cell(row=i, column=2).value = item[1]
+        sheet.cell(row=i, column=3).value = item[2]
+        sheet.cell(row=i, column=4).value = item[3]
+        sheet.cell(row=i, column=5).value = item[4]
+        sheet.cell(row=i, column=6).value = item[5]
+        sheet.cell(row=i, column=7).value = item[6]
+        sheet.cell(row=i, column=8).value = item[7]
+        sheet.cell(row=i, column=9).value = item[8]
+        sheet.cell(row=i, column=10).value = item[9]
+        sheet.cell(row=i, column=11).value = item[10]
+        sheet.cell(row=i, column=12).value = item[11]
+        sheet.cell(row=i, column=13).value = item[12]
+        sheet.cell(row=i, column=14).value = item[13]
+        sheet.cell(row=i, column=15).value = item[14]
+        sheet.cell(row=i, column=16).value = item[15]
+        sheet.cell(row=i, column=17).value = item[16]
+        sheet.cell(row=i, column=18).value = "Забанен" if item[17] == True else ""
+        sheet.cell(row=i, column=19).value = item[18]
 
-    with open(f"result_{curr_dt}.csv", 'rb') as f:
-        # await bot.send_document(chat_id=call.message.chat.id, document=f, filename=f"result_{curr_dt}.csv", thumb=None, caption='')
-        await bot.send_document(chat_id=call.message.chat.id, document=f, caption=f"result_{curr_dt}.csv", thumb=None)
+    book.save("users.xlsx")
+    book.close()
+
+    with open("users.xlsx", 'rb') as file:
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        # Отправляем файл в сообщении
+        xls_file = types.InputFile(output, filename="users.xlsx")
+
+        await bot.send_document(chat_id=call.message.chat.id, document=xls_file, caption="Выгрузка-Пользователи")
 
 
 @dp.message_handler(Text(contains=["Пользователи"]), state=Analytics.main)
@@ -262,7 +291,8 @@ async def analytics_hall_reservation(message: types.Message, state: FSMContext):
 
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Показать бронирования сделанные сегодня (все)", callback_data="a_order_hall")]
+            [InlineKeyboardButton(text="Показать бронирования сделанные сегодня (все)", callback_data="a_order_hall")],
+            [InlineKeyboardButton(text="Показать бронирования на дату", callback_data="a_order_hall_data")]
         ]
     )
 
@@ -275,31 +305,114 @@ async def analytics_hall_reservation(message: types.Message, state: FSMContext):
         data['id_msg_list'] = id_msg_list
 
 
-@dp.callback_query_handler(text=["a_order_hall"], state=Analytics.main)
-async def get_order_hall_made_today(call: types.CallbackQuery, state: FSMContext):
-    """Выборка бронирований столиков сделанных сегодня"""
-    orders = await db.get_all_order_dall_made_today(date=datetime.now().date())
+@dp.callback_query_handler(text=["a_order_hall_data"], state=Analytics.main)
+async def get_order_hall_on_data(call: types.CallbackQuery, state: FSMContext):
+    """Нажатие на кнопку Показать бронирования на дату"""
     data = await state.get_data()
     id_msg_list = data['id_msg_list']
 
-    for item in orders:
-        text = f"Бронирование столика на {item['data_reservation']} {item['time_reservation']}\n"
-        text += f"от @{item['username']}\n"
-        text += f"Телофон: {item['phone']}\n"
-        text += f"Кол-во человек: {item['number_person']}\n"
-        text += f"Комментарий: {item['comment']}\n"
+    await Analytics.hall_reservation_statistic_data.set()
 
-        if item['admin_answer'] == "approve":
+    date = datetime.now().strftime('%d.%m.%Y')
+    text = f"Введите дату на которую нужно сделать выборку, в формате ДД.ММ.ГГГГ, сегодня {date}"
+
+    msg = await call.message.answer(text=text)
+    id_msg_list.append(msg.message_id)
+
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
+
+
+@dp.message_handler(content_types=["text"], state=Analytics.hall_reservation_statistic_data)
+async def get_orders_on_date(message: types.Message, state: FSMContext):
+    """Ловлю от пользователя дату выборки"""
+
+    try:
+        date = message.text.strip()
+        if len(date.split('.')) == 3:
+            if (len(date.split('.')[0]) == 2) and (len(date.split('.')[1]) == 2) and (len(date.split('.')[2]) == 4):
+                orders = await db.get_orders_hall_on_date(date=datetime.strptime(date, "%d.%m.%Y"))
+
+                data = await state.get_data()
+                id_msg_list = data['id_msg_list']
+                count = 0
+                if orders:
+                    for order in orders:
+                        text = f"Бронирование столика на {order['data_reservation']} - {order['time_reservation']}\n"
+                        text += f"Номер столика: {order['table_number']}\n"
+                        text += f"Забронировал @{order['username']}\n"
+                        text += f"Кол-во человек: {order['number_person']}\n"
+                        text += f"Комментарий клиента: {order['comment']}\n"
+                        text += f"Номер телефона: {order['phone']}\n"
+
+                        if order['admin_answer'] == "approve":
+                            markup = InlineKeyboardMarkup(
+                                inline_keyboard=[
+                                    [InlineKeyboardButton(text="Отменить",
+                                                          callback_data=f"aa_hall_cancel-{order['id']}")]
+                                ]
+                            )
+                        elif order['admin_answer'] == None or order['admin_answer'] == 'cancel':
+                            markup = InlineKeyboardMarkup(
+                                inline_keyboard=[
+                                    [
+                                        InlineKeyboardButton(text="Взять в работу",
+                                                             callback_data=f"aa_hall_approve-{order['id']}")
+                                    ]
+                                ]
+                            )
+
+                        msg = await message.answer(text=text, reply_markup=markup)
+                        count += 1
+                        id_msg_list.append(msg.message_id)
+                else:
+                    text = "На указанную Вами дату нет бронирований"
+                    await message.answer(text=text)
+
+                async with state.proxy() as data:
+                    data['id_msg_list'] = id_msg_list
+
+                await Analytics.main.set()
+            else:
+                raise Exception('input error')
+
+        else:
+            raise Exception("input error")
+    except Exception as _ex:
+        text = ""
+        if (str(_ex) == 'input error') or (str(_ex) == 'day is out of range for month'):
+            text = f"К сожалению я Вас не понимаю, введите корректную дату в правильном формате ДД.ММ.ГГГГ. Сегодня {datetime.strftime(datetime.now(), '%d.%m.%Y')}"
+
+        await message.answer(text=text)
+        return
+
+
+@dp.callback_query_handler(text_contains=["a_order_hall"], state=Analytics.main)
+async def get_order_hall_made_today(call: types.CallbackQuery, state: FSMContext):
+    """Выборка бронирований столиков сделанных сегодня"""
+    orders = await db.get_all_order_hall_made_today(date=datetime.now().date())
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+
+    for order in orders:
+        text = f"Бронирование столика на {order['data_reservation']} - {order['time_reservation']}\n"
+        text += f"Номер столика: {order['table_number']}\n"
+        text += f"Забронировал @{order['username']}\n"
+        text += f"Кол-во человек: {order['number_person']}\n"
+        text += f"Комментарий клиента: {order['comment']}\n"
+        text += f"Номер телефона: {order['phone']}\n"
+
+        if order['admin_answer'] == "approve":
             markup = InlineKeyboardMarkup(
                 inline_keyboard=[
-                    [InlineKeyboardButton(text="Отменить", callback_data=f"aa_hall_cancel-{item['id']}")]
+                    [InlineKeyboardButton(text="Отменить", callback_data=f"aa_hall_cancel-{order['id']}")]
                 ]
             )
-        elif item['admin_answer'] == None or item['admin_answer'] == 'cancel':
+        elif order['admin_answer'] == None or order['admin_answer'] == 'cancel':
             markup = InlineKeyboardMarkup(
                 inline_keyboard=[
                     [
-                        InlineKeyboardButton(text="Взять в работу", callback_data=f"aa_hall_approve-{item['id']}")
+                        InlineKeyboardButton(text="Взять в работу", callback_data=f"aa_hall_approve-{order['id']}")
                     ]
                 ]
             )
@@ -310,30 +423,81 @@ async def get_order_hall_made_today(call: types.CallbackQuery, state: FSMContext
         data['id_msg_list'] = id_msg_list
 
 
-@dp.callback_query_handler(text_contains=["aa_hall_"], state=Analytics.main)
-async def approve_order_hall_made_today(call: types.CallbackQuery, state: FSMContext):
-    """Подтверждение/Отмена бронирования администратором"""
+@dp.callback_query_handler(text_contains=["aa_hall_cancel"], state=Analytics.main)
+async def cancel_order_hall_made_today(call: types.CallbackQuery):
+    """Отмена бронирования администратором"""
 
     data = call.data.split('-')
-    if 'approve' in data[0]:
-        markup = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [InlineKeyboardButton(text="Отменить", callback_data=f"aa_shipping_rejected-{data[1]}")]
-            ]
-        )
-    elif 'rejected' in data[0]:
-        markup = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(text="Взять в работу", callback_data=f"aa_shipping_approve-{data[1]}")
-                ]
-            ]
-        )
 
-    await call.message.edit_reply_markup(markup)
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Взять в работу",
+                                  callback_data=f"aa_hall_approve-{data[1]}")]
+        ]
+    )
+
     await db.update_order_hall_status(id=int(data[1]), order_status=True, admin_answer=data[0].split("_")[-1],
                                       admin_id=str(call.from_user.id), admin_name=call.from_user.username,
                                       table_number=0)
+    order = await db.get_order_hall_data(id=int(data[1]))
+
+    text = f"Бронирование столика на {order[0]['data_reservation']} - {order[0]['time_reservation']}\n"
+    text += f"Номер столика: {order[0]['table_number']}\n"
+    text += f"Забронировал @{order[0]['username']}\n"
+    text += f"Кол-во человек: {order[0]['number_person']}\n"
+    text += f"Комментарий клиента: {order[0]['comment']}\n"
+    text += f"Номер телефона: {order[0]['phone']}\n"
+
+    await call.message.edit_text(text=text)
+    await call.message.edit_reply_markup(markup)
+
+
+@dp.callback_query_handler(text_contains=["aa_hall_approve"], state=Analytics.main)
+async def approve_order_hall_made_today(call: types.CallbackQuery, state: FSMContext):
+    """Взять заявку на бронирование в работу администратором"""
+    data = call.data.split('-')
+    order_id = int(data[1])
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="Отменить", callback_data=f"aa_hall_cancel-{data[1]}")]
+        ]
+    )
+    await call.message.edit_reply_markup(markup)
+
+    text = "Выедите номер столика"
+    await call.message.answer(text=text)
+    await Analytics.hall_reservation_statistic_table.set()
+    async with state.proxy() as data:
+        data['order_id'] = order_id
+        data['message_id'] = call.message.message_id
+        data['markup'] = markup
+
+
+@dp.message_handler(content_types=["text"], state=Analytics.hall_reservation_statistic_table)
+async def get_orders_on_date(message: types.Message, state: FSMContext):
+    """Лобвлю номер столика от администратора"""
+    data = await state.get_data()
+
+    await db.update_order_hall_status(id=int(data['order_id']), order_status=True, admin_answer='approve',
+                                      admin_id=str(message.from_user.id), admin_name=message.from_user.username,
+                                      table_number=int(message.text))
+
+    order = await db.get_order_hall_data(id=int(data['order_id']))
+
+    text = f"Бронирование столика на {order[0]['data_reservation']} - {order[0]['time_reservation']}\n"
+    text += f"Номер столика: {order[0]['table_number']}\n"
+    text += f"Забронировал @{order[0]['username']}\n"
+    text += f"Кол-во человек: {order[0]['number_person']}\n"
+    text += f"Комментарий клиента: {order[0]['comment']}\n"
+    text += f"Номер телефона: {order[0]['phone']}\n"
+
+    await bot.edit_message_text(chat_id=message.from_user.id, message_id=int(data['message_id']), text=text)
+    await bot.edit_message_reply_markup(chat_id=message.from_user.id, message_id=int(data['message_id']),
+                                        reply_markup=data['markup'])
+
+    await bot.send_message(chat_id=message.from_user.id, text="Заявка успешно изменена",
+                           reply_to_message_id=int(data['message_id']))
+    await Analytics.main.set()
 
 
 @dp.message_handler(Text(contains=["Статистика доставки"]), state=Analytics.main)
@@ -369,7 +533,8 @@ async def analytics_shipping(message: types.Message, state: FSMContext):
 
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Показать заявки сделанные сегодня (все)", callback_data="a_shipping_order")]
+            [InlineKeyboardButton(text="Выгрузить в Excel", callback_data="a_sh_excel")],
+            [InlineKeyboardButton(text="Показать заявки сделанные сегодня (все)", callback_data="a_sh_order")]
         ]
     )
 
@@ -382,65 +547,124 @@ async def analytics_shipping(message: types.Message, state: FSMContext):
         data['id_msg_list'] = id_msg_list
 
 
-@dp.callback_query_handler(text=["a_shipping_order"], state=Analytics.main)
+@dp.callback_query_handler(text=["a_shipping_excel"], state=Analytics.main)
+async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext):
+    """Выгрузка данных по доставке в Excell"""
+    kwargs = data_preparation()
+    # За сегодня
+    today = await db.get_approved_shipping(start_date=kwargs['start_date'], end_date=kwargs['end_date'])
+    # За неделю
+    week = await db.get_approved_shipping(start_date=kwargs['start_date_week'], end_date=kwargs['end_date_week'])
+    # За месяц
+    month = await db.get_approved_shipping(
+        start_date=kwargs['start_date_prev_month'].replace(day=1) - timedelta(days=1),
+        end_date=kwargs['end_date_prev_month'])
+    # За предыдущий месяц
+    prev_month = await db.get_approved_shipping(start_date=kwargs['start_date_month'],
+                                                end_date=kwargs['end_date_month'])
+
+    # "start_date": start_date,
+    # "end_date": end_date,
+    # "start_date_week": start_date_week,
+    # "end_date_week": end_date_week,
+    # "start_date_month": start_date_month,
+    # "end_date_month": end_date_month,
+    # "start_date_prev_month": start_date_prev_month,
+    # "end_date_prev_month": end_date_prev_month
+
+    book = openpyxl.Workbook()
+    book.remove(book.active)
+    book.create_sheet(f"За сегодня")
+    book.create_sheet(f"За неделю")
+    book.create_sheet(f"За месяц")
+    book.create_sheet(f"За предыдущий месяц")
+
+    for sheet in book.worksheets:
+        if sheet.title == "За сегодня":
+            sheet.cell(row=1, column=1).value = 'ЗаеБАЛ!!!'
+        else:
+            sheet.cell(row=1, column=1).value = "Не ПИЗДИ!!!"
+
+    book.save("shipping.xlsx")
+    book.close()
+
+    with open("shipping.xlsx", 'rb') as file:
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+
+        # Отправляем файл в сообщении
+        xls_file = types.InputFile(output, filename="shipping.xlsx")
+
+        await bot.send_document(chat_id=call.message.chat.id, document=xls_file, caption="Выгрузка-Доставка")
+
+
+@dp.callback_query_handler(text=["a_sh_order"], state=Analytics.main)
 async def get_shipping_order_made_today(call: types.CallbackQuery, state: FSMContext):
     """Выборка заявок на доставку сделанных сегодня"""
     orders = await db.get_shipping_order_made_today(date=datetime.now().date())
     data = await state.get_data()
     id_msg_list = data['id_msg_list']
-
-    for item in orders:
-        text = f"Заявка на {item['data_reservation']} {item['time_reservation']}\n"
-        text += f"от @{item['user_name']}\n"
-        text += f"Адрес: {item['address']}\n"
-        text += f"Телофон: {item['phone']}\n"
-        text += f"Кол-во приборов: {item['number_of_devices']}\n"
-        text += f"{'-' * 50}\n"
-        data = json.loads(item['tpc'])
-        for title in data:
-            text += f"{title['title']} - {title['count']}\n"
-        text += f'{"-" * 50}\n'
-        text += f"Итого: {item['final_summa']} тенге"
-        if item['admin_answer'] == "approve":
-            markup = InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [InlineKeyboardButton(text="Отменить", callback_data=f"aa_shipping_cancel-{item['id']}")]
-                ]
-            )
-        elif item['admin_answer'] == 'cancel':
-            markup = InlineKeyboardMarkup(
-                inline_keyboard=[
-                    [
-                        InlineKeyboardButton(text="Взять в работу", callback_data=f"aa_shipping_approve-{item['id']}")
+    if orders:
+        for item in orders:
+            text = f"Заявка на {item['data_reservation']} {item['time_reservation']}\n"
+            text += f"от @{item['user_name']}\n"
+            text += f"Адрес: {item['address']}\n"
+            text += f"Телофон: {item['phone']}\n"
+            text += f"Кол-во приборов: {item['number_of_devices']}\n"
+            text += f"{'-' * 50}\n"
+            data = json.loads(item['tpc'])
+            for title in data:
+                text += f"{title['title']} - {title['count']}\n"
+            text += f'{"-" * 50}\n'
+            text += f"Итого: {item['final_summa']} тенге"
+            if item['admin_answer'] == "approve":
+                markup = InlineKeyboardMarkup(
+                    inline_keyboard=[
+                        [InlineKeyboardButton(text="Отменить", callback_data=f"aa_sh_cancel-{item['id']}")]
                     ]
-                ]
-            )
-        msg = await call.message.answer(text=text, reply_markup=markup)
-        id_msg_list.append(msg.message_id)
-
+                )
+            elif item['admin_answer'] == 'cancel':
+                markup = InlineKeyboardMarkup(
+                    inline_keyboard=[
+                        [
+                            InlineKeyboardButton(text="Взять в работу", callback_data=f"aa_sh_approve-{item['id']}")
+                        ]
+                    ]
+                )
+            msg = await call.message.answer(text=text, reply_markup=markup)
+            id_msg_list.append(msg.message_id)
+    else:
+        await call.message.answer(text="Сегодня еще не было заказов на доставку")
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
 
 
-@dp.callback_query_handler(text_contains=["aa_shipping_"], state=Analytics.main)
+@dp.callback_query_handler(text_contains=["aa_sh_"], state=Analytics.main)
 async def approve_shipping_order_made_today(call: types.CallbackQuery, state: FSMContext):
     """Подтверждение/Отмена заявки администратором"""
+    username = re.findall(r'@(\w+)', call.message.html_text)[0]
 
     data = call.data.split('-')
     if 'approve' in data[0]:
         markup = InlineKeyboardMarkup(
             inline_keyboard=[
-                [InlineKeyboardButton(text="Отменить", callback_data=f"aa_shipping_cancel-{data[1]}")]
+                [InlineKeyboardButton(text="Отменить", callback_data=f"aa_sh_cancel-{data[1]}")]
             ]
         )
     elif 'cancel' in data[0]:
         markup = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton(text="Взять в работу", callback_data=f"aa_shipping_approve-{data[1]}")
+                    InlineKeyboardButton(text="Взять в работу", callback_data=f"aa_sh_approve-{data[1]}")
                 ]
             ]
         )
+        #TODO: Отправка сообщение пользователю об отмене доставки
+        user = await bot.get_chat(username)
+        await bot.send_message(chat_id=user.id, text='Ваша заявка на доставку отклонена администрацией.')
 
     await call.message.edit_reply_markup(markup)
     await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,

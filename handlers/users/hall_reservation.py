@@ -1,13 +1,10 @@
+# TODO: Редактирование забронированных столиков админом на выбранную дату
 
-#TODO: Редактирование забронированных столиков админом на выбранную дату
-
-#TODO:рассылка уведомления о времени бронирования столика за час
-#TODO: Проверка пользователем брони столика
 from datetime import datetime, timezone
 
 from aiogram.dispatcher import FSMContext
 
-from loader import dp, bot, db
+from loader import dp, bot, db, logger
 from aiogram import types
 from aiogram.types import ReplyKeyboardRemove
 from keyboards.inline.inline_buttons import admin_inline_staff, admin_inline_send_ls, \
@@ -24,9 +21,6 @@ from data.config import admins
 import logging
 
 db = DBCommands()
-
-logging.basicConfig(format=u'%(filename)s [LINE:%(lineno)d] #%(levelname)-8s [%(asctime)s] %(message)s',
-                    level=logging.INFO)
 
 
 async def build_tables_ikb_on_data(data, order_id):
@@ -65,13 +59,13 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
     """Обработка данных и вывод сообщения с кнопками администратору"""
     result = await db.get_order_hall_data(id=int(call_data[1]))
 
-    res = datetime.now() - result[0]['updated_at']
-    user_wait = "Гость ждал: "
-
-    if res.days == 0:
-        user_wait += f"{res.seconds // 60} минут"
-    else:
-        user_wait += f"{res.days} дней {res.seconds // 60} минут"
+    # res = datetime.now() - result[0]['updated_at']
+    # user_wait = "Гость ждал: "
+    #
+    # if res.days == 0:
+    #     user_wait += f"{res.seconds // 60} минут"
+    # else:
+    #     user_wait += f"{res.days} дней {res.seconds // 60} минут"
 
     text = ''
     if call_data[2] == 'foolrest':
@@ -95,13 +89,12 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
         await bot.send_message(chat_id=call_data[0],
                                text="К сожалению, все столы забронированы.😞 Если что-то измениться, мы свяжемся с Вами позже 🤝")
     elif call_data[2] == 'approve':
-        #TODO: кнопка отмены резервации столика
-
         # makrup = InlineKeyboardMarkup(
         #     inline_keyboard=[
-        #         [InlineKeyboardButton(text="Отменить заявку", callback_data="hall_reject")]
+        #         [InlineKeyboardButton(text="Отменить заявку", callback_data=f"hall_cancel-user-{call_data[1]}")]
         #     ]
         # )
+
         await bot.send_message(chat_id=call_data[0],
                                text=f"Ваша запись подтвердждена администрацией. Ваш столик: {tableNumber}. Ждем вас :)")
     # Обновить статус заявки в БД
@@ -334,8 +327,6 @@ async def table_reservation_admin_reject(call):
 
     await table_reservation_admin_butons(call=call, call_data=call_data, adminUsername=adminUsername, admin_id=admin_id,
                                          tableNumber=0)
-
-
 """ Админская часть """
 
 

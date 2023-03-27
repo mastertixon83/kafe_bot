@@ -166,7 +166,7 @@ async def table_reservation(message: Union[types.Message, types.CallbackQuery], 
 
 
 @dp.callback_query_handler(text=["order_shipping_mailings"], state="*")
-@dp.message_handler(Text(contains="Зказать доставку"), state=None)
+@dp.message_handler(Text(contains="Доставка"), state=None)
 async def show_menu_order_shipping(message: Union[types.Message, types.CallbackQuery], state: FSMContext):
     """Обработчик нажатия на кнопку Оформить заказ на доставку"""
 

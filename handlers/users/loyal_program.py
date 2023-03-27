@@ -1,7 +1,5 @@
 # TODO: У администратора просмотр не использованных кодов
-# TODO: Удаление карты лояльности
-# TODO: Настройка призов
-# TODO: Продумать программу лояльности
+# TODO: Настройка призов (Вид приза, пицца, кольян и т.д)
 
 # INSERT INTO users (user_id, referral, username, card_status, birthday, card_phone)
 # VALUES ('3', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user1', TRUE, '1983-03-27', '+77770748383'),
@@ -38,6 +36,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters import Text
 from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 
+from states.config import MainMenu
 from utils.db_api.db_commands import DBCommands
 
 from keyboards.default.menu import *
@@ -111,7 +110,7 @@ async def sum_approved_users(user_id):
     return info, referral_id, approved_users, all_invited_users
 
 
-@dp.message_handler(Text(contains="Пригласить друга"))
+@dp.message_handler(Text(contains="Пригласить друга"), state=MainMenu.main)
 async def invite_friend(message: Message):
     """Нажатие на кнопку пригласить друга"""
     await db.update_last_activity(user_id=message.from_user.id, button='Прогласить друга')

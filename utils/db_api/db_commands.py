@@ -21,7 +21,7 @@ class DBCommands:
                             "VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
     ADD_NEW_USER = "INSERT INTO users(user_id, username, full_name, gender, employment) VALUES ($1, $2, $3, $4, $5) RETURNING id"
     GET_ALL_NB_USERS = "SELECT user_id, administrator FROM users WHERE ban_status=FALSE"
-    GET_ALL_USERS = "SELECT * FROM users"
+    GET_ALL_USERS = "SELECT * FROM users ORDER BY id"
     UPDATE_LAST_ACTIVITY = "UPDATE users SET last_activity = $2 WHERE user_id = $1"
 
     ### Удаление пользователя в черный список
@@ -114,6 +114,7 @@ class DBCommands:
     GET_APPROVED_ORDERS_HALL = "SELECT * FROM orders_hall WHERE admin_answer = 'approve' and updated_at >= $1 AND updated_at < $2"
     GET_ALL_APPROVED_ORDERS_HALL = "SELECT * FROM orders_hall WHERE admin_answer = 'approve'"
     GET_ALL_ORDER_HALL_MADE_TODAY = "SELECT * FROM orders_hall WHERE created_at = $1"
+    GET_ORDERS_HALL_ON_DATE = "SELECT * FROM orders_hall WHERE data_reservation = $1 ORDER BY time_reservation"
 
     GET_APPROVED_SHIPPING = "SELECT * FROM shipping WHERE admin_answer = 'approve' and updated_at >= $1 AND updated_at < $2"
     GET_ALL_APPROVED_SHIPPING = "SELECT * FROM shipping WHERE admin_answer = 'approve'"
@@ -516,9 +517,14 @@ class DBCommands:
         command = self.GET_ALL_APPROVED_ORDERS_HALL
         return await self.pool.fetch(command)
 
-    async def get_all_order_dall_made_today(self, date):
+    async def get_all_order_hall_made_today(self, date):
         """Выбор всех бронирований сделанных сегодня"""
         command = self.GET_ALL_ORDER_HALL_MADE_TODAY
+        return await self.pool.fetch(command, date)
+
+    async def get_orders_hall_on_date(self, date):
+        """Выбор всех бронирований на дату"""
+        command = self.GET_ORDERS_HALL_ON_DATE
         return await self.pool.fetch(command, date)
 
     async def get_approved_shipping(self, start_date, end_date):

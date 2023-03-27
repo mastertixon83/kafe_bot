@@ -516,7 +516,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
         await call.message.answer(text=text, reply_markup=menuUser)
 
 
-@dp.callback_query_handler(text_contains=["admin_shipping"])
+@dp.callback_query_handler(text_contains=["admin_shipping"], state="*")
 async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContext):
     """Ловлю от администратора ответ о заявке"""
     ikb = call.message.reply_markup.inline_keyboard.copy()
