@@ -74,6 +74,7 @@ async def waiter_go(message: types.Message, state: FSMContext):
     text = f'{table_comment[0]} (@{message.from_user.username}) вызвал {personal} \n\n' \
            f'Комментарий: {table_comment[1]}'
 
-    await bot.send_message(chat_id=admins[0], text=text)
+    for admin in admins:
+        await bot.send_message(chat_id=admin, text=text)
 
     await db.add_personal_request(who=personal, table_number=table_comment[0], comment=table_comment[1])

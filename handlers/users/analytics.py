@@ -1,4 +1,4 @@
-# TODO: Удаление карты лояльности
+# TODO: Удаление карты лояльности????
 import json
 import re
 import time
@@ -98,7 +98,7 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
              card_status, prize, balance, referral, referral_id,
              administrator, director, ban_status, reason_for_ban]
         )
-    # TODO: Разобраться с кодировкий файла и выгрузкой в Excel
+
     book = openpyxl.Workbook()
     book.remove(book.active)
     book.create_sheet("Пользователи")
@@ -171,7 +171,7 @@ async def analytics_users(message: types.Message, state: FSMContext):
     text = f"Активных пользователей: {len(users_nb_info)}\nВсего пользователей: {len(all_users_info)}"
     markup = InlineKeyboardMarkup()
     markup.add(
-        InlineKeyboardButton(text="Выгрузить Excel файл", callback_data="excel_users")
+        InlineKeyboardButton(text="Выгрузить в Excel файл", callback_data="excel_users")
     )
     msg = await message.answer(text=text, reply_markup=markup)
 
@@ -221,7 +221,12 @@ async def analytics_mailings(message: types.Message, state: FSMContext):
         text += f" За предыдущий месяц: {month_count}\n"
         text += f'{"-" * 50}\n'
 
-    msg = await message.answer(text=text)
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text='Показать активные рассылки', callback_data="show_active_tasks")]
+        ]
+    )
+    msg = await message.answer(text=text, reply_markup=markup)
 
     data = await state.get_data()
     id_msg_list = data['id_msg_list']
@@ -237,7 +242,6 @@ async def analytics_personal(message: types.Message, state: FSMContext):
     # За сегодня
     kwargs = data_preparation()
     start_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    end_date = start_date + timedelta(days=1)
     who1 = "Официанта"
     who2 = "Кальянного мастера"
     today_count1 = len(await db.get_personal_request_today(personal=who1, start_date=kwargs['start_date'],
@@ -352,7 +356,7 @@ async def get_orders_on_date(message: types.Message, state: FSMContext):
                                                           callback_data=f"aa_hall_cancel-{order['id']}")]
                                 ]
                             )
-                        elif order['admin_answer'] == None or order['admin_answer'] == 'cancel':
+                        elif order['admin_answer'] == None or order['admin_answer'] == 'cancel' or order['admin_answer'] == 'rejected':
                             markup = InlineKeyboardMarkup(
                                 inline_keyboard=[
                                     [
@@ -465,7 +469,8 @@ async def approve_order_hall_made_today(call: types.CallbackQuery, state: FSMCon
     await call.message.edit_reply_markup(markup)
 
     text = "Выедите номер столика"
-    await call.message.answer(text=text)
+    msg = await call.message.answer(text=text)
+
     await Analytics.hall_reservation_statistic_table.set()
     async with state.proxy() as data:
         data['order_id'] = order_id
@@ -547,9 +552,10 @@ async def analytics_shipping(message: types.Message, state: FSMContext):
         data['id_msg_list'] = id_msg_list
 
 
-@dp.callback_query_handler(text=["a_shipping_excel"], state=Analytics.main)
+@dp.callback_query_handler(text=["a_sh_excel"], state=Analytics.main)
 async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext):
     """Выгрузка данных по доставке в Excell"""
+
     kwargs = data_preparation()
     # За сегодня
     today = await db.get_approved_shipping(start_date=kwargs['start_date'], end_date=kwargs['end_date'])
@@ -571,18 +577,22 @@ async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext)
     # "end_date_month": end_date_month,
     # "start_date_prev_month": start_date_prev_month,
     # "end_date_prev_month": end_date_prev_month
-
+    #TODO: Доделать выгрузку в Excel данных о доставке
     book = openpyxl.Workbook()
     book.remove(book.active)
-    book.create_sheet(f"За сегодня")
-    book.create_sheet(f"За неделю")
-    book.create_sheet(f"За месяц")
-    book.create_sheet(f"За предыдущий месяц")
+    book.create_sheet("За сегодня")
+    book.create_sheet("За неделю")
+    book.create_sheet("За месяц")
+    book.create_sheet("За предыдущий месяц")
 
     for sheet in book.worksheets:
         if sheet.title == "За сегодня":
             sheet.cell(row=1, column=1).value = 'ЗаеБАЛ!!!'
-        else:
+        elif sheet.title == "За неделю":
+            sheet.cell(row=1, column=1).value = "Не ПИЗДИ!!!"
+        elif sheet.title == "За месяц":
+            sheet.cell(row=1, column=1).value = "Не ПИЗДИ!!!"
+        elif sheet.title == "За предыдущий месяц":
             sheet.cell(row=1, column=1).value = "Не ПИЗДИ!!!"
 
     book.save("shipping.xlsx")

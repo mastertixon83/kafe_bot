@@ -534,7 +534,10 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
             user_name=data['user_name']
         )
         text = f"{data['user_name']} Ваша заявка отправлена нашему сотруднику. Ожидайте. Он с Вами скоро свяжется"
-        await call.message.answer(text=text, reply_markup=menuUser)
+        if call.from_user.id in admins:
+            await call.message.answer(text=text, reply_markup=menuAdmin)
+        else:
+            await call.message.answer(text=text, reply_markup=menuUser)
 
         text = "Поступила заявка на доставку\n"
         text += f"Пользователь @{data['user_name']} заказал:\n"
@@ -563,8 +566,16 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
             InlineKeyboardButton("Написать гостю в ЛС", callback_data=f"shipping_write_to_pm-{order_id}",
                                  url=f"https://t.me/{data['user_name']}")
         )
+        admin_msg_id_list = []
+        for admin in admins:
+            msg = await bot.send_message(chat_id=admin, text=text, parse_mode="HTML", reply_markup=markup)
+            admin_msg_id_list.append(
+                {admin: msg.message_id}
+            )
+        admin_msg_id_list.append({"text": text})
+        with open("temp.json", "w") as file:
+            json.dump(admin_msg_id_list, file, indent=4, ensure_ascii=False)
 
-        await bot.send_message(chat_id=admins[0], text=text, parse_mode="HTML", reply_markup=markup)
         await state.finish()
 
     elif call.data == "cancel_order_user":
@@ -583,7 +594,22 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
     ikb.pop(0)
     markup = InlineKeyboardMarkup()
     markup.add(ikb[0][0])
-    await call.message.edit_reply_markup(reply_markup=markup)
+
+    with open("temp.json", "r") as file:
+        msg_id_list = json.load(file)
+
+    text = msg_id_list[-1]
+    logger.debug(text)
+    msg_id_dict = {}
+    for item in msg_id_list[:-1]:
+        msg_id_dict.update(item)
+    text['text']
+    for admin in admins:
+        await bot.edit_message_text(chat_id=admin, message_id=msg_id_dict[admin],
+                                    text=text['text'] + f'\nПринял администратор: @{call.from_user.username}')
+        await bot.edit_message_reply_markup(chat_id=admin, message_id=msg_id_dict[admin], reply_markup=markup)
+
+    # await call.message.edit_reply_markup(reply_markup=markup)
     data = call.data.split('-')
 
     await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,

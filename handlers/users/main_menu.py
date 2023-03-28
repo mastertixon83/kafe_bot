@@ -33,7 +33,7 @@ async def cancel(message: types.Message, state=FSMContext):
     data = await state.get_data()
     await message.delete()
 
-    if str(message.from_user.id) == admins[0]:
+    if str(message.from_user.id) in admins:
         await message.answer("Главное меню", reply_markup=menuAdmin)
     else:
         await message.answer("Главное меню", reply_markup=menuUser)
@@ -49,6 +49,7 @@ async def cancel(message: types.Message, state=FSMContext):
           or re.search(r"ConfigAdmins:config_main", current_state)
           or re.search(r"Mailings", current_state)
           or re.search(r"Analytics:main", current_state)):
+
         if data['id_msg_list']:
             for id_msg in data['id_msg_list']:
                 try:
@@ -112,8 +113,8 @@ async def review_text(message: types.Message, state: FSMContext):
     markup.add(
         InlineKeyboardButton(text="Опубликовать", callback_data=f"approve_review-{review_id[0]['id']}"),
     )
-
-    await bot.send_message(chat_id=admins[0], text=text, reply_markup=markup)
+    for admin in admins:
+        await bot.send_message(chat_id=admin, text=text, reply_markup=markup)
 
 
 @dp.callback_query_handler(text_contains=["approve_review"], state="*")
@@ -123,11 +124,12 @@ async def approve_review(call: types.CallbackQuery, state: FSMContext):
     await db.update_status_review(id=int(data[-1]))
     await call.answer()
 
+
 @dp.message_handler(Text(contains=["Меню"]), state="*")
 async def menu(message: Message):
     """Обработчик нажатия на кнопку Меню"""
     await db.update_last_activity(user_id=message.from_user.id, button='Меню')
-    text = f"Меню к Твоим услугам"
+    text = f"Меню к Вашим услугам"
     msg = await message.answer(text=text, reply_markup=ReplyKeyboardRemove())
     await bot.delete_message(chat_id=message.chat.id, message_id=msg.message_id)
     # await MainMenu.main.set()
@@ -158,12 +160,6 @@ async def table_reservation(message: Union[types.Message, types.CallbackQuery], 
     elif isinstance(message, types.CallbackQuery):
         call = message
         await call.message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
-
-    async with state.proxy() as data:
-        data["chat_id"] = str(message.chat.id)
-        data["user_name"] = message.from_user.username
-        data["user_id"] = str(message.from_user.id)
-        data['full_name'] = message.from_user.full_name
 
 
 @dp.callback_query_handler(text=["order_shipping_mailings"], state="*")
@@ -210,7 +206,6 @@ async def reg_loyal_card(message: Message, state: FSMContext):
 
 @dp.message_handler(Text(contains="Задайте нам вопрос"), state="*")
 async def ask_question(message: Message, state: FSMContext):
-    #TODO: Ответ от администратора чеоез бота
     """Задайте нам вопрос"""
     await Question.ask_questions.set()
     await message.answer(text="Задайте Ваш вопрос", reply_markup=cancel_btn)
@@ -228,10 +223,11 @@ async def send_question_to_admin(message: types.Message, state: FSMContext):
     text = f"Пользователь @{message.from_user.username} задает вопрос:\n"
     text += f"{question_text}\n"
 
-    await bot.send_message(chat_id=admins[0], text=text, reply_markup=markup)
+    for admin in admins:
+        await bot.send_message(chat_id=admin, text=text, reply_markup=markup)
     await state.finish()
     text = "Благодарим Вас за обратную связь 🤗. С Вами скоро свяжется наш администратор."
-    if message.from_user.id in admins:
+    if str(message.from_user.id) in admins:
         await message.answer(text=text, reply_markup=menuAdmin)
     else:
         await message.answer(text=text, reply_markup=menuUser)
@@ -243,6 +239,7 @@ async def promotions(message: Message):
     await db.update_last_activity(user_id=message.from_user.id, button='Акции')
     text = f"https://teletype.in/@andreytikhonov/uJftR9aBA"
     await message.answer(text=text)
+
 
 @dp.message_handler(Text(contains="Сделать рассылку подписчикам"), state="*")
 async def newsletter(message: Message):

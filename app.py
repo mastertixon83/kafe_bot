@@ -1,3 +1,4 @@
+#TODO: Настроить админов
 import asyncio
 import datetime
 import os
@@ -13,6 +14,9 @@ from loader import scheduler, logger
 from utils.notify_admins import on_startup_notify, on_shutdown_notify
 from utils.set_bot_commands import set_default_commands
 from utils.db_api.sql import create_db
+from utils.db_api.db_commands import DBCommands
+
+db = DBCommands()
 
 
 # https://www.youtube.com/watch?v=ke7LP4LDXSg
@@ -25,8 +29,15 @@ async def on_shutdown(dp):
 async def on_startup(dp):
     await set_default_commands(dp)
     await create_db()
-    await on_startup_notify(dp)
 
+    administrators = await db.get_all_admins()
+    main_admin = config.admins[0]
+    config.admins.clear()
+    config.admins.append(main_admin)
+    for admin in administrators:
+        config.admins.append(admin['user_id'])
+
+    await on_startup_notify(dp)
     scheduler.start()
     # BOT_TOKEN=6040617089:AAFbKfUPqPnW1_UkikhefvayTlrGQoBq6G4
     # BOT_TOKEN=5664820788:AAEfWKPVB8myVcLkpdNKpurc1mY5yogUzuc

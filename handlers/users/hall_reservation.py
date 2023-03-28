@@ -1,5 +1,4 @@
-# TODO: Редактирование забронированных столиков админом на выбранную дату
-
+import json
 from datetime import datetime, timezone
 
 from aiogram.dispatcher import FSMContext
@@ -18,6 +17,7 @@ from utils.db_api.db_commands import DBCommands
 
 from aiogram.dispatcher.filters import Text
 from data.config import admins
+
 import logging
 
 db = DBCommands()
@@ -83,7 +83,16 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
     # text += f"Ваш столик: {tableNumber}"
 
     admin_inline_send_ls.inline_keyboard[0][0]["url"] = f"https://t.me/{result[0]['username']}"
-    await call.message.edit_text(text, reply_markup=admin_inline_send_ls, parse_mode=types.ParseMode.HTML)
+
+    with open("temp.json", "r") as file:
+        msg_id_list = json.load(file)
+
+    msg_id_dict = {}
+    for item in msg_id_list:
+        msg_id_dict.update(item)
+
+    for admin in admins:
+        await bot.edit_message_text(chat_id=int(admin), message_id=msg_id_dict[admin], text=text, reply_markup=admin_inline_send_ls, parse_mode=types.ParseMode.HTML)
 
     if call_data[2] in ['rejected', 'foolrest']:
         await bot.send_message(chat_id=call_data[0],
@@ -230,6 +239,11 @@ async def table_reservation_user_comment(message: types.Message, state: FSMConte
     await TableReservation.check.set()
     async with state.proxy() as data:
         data['comment'] = message.text
+        data["chat_id"] = str(message.chat.id)
+        data["user_name"] = message.from_user.username
+        data["user_id"] = str(message.from_user.id)
+        data['full_name'] = message.from_user.full_name
+
     text = "Проверьте введенные данные:\n\n"
     # d = data["date"][:-3]
     date = data['data'].strftime('%d.%m.%Y').strip()
@@ -248,7 +262,7 @@ async def table_reservation_user_comment(message: types.Message, state: FSMConte
 async def table_reservation_check_data(call, state: FSMContext):
     """Подтверждение или отмена заяявки пользователем"""
     await db.update_last_activity(user_id=call.message.from_user.id, button='Бронирование столика подтверждение')
-    await call.answer(cache_time=60)
+    await call.answer()
     if call.data == "approve_order_user":
         data = await state.get_data()
 
@@ -278,8 +292,16 @@ async def table_reservation_check_data(call, state: FSMContext):
                                                comment=data['comment'])
 
         admin_inline_staff = await build_tables_ikb_on_data(data=data, order_id=order_id)
+        admin_msg_id_list = []
+        for admin in admins:
+            msg = await bot.send_message(chat_id=admin, text=text, reply_markup=admin_inline_staff)
+            admin_msg_id_list.append(
+                {admin:msg.message_id}
+            )
 
-        await bot.send_message(chat_id=admins[0], text=text, reply_markup=admin_inline_staff)
+        with open("temp.json", "w") as file:
+            json.dump(admin_msg_id_list, file, indent=4, ensure_ascii=False)
+
         await state.finish()
 
     elif call.data == "cancel_order_user":
@@ -294,7 +316,7 @@ async def table_reservation_check_data(call, state: FSMContext):
 @dp.callback_query_handler(text_contains="approve-free")
 async def table_reservation_admin(call):
     """Подтверждение заявки администратором"""
-    await call.answer(cache_time=60)
+    await call.answer()
 
     call_data = call.data.split("-")
     adminUsername = call.from_user.username
@@ -327,6 +349,8 @@ async def table_reservation_admin_reject(call):
 
     await table_reservation_admin_butons(call=call, call_data=call_data, adminUsername=adminUsername, admin_id=admin_id,
                                          tableNumber=0)
+
+
 """ Админская часть """
 
 

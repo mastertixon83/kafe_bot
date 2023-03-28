@@ -19,7 +19,7 @@ async def out_categories(call: CallbackQuery, callback_data: dict):
     if (callback_data['exit']) == "Exit":
         await bot.delete_message(chat_id=call.message.chat.id, message_id=message_id)
 
-        if str(call.from_user.id) == admins[0]:
+        if str(call.from_user.id) in admins:
             markup = menuAdmin
         else:
             markup = menuUser

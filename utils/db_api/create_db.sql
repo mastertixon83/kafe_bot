@@ -172,7 +172,8 @@ create table if not exists task
     picture text,
     message text,
     status text DEFAULT 'draft',
-    error text
+    error text,
+    keyboard text
 );
 
 DO $$

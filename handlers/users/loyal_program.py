@@ -144,7 +144,7 @@ async def invite_friend(message: Message, state: FSMContext):
         get_prize_inline.inline_keyboard[0][0]["callback_data"] = f"get_prize-{user_id}"
         await message.answer(text, reply_markup=get_prize_inline)
     else:
-        if str(message.from_user.id) == admins[0]:
+        if str(message.from_user.id) in admins:
             markup = menuAdmin
         else:
             markup = menuUser
@@ -209,7 +209,8 @@ async def use_prize_code_waiter_call(message: types.Message, state: FSMContext):
     await state.finish()
 
     text = f'Столик {message.text} (@{message.from_user.username}) заказал свой приз \n{data["prize_desc"]} - Код {data["prize_code"]}\n\n'
-    await bot.send_message(chat_id=admins[0], text=text)
+    for admin in admins:
+        await bot.send_message(chat_id=admin, text=text)
     await db.update_prize_code_status(data["prize_code"])
 
     text = "Официант уже на пути к Вам"
@@ -264,7 +265,7 @@ async def reg_loyal_card(message: Message, state: FSMContext):
         await state.finish()
         text = "Вот Ваша карточка. Используйте её для получения скидок и участия в акциях."
         card = card_generate(info[0]["user_id"], info[0]["card_fio"], info[0]["card_number"])
-        if str(message.from_user.id) == admins[0]:
+        if str(message.from_user.id) in admins:
             markup = menuAdmin
         else:
             markup = menuUser
@@ -382,14 +383,15 @@ async def reg_loyal_card_approve(call, state: FSMContext):
 
             admin_card_approve.inline_keyboard[0][0]["callback_data"] = f"admin_card_reject-{data['user_id']}"
             admin_card_approve.inline_keyboard[0][1]["callback_data"] = f"admin_card_approve-{data['user_id']}"
-            await bot.send_message(chat_id=admins[0], text=text, reply_markup=admin_card_approve)
+            for admin in admins:
+                await bot.send_message(chat_id=admin, text=text, reply_markup=admin_card_approve)
 
             await state.finish()
         else:
             card = card_generate(data["user_id"], data["card_fio"], data["card_number"])
             text = "Вот Ваша карточка. Используйте её для получения скидок и участия в акциях."
 
-            if call.message.from_user.id == int(admins[0]):
+            if str(call.message.from_user.id) in admins:
                 await bot.send_photo(chat_id=info[0]['user_id'], photo=card, caption=text,
                                      reply_markup=menuAdmin)
             else:
@@ -425,7 +427,7 @@ async def reg_loyal_card_admin_approve(call, state: FSMContext):
         text = "Поздравляем! Вы стали участником программы лояльности.\n\n " \
                "Вот Ваша карточка. Используйте её для получения скидок и участия в акциях."
 
-        if call.message.from_user.id == int(admins[0]):
+        if str(call.message.from_user.id) in admins:
             await bot.send_photo(chat_id=info[0]['user_id'], photo=card, caption=text,
                                  reply_markup=menuAdmin)
         else:
@@ -435,7 +437,7 @@ async def reg_loyal_card_admin_approve(call, state: FSMContext):
     else:
         text = "Вот Ваша карточка. Используйте её для получения скидок и участия в акциях."
 
-        if call.message.from_user.id == int(admins[0]):
+        if str(call.message.from_user.id) in admins:
             await bot.send_photo(chat_id=info[0]['user_id'], photo=card, caption=text,
                                  reply_markup=menuAdmin)
         else:

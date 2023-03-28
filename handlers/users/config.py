@@ -1,8 +1,10 @@
+#TODO Сделать управление акциями
+import os
 from datetime import datetime, timezone
 
 from aiogram.dispatcher import FSMContext
 
-from loader import dp, bot, db
+from loader import dp, bot, db, logger
 from aiogram import types
 from aiogram.utils import exceptions
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -67,8 +69,8 @@ async def config_username_for_admin(message: types.Message, state=FSMContext):
     msg = await message.answer(text=text, reply_markup=cancel_btn)
     id_msg_list.append(msg.message_id)
 
-    admins = await db.get_all_admins()
-    markup = await build_admins_keyboard(users=admins, action='admins')
+    administrators = await db.get_all_admins()
+    markup = await build_admins_keyboard(users=administrators, action='admins')
 
     msg = await message.answer(text='Администроторы', reply_markup=markup)
     id_msg_list.append(msg.message_id)
@@ -83,12 +85,19 @@ async def remove_admin_status(call: types.CallbackQuery, state: FSMContext):
     user_id = call.data.split("-")[-1]
     data = await state.get_data()
     try:
-        await db.remove_admin_status_from_user(id=int(user_id))
+        await db.remove_admin_status_from_user(id=user_id)
     except Exception as _ex:
-        pass
+        logger.debug(_ex)
 
-    admins = await db.get_all_admins()
-    markup = await build_admins_keyboard(users=admins, action='admins')
+    administrators = await db.get_all_admins()
+    main_admin = admins[0]
+    admins.clear()
+    admins.append(main_admin)
+
+    for admin in administrators:
+        admins.append(admin['user_id'])
+
+    markup = await build_admins_keyboard(users=administrators, action='admins')
 
     msg = await call.message.edit_reply_markup(reply_markup=markup)
 
@@ -113,7 +122,7 @@ async def add_admin_status(call: types.CallbackQuery, state: FSMContext):
 
 @dp.message_handler(content_types=["text"], state=ConfigAdmins.config_admins_name)
 async def username_for_admin(message: types.Message, state: FSMContext):
-    """Ловлю username от пользователя для удаления пользователя из администраторов"""
+    """Ловлю username от пользователя для добавления пользователя в администраторы"""
     username = message.text.strip()
     data = await state.get_data()
     id_msg_list = data['id_msg_list']
@@ -126,8 +135,14 @@ async def username_for_admin(message: types.Message, state: FSMContext):
         await state.finish()
         await ConfigAdmins.config_main.set()
 
-    admins = await db.get_all_admins()
-    markup = await build_admins_keyboard(users=admins, action='admins')
+    administrators = await db.get_all_admins()
+    main_admin = admins[0]
+    admins.clear()
+    admins.append(main_admin)
+    for admin in administrators:
+        admins.append(admin['user_id'])
+
+    markup = await build_admins_keyboard(users=administrators, action='admins')
 
     msg = await message.answer(text='Администроторы', reply_markup=markup)
 

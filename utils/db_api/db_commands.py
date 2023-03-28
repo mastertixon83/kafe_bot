@@ -95,11 +95,11 @@ class DBCommands:
 
     ### Настройки Администраторы
     GET_ALL_ADMINS = "SELECT * FROM users WHERE administrator = true"
-    REMOVE_ADMIN_STATUS_FROM_USER = "UPDATE users SET administrator = FALSE WHERE id = $1"
+    REMOVE_ADMIN_STATUS_FROM_USER = "UPDATE users SET administrator = FALSE WHERE user_id = $1"
     ADD_ADMIN_STATUS_FOR_USER = "UPDATE users SET administrator = TRUE WHERE username = $1"
 
     ### Рассылки
-    ADD_NEW_TASK = "INSERT INTO task(admin_name, type_mailing, picture, message, status, execution_date, error) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id"
+    ADD_NEW_TASK = "INSERT INTO task(admin_name, type_mailing, picture, message, status, execution_date, error, keyboard) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id"
     UPDATE_BEFORE_ADDING = "UPDATE task set status = 'off' WHERE type_mailing = $1 and status = 'waiting'"
     UPDATE_TASK = "UPDATE task SET status=$1, error=$2 WHERE id=$3 RETURNING id"
     GET_TASK_INFO = "SELECT * FROM task WHERE id=$1"
@@ -124,6 +124,7 @@ class DBCommands:
     GET_PERSONAL_REQUEST_TODAY = "SELECT * FROM personal WHERE personal = $1 and created_at >= $2 AND created_at < $3"
 
     GET_TASKS_MAILING = "SELECT * FROM task WHERE type_mailing = $1 and updated_at >= $2 AND updated_at < $3"
+    GET_ALL_ACTIVE_TASKS = "SELECT & FROM task WHERE status = 'waiting'"
 
     ### Отзывы
     async def add_new_review(self, text, username):
@@ -441,10 +442,10 @@ class DBCommands:
         await self.pool.fetch(command)
 
     ### Рассылки
-    async def add_new_task(self, admin_name, type_mailing, picture, message, status, execution_date, error):
+    async def add_new_task(self, admin_name, type_mailing, picture, message, status, execution_date, error, keyboard):
         """Добавление нового задания в очередь"""
         command = self.ADD_NEW_TASK
-        args = admin_name, type_mailing, picture, message, status, execution_date, error
+        args = admin_name, type_mailing, picture, message, status, execution_date, error, keyboard
         task_id = await self.pool.fetchval(command, *args)
         return task_id
 
@@ -560,3 +561,8 @@ class DBCommands:
         command = self.GET_TASKS_MAILING
         args = type_mailing, start_date, end_date
         return await self.pool.fetch(command, *args)
+
+    async def get_all_active_tasks(self):
+        """Выбор всех активных рассылок"""
+        command = self.GET_ALL_ACTIVE_TASKS
+        return await self.pool.fetch(command)

@@ -6,7 +6,7 @@ from aiogram import Bot
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from data import config
 from data.config import admins
-from loader import db, scheduler
+from loader import db, scheduler, logger
 from utils.db_api.db_commands import DBCommands
 import time
 
@@ -46,7 +46,8 @@ async def send_birthday_cron(bot, **kwargs):
             except Exception as _ex:
                 pass
     else:
-        await bot.send_message(chat_id=admins[0], text="‼️‼️‼️‼️‼️\n Не создана рассылка для именинников! Не забуюте создать")
+        for admin in admins:
+            await bot.send_message(chat_id=admin, text="‼️‼️‼️‼️‼️\n Не создана рассылка для именинников! Не забуюте создать")
 
 
 async def send_message_date(bot, **kwargs):
@@ -54,34 +55,38 @@ async def send_message_date(bot, **kwargs):
     task_id = kwargs.get('task_id')
     users = kwargs.get('users')
     type_mailing = kwargs.get('type_mailing')
+    keyboard = kwargs.get('keyboard')
     task_info = await db.get_task_info(task_id=int(task_id))
     picture = task_info[0]['picture']
     text = task_info[0]['message']
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="text",
+                                  callback_data="cb_data")]
+        ]
+    )
+    markup['inline_keyboard'][0][0]['text'] = "Заказать доставку" if keyboard == 'shipping' else "Забронировать столик"
 
     for user in users:
         if user['administrator'] != True:
             try:
                 if type_mailing in ["birthday", "hall_reservation"]:
-                    markup = InlineKeyboardMarkup(
-                        inline_keyboard=[
-                            [InlineKeyboardButton(text="Забронировать столик",
-                                                  callback_data="hall_reservation_mailings")]
-                        ]
-                    )
+                    markup['inline_keyboard'][0][0]['callback_data'] = "hall_reservation_mailings"
                     await bot.send_photo(chat_id=user['user_id'], photo=picture)
                     await bot.send_message(chat_id=user['user_id'], text=text, reply_markup=markup)
 
                 elif type_mailing == "shipping":
-                    markup = InlineKeyboardMarkup(
-                        inline_keyboard=[
-                            [InlineKeyboardButton(text="Заказать доставку",
-                                                  callback_data="order_shipping_mailings")]
-                        ]
-                    )
+
+                    markup['inline_keyboard'][0][0]['callback_data'] = "order_shipping_mailings"
                     await bot.send_photo(chat_id=user['user_id'], photo=picture)
-                    await bot.send_message(chat_id=user['user_id'], text=text, reply_markup=markup)
+                    await bot.send_message(chat_id=user['user_id'], text="", reply_markup=markup)
+
                 else:
                     await bot.send_photo(chat_id=int(user['user_id']), photo=picture, caption=text)
+                    if keyboard != 'None':
+                        markup['inline_keyboard'][0][0]['callback_data'] = "order_shipping_mailings" if keyboard == "shipping" else "hall_reservation_mailings"
+                        await bot.send_message(chat_id=user['user_id'], text="Успейте забронировать столик, места ограничены", reply_markup=markup)
+
                     time.sleep(2)
                 error = 'No Errors'
             except Exception as _ex:

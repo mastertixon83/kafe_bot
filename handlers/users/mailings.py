@@ -1,12 +1,12 @@
 import os
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from data import config
 from handlers.users import apsched
 
-from loader import dp, bot, db, scheduler
+from loader import dp, bot, db, scheduler, logger
 from aiogram import types
 
 from keyboards.default.menu import cancel_btn, newsletter_kbd
@@ -127,19 +127,22 @@ async def standard_mailing_picture(message: types.Message, state: FSMContext):
 @dp.message_handler(content_types=["text"], state=Mailings.standard_mailing_text)
 async def standard_mailing_text(message: types.Message, state: FSMContext):
     """Ловлю текст стандартной рассылки"""
-    await Mailings.standard_sending_method.set()
+    await Mailings.standard_sending_button.set()
 
     message_text = message.text.strip()
     data = await state.get_data()
 
-    markup = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(text="📅 Указать дату", callback_data="delayed_mailing")],
-        [InlineKeyboardButton(text="📤 Отправить немедленно", callback_data="send_immediately")]
-    ])
-    if data["type_mailing"] == "birthday":
-        markup.row(InlineKeyboardButton(text="💾 Сохранить", callback_data="save_task"))
+    text = "Выберите какую клавиатуру прикрепить к сообщению"
+    await message.answer(text=text)
+    markup = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="🍽 Забронировать стол", callback_data="hall_reservation")],
+            [InlineKeyboardButton(text="🚚 Заказать доставку", callback_data="shipping")],
+            [InlineKeyboardButton(text="Никакую", callback_data="None")],
+        ]
+    )
 
-    msg = await message.answer(text="Выберите действие", reply_markup=markup)
+    msg = await message.answer(text="Выберите клавиатуру", reply_markup=markup)
 
     id_msg_list = []
     id_msg_list = data['id_msg_list']
@@ -150,7 +153,29 @@ async def standard_mailing_text(message: types.Message, state: FSMContext):
         data['message_text'] = message_text
 
 
-@dp.callback_query_handler(text=["delayed_mailing", "send_immediately", "save_task"], state=Mailings.standard_sending_method)
+@dp.callback_query_handler(text=["hall_reservation", "shipping", "None"], state=Mailings.standard_sending_button)
+async def standard_mailing_buttons(call: types.CallbackQuery, state: FSMContext):
+    """Ловлю выбор какую кнопку прикрепить"""
+    await Mailings.standard_sending_method.set()
+
+    data = await state.get_data()
+
+    markup = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="📅 Указать дату", callback_data="delayed_mailing")],
+        [InlineKeyboardButton(text="📤 Отправить немедленно", callback_data="send_immediately")]
+    ])
+    if data["type_mailing"] == "birthday":
+        markup.row(InlineKeyboardButton(text="💾 Сохранить", callback_data="save_task"))
+
+    await call.message.edit_text(text="Выберите действие")
+    await call.message.edit_reply_markup(reply_markup=markup)
+    keyboard = call.data
+    async with state.proxy() as data:
+        data['keyboard'] = keyboard
+
+
+@dp.callback_query_handler(text=["delayed_mailing", "send_immediately", "save_task"],
+                           state=Mailings.standard_sending_method)
 async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
     """Ловлю от пользователя способ отправки"""
     await call.answer()
@@ -162,6 +187,7 @@ async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
     message_text = data["message_text"]
     id_msg_list = data["id_msg_list"]
     users = data['users']
+    keyboard = data['keyboard']
 
     if (call.data == "send_immediately") or (call.data == "save_task"):
         # Отпраивть немедленно
@@ -172,13 +198,14 @@ async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
 
         task_id = await db.add_new_task(admin_name=admin_name, type_mailing=type_mailing, picture=picture,
                                         message=message_text, status="waiting", execution_date=minute_later,
-                                        error="No errors")
+                                        error="No errors", keyboard=keyboard)
         if call.data != "save_task":
             try:
                 if users:
                     scheduler.add_job(
                         apsched.send_message_date, 'date', run_date=minute_later, id=type_mailing,
-                        kwargs={'bot': bot, 'task_id': task_id, 'users': users, 'type_mailing': type_mailing}
+                        kwargs={'bot': bot, 'task_id': task_id, 'users': users, 'type_mailing': type_mailing,
+                                'keyboard': keyboard}
                     )
                     text = f"Рассылка запланирована на {minute_later.strftime('%Y-%m-%d %H:%M:%S')}"
                 else:
@@ -222,7 +249,7 @@ async def standard_mailing_date_time(message: types.Message, state: FSMContext):
     users = data["users"]
 
     try:
-        #Отключение всех рассылок данного типа, чтобы не размножались
+        # Отключение всех рассылок данного типа, чтобы не размножались
         await db.update_before_adding(type_mailing=type_mailing)
 
         task_id = await db.add_new_task(admin_name=admin_name, type_mailing=type_mailing, picture=picture,
@@ -233,7 +260,8 @@ async def standard_mailing_date_time(message: types.Message, state: FSMContext):
             if users:
                 scheduler.add_job(
                     apsched.send_message_date, 'date', run_date=datetime.strptime(date, "%Y-%m-%d %H:%M:%S"),
-                    id=type_mailing, kwargs={'bot': bot, 'task_id': task_id, 'users': users, 'type_mailing': type_mailing}
+                    id=type_mailing,
+                    kwargs={'bot': bot, 'task_id': task_id, 'users': users, 'type_mailing': type_mailing}
                 )
                 text = f"Рассылка запланирована на {datetime.strptime(date, '%Y-%m-%d %H:%M:%S')}"
             else:
