@@ -18,7 +18,7 @@ from keyboards.default import cancel_btn, menuAdmin, send_phone_cancel, menuUser
 from keyboards.inline.inline_user_order_shipping import categories_keyboard, menu_cd, \
     items_in_category_keyboard, make_callback_data
 
-from loader import dp, bot
+from loader import dp, bot, logger
 from states.config import MainMenu
 from utils.db_api.db_commands import DBCommands
 
@@ -50,8 +50,9 @@ async def navigate(call: types.CallbackQuery, callback_data: dict, state: FSMCon
         # "14": edit_position_category,
         # "22": new_item,
         # "23": delete_item,
-        "221": add_order_item,
-        "222": del_order_item,
+        "221": plus_order_item,
+        "222": minus_order_item,
+        "223": del_item_from_cart,
         "999": cart
     }
 
@@ -101,7 +102,7 @@ async def cart(callback: types.CallbackQuery, what, state, **kwargs):
         data['message_id_list'] = message_id_list
 
     markup2 = InlineKeyboardMarkup()
-    markup2.add(
+    markup2.row(
         InlineKeyboardButton(text="Назад",
                              callback_data=make_callback_data(level=1,
                                                               what='back_order_shipping'))
@@ -128,7 +129,10 @@ async def build_category_keyboard(message: Union[types.Message, types.CallbackQu
     if kwargs:
         data = await kwargs['state'].get_data()
         for msg_id in data['message_id_list']:
-            await bot.delete_message(chat_id=message.from_user.id, message_id=msg_id)
+            try:
+                await bot.delete_message(chat_id=message.from_user.id, message_id=msg_id)
+            except Exception as _ex:
+                pass
 
     if isinstance(message, types.Message):
         await message.answer("Что будете заказывать?", reply_markup=markup)
@@ -172,7 +176,7 @@ async def build_item_cards(callback: types.CallbackQuery, category_id, state, **
         data['message_id_list'] = message_id_list
 
     markup2 = InlineKeyboardMarkup()
-    markup2.add(
+    markup2.row(
         InlineKeyboardButton(text="Назад",
                              callback_data=make_callback_data(level=1,
                                                               what='back_order_shipping'))
@@ -182,16 +186,18 @@ async def build_item_cards(callback: types.CallbackQuery, category_id, state, **
         data["sum_id"] = msg.message_id
 
 
-async def add_order_item(callback: types.CallbackQuery, state, **kwargs):
-    """Добавление блюда в корзину"""
+async def plus_order_item(callback: types.CallbackQuery, state, **kwargs):
+    """Прибавление блюда в корзину"""
     await db.update_last_activity(user_id=callback.message.from_user.id, button='Доставка добавление блюда в корзину')
     count = int(kwargs['count'][0])
     item_id = kwargs['item_id']
     data = await state.get_data()
 
     user_id = callback.message.chat.id
+
     markup = await items_in_category_keyboard(item_id=kwargs['item_id'], count=count + 1)
     info = await db.get_item_info(id=int(kwargs['item_id']))
+
     try:
         cart_id = await db.update_cart(item_id=int(item_id),
                                        item_count=count + 1,
@@ -208,6 +214,7 @@ async def add_order_item(callback: types.CallbackQuery, state, **kwargs):
                                         price=info[0]['price']
                                         )
 
+
     user_cart = await db.get_user_cart(user_id=user_id)
     sum = 0
     for item in user_cart:
@@ -216,7 +223,7 @@ async def add_order_item(callback: types.CallbackQuery, state, **kwargs):
     await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=data["sum_id"],
                                 text=f"Сумма Вашего заказа {sum}")
     markup2 = InlineKeyboardMarkup()
-    markup2.add(
+    markup2.row(
         InlineKeyboardButton(text="Назад",
                              callback_data=make_callback_data(level=1,
                                                               what='back_order_shipping'))
@@ -225,8 +232,8 @@ async def add_order_item(callback: types.CallbackQuery, state, **kwargs):
                                         reply_markup=markup2)
 
 
-async def del_order_item(callback: types.CallbackQuery, state, **kwargs):
-    """Удаление блюда из корзины"""
+async def minus_order_item(callback: types.CallbackQuery, state, **kwargs):
+    """Минусование блюда из корзины"""
     await db.update_last_activity(user_id=callback.message.from_user.id, button='Доставка удаление блюда из корзины')
     count = int(kwargs['count'][0])
     item_id = kwargs['item_id']
@@ -264,7 +271,7 @@ async def del_order_item(callback: types.CallbackQuery, state, **kwargs):
         await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=data["sum_id"],
                                     text=f"Сумма Вашего заказа {sum}")
         markup2 = InlineKeyboardMarkup()
-        markup2.add(
+        markup2.row(
             InlineKeyboardButton(text="Назад",
                                  callback_data=make_callback_data(level=1,
                                                                   what='back_order_shipping'))
@@ -274,6 +281,47 @@ async def del_order_item(callback: types.CallbackQuery, state, **kwargs):
         if count - 1 == 0:
             await db.delete_item_From_cart(item_id=int(item_id))
             return
+
+
+async def del_item_from_cart(callback: types.CallbackQuery, state, **kwargs):
+    """Удаление блюда из корзины"""
+    await db.update_last_activity(user_id=callback.message.from_user.id, button='Доставка удаление блюда из корзины')
+    count = int(kwargs['count'][0])
+    item_id = kwargs['item_id']
+    data = await state.get_data()
+
+    user_id = callback.message.chat.id
+    info = await db.get_item_info(id=item_id)
+
+    markup = await items_in_category_keyboard(int(item_id), count=0)
+
+    cart_id = await db.update_cart(
+        item_id=int(item_id),
+        item_count=0,
+        user_id=str(user_id),
+        title=info[0]['title'],
+        price=info[0]['price']
+    )
+    user_cart = await db.get_user_cart(user_id=user_id)
+    sum = 0
+    for item in user_cart:
+        sum += item["price"] * item["item_count"]
+    await callback.message.edit_reply_markup(markup)
+    await bot.edit_message_text(chat_id=callback.message.chat.id, message_id=data["sum_id"],
+                                text=f"Сумма Вашего заказа {sum}")
+    markup2 = InlineKeyboardMarkup()
+    markup2.row(
+        InlineKeyboardButton(text="Назад",
+                             callback_data=make_callback_data(level=1,
+                                                              what='back_order_shipping'))
+    )
+    await bot.edit_message_reply_markup(chat_id=callback.message.chat.id, message_id=data["sum_id"],
+                                        reply_markup=markup2)
+
+    await db.delete_item_From_cart(item_id=int(item_id))
+
+    await callback.message.delete()
+
 
 
 async def delivery_registration(callback: types.CallbackQuery, **kwargs):

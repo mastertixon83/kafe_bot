@@ -55,16 +55,25 @@ async def categories_keyboard(user_id):
 ### Построение клавиатуры с блюдами категории
 async def items_in_category_keyboard(item_id, count, user_id="0", text="None"):
     CURRENT_LEVEL = 2
-    markup = InlineKeyboardMarkup()
+    markup = InlineKeyboardMarkup(max_row_width=4)
 
-    callback_data_minus = make_callback_data(level=222, action="del_shipping", user_id=user_id, item_id=item_id, count=count)
+    callback_data_delete = make_callback_data(level=223, action="del_item_from_cart", user_id=user_id, item_id=item_id, count=0)
+    callback_data_minus = make_callback_data(level=222, action="minus_shipping", user_id=user_id, item_id=item_id, count=count)
     callback_data_count = make_callback_data(level=999, action="add_shipping", count=count)
-    callback_data_plus = make_callback_data(level=221, action="add_shipping", user_id=user_id, item_id=item_id, count=count)
+    callback_data_plus = make_callback_data(level=221, action="plus_shipping", user_id=user_id, item_id=item_id, count=count)
 
-    markup.add(
-        InlineKeyboardButton(text="-", callback_data=callback_data_minus),
-        InlineKeyboardButton(text=str(count), callback_data="count"),
-        InlineKeyboardButton(text="+", callback_data=str(callback_data_plus))
-    )
+    if count == 0:
+        markup.row(
+            InlineKeyboardButton(text="-", callback_data=callback_data_minus),
+            InlineKeyboardButton(text=str(count), callback_data="count"),
+            InlineKeyboardButton(text="+", callback_data=str(callback_data_plus))
+        )
+    else:
+        markup.row(
+            InlineKeyboardButton(text="❌", callback_data=callback_data_delete),
+            InlineKeyboardButton(text="-", callback_data=callback_data_minus),
+            InlineKeyboardButton(text=str(count), callback_data="count"),
+            InlineKeyboardButton(text="+", callback_data=str(callback_data_plus))
+        )
 
     return markup
