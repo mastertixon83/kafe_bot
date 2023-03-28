@@ -51,7 +51,7 @@ async def standard_mailing(message: types.Message, state: FSMContext):
 
     elif "Владельцам карт лояльности" in message.text.strip():
         type_mailing = "loyal_card"
-        users = await db.get_loyal_card_users()
+        users = await db.get_loyal_program_participants()
 
     # elif "Конкретным пользователям" in message.text.strip():
     #     type_mailing = "users"

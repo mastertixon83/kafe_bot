@@ -23,6 +23,7 @@ class DBCommands:
     GET_ALL_NB_USERS = "SELECT user_id, administrator FROM users WHERE ban_status=FALSE"
     GET_ALL_USERS = "SELECT * FROM users ORDER BY id"
     UPDATE_LAST_ACTIVITY = "UPDATE users SET last_activity = $2 WHERE user_id = $1"
+    GET_USER_BY_USERNAME = "SELECT * FROM users WHERE username = $1"
 
     ### Удаление пользователя в черный список
     UPDATE_BLACKLIST_STATUS = "UPDATE users SET ban_status = $3, reason_for_ban = $2 WHERE id = $1"
@@ -496,6 +497,11 @@ class DBCommands:
         command = self.UPDATE_LAST_ACTIVITY
         args = str(user_id), button
         await self.pool.fetch(command, *args)
+
+    async def get_user_by_username(self, username):
+        """Выбрать пользователя по username"""
+        command = self.GET_USER_BY_USERNAME
+        return await self.pool.fetch(command, username)
 
     async def get_birthday_users(self, target_data):
         """Выбор именинников"""

@@ -111,7 +111,7 @@ async def sum_approved_users(user_id):
 
 
 @dp.message_handler(Text(contains="Пригласить друга"), state=MainMenu.main)
-async def invite_friend(message: Message):
+async def invite_friend(message: Message, state: FSMContext):
     """Нажатие на кнопку пригласить друга"""
     await db.update_last_activity(user_id=message.from_user.id, button='Прогласить друга')
     user_id = message.from_user.id
@@ -149,6 +149,7 @@ async def invite_friend(message: Message):
         else:
             markup = menuUser
         await message.answer(text, reply_markup=markup)
+    await state.finish()
 
 
 @dp.message_handler(Text(contains="Мои подарки"), state="*")

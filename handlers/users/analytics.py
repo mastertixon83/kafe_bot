@@ -646,6 +646,7 @@ async def get_shipping_order_made_today(call: types.CallbackQuery, state: FSMCon
 async def approve_shipping_order_made_today(call: types.CallbackQuery, state: FSMContext):
     """Подтверждение/Отмена заявки администратором"""
     username = re.findall(r'@(\w+)', call.message.html_text)[0]
+    user = await db.get_user_by_username(username=username)
 
     data = call.data.split('-')
     if 'approve' in data[0]:
@@ -654,6 +655,10 @@ async def approve_shipping_order_made_today(call: types.CallbackQuery, state: FS
                 [InlineKeyboardButton(text="Отменить", callback_data=f"aa_sh_cancel-{data[1]}")]
             ]
         )
+
+        await bot.send_message(chat_id=int(user[0]['user_id']),
+                               text=f'Ваша заявка на доставку подтверждена администрацией.\n\n{call.message.text}')
+
     elif 'cancel' in data[0]:
         markup = InlineKeyboardMarkup(
             inline_keyboard=[
@@ -662,9 +667,9 @@ async def approve_shipping_order_made_today(call: types.CallbackQuery, state: FS
                 ]
             ]
         )
-        #TODO: Отправка сообщение пользователю об отмене доставки
-        user = await bot.get_chat(username)
-        await bot.send_message(chat_id=user.id, text='Ваша заявка на доставку отклонена администрацией.')
+
+        await bot.send_message(chat_id=int(user[0]['user_id']),
+                               text=f'Ваша заявка на доставку отклонена администрацией.\n\n{call.message.text}')
 
     await call.message.edit_reply_markup(markup)
     await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,
@@ -696,6 +701,7 @@ async def analytics_loyal_program_participants(message: types.Message, state: FS
 @dp.callback_query_handler(text_contains=["user_info"], state=Analytics.main)
 async def show_user_info(call: types.CallbackQuery, state: FSMContext):
     """Показать информацию о пользователе"""
+    await bot.answer_callback_query(call.id, text="Привет, это сообщение alert!", show_alert=True)
     callback_data = call.data.split('-')
     data = await state.get_data()
     user_info = await db.get_user_info(user_id=callback_data[0])
@@ -711,6 +717,10 @@ async def show_user_info(call: types.CallbackQuery, state: FSMContext):
     text += f"Дата рождения: {user_info[0]['birthday']}\n"
     text += f"Пришло к нам по рекомендации: {plural_form(count_users, 'человек')}\n"
     text += f"Номер телефона: {user_info[0]['card_phone']}\n"
+    text += f"{'-' * 50}\n"
+    text += f"Бан Статус: {'<b>Забанен</b>' if user_info[0]['ban_status'] == True else 'Чист'}\n"
+    if user_info[0]["ban_status"] == True:
+        text += f"Причина бана: {user_info[0]['reason_for_ban']}"
 
     msg = await call.message.edit_text(text=text)
     await call.message.edit_reply_markup(data["markup"])

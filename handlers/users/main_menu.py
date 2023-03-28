@@ -20,6 +20,7 @@ from states.mailings import Mailings
 from states.question import Question
 from states.restoran import TableReservation
 from states.reviews import Review
+from states.shipping import Shipping
 
 
 # Отмена действия
@@ -169,7 +170,7 @@ async def table_reservation(message: Union[types.Message, types.CallbackQuery], 
 @dp.message_handler(Text(contains="Доставка"), state=None)
 async def show_menu_order_shipping(message: Union[types.Message, types.CallbackQuery], state: FSMContext):
     """Обработчик нажатия на кнопку Оформить заказ на доставку"""
-
+    await Shipping.main.set()
     if isinstance(message, types.Message):
         await db.update_last_activity(user_id=message.from_user.id, button='Оформить доставку')
         await db.delete_cart(str(message.chat.id))
@@ -186,7 +187,7 @@ async def show_menu_order_shipping(message: Union[types.Message, types.CallbackQ
         message_id = call.message.message_id + 2
         user_id = call.message.from_user.id
 
-    await build_category_keyboard(message)
+    await build_category_keyboard(message, state)
 
     async with state.proxy() as data:
         data["message_id"] = message_id
@@ -235,6 +236,13 @@ async def send_question_to_admin(message: types.Message, state: FSMContext):
     else:
         await message.answer(text=text, reply_markup=menuUser)
 
+
+@dp.message_handler(Text(contains="Акции"), state="*")
+async def promotions(message: Message):
+    """Лювлю нажатие на кнопку Акции"""
+    await db.update_last_activity(user_id=message.from_user.id, button='Акции')
+    text = f"https://teletype.in/@andreytikhonov/uJftR9aBA"
+    await message.answer(text=text)
 
 @dp.message_handler(Text(contains="Сделать рассылку подписчикам"), state="*")
 async def newsletter(message: Message):

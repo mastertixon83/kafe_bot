@@ -1,5 +1,5 @@
-#TODO: Добавить в текст эмодзи аппетитных
-#TODO: Добавить гпс для указания адреса через карту
+# TODO: Добавить в текст эмодзи аппетитных
+# TODO: Добавить гпс для указания адреса через карту
 import json
 import re
 import time
@@ -14,12 +14,12 @@ from data.config import admins
 from keyboards.inline import user_inline_approve
 from states.shipping import Shipping
 
-from keyboards.default import cancel_btn, menuAdmin, send_phone_cancel, menuUser, send_phone
+from keyboards.default import cancel_btn, menuAdmin, menuUser, send_phone
 from keyboards.inline.inline_user_order_shipping import categories_keyboard, menu_cd, \
     items_in_category_keyboard, make_callback_data
 
 from loader import dp, bot, logger
-from states.config import MainMenu
+from states.shipping import Cart
 from utils.db_api.db_commands import DBCommands
 
 db = DBCommands()
@@ -72,6 +72,7 @@ async def navigate(call: types.CallbackQuery, callback_data: dict, state: FSMCon
 
 async def cart(callback: types.CallbackQuery, what, state, **kwargs):
     """Корзина пользователя"""
+    await Cart.cart.set()
     await db.update_last_activity(user_id=callback.message.from_user.id, button='Корзина пользователя')
     msg = await callback.message.edit_text("Корзина пользователя")
     items = await db.get_user_cart(user_id=callback.message.chat.id)
@@ -91,7 +92,7 @@ async def cart(callback: types.CallbackQuery, what, state, **kwargs):
             msg = await bot.send_photo(
                 chat_id=callback.message.chat.id,
                 photo=photo,
-                caption=f"{info[0]['description']}\nЦена: {str(item['price'])[:-3]} тенге.",
+                caption=f"<b>{info[0]['title']}</b>\n{info[0]['description']}\nЦена: {str(item['price'])[:-3]} тенге.",
                 parse_mode="HTML",
                 reply_markup=markup
             )
@@ -113,7 +114,7 @@ async def cart(callback: types.CallbackQuery, what, state, **kwargs):
 
 
 async def main_menu(callback: types.CallbackQuery, what, state, **kwargs):
-    """Обработчик нажатия на кнопку выход"""
+    """Обработчик нажатия на кнопку выход, Главное меню"""
     await db.update_last_activity(user_id=callback.message.from_user.id, button='Доставка Главное меню')
     await callback.message.delete()
     await callback.message.answer(text="Главное меню", reply_markup=menuAdmin)
@@ -122,12 +123,17 @@ async def main_menu(callback: types.CallbackQuery, what, state, **kwargs):
     await state.finish()
 
 
-async def build_category_keyboard(message: Union[types.Message, types.CallbackQuery], **kwargs):
-    """Построение клавиатуры категорий, после нажатия на кнопку Оформить заказ на доставку"""
+async def build_category_keyboard(message: Union[types.Message, types.CallbackQuery], state, **kwargs):
+    """Построение клавиатуры категорий, после нажатия на кнопку Оформить заказ на доставку, кнопка назад"""
     await db.update_last_activity(user_id=message.from_user.id, button='Доставка клавиатура категорий')
     markup = await categories_keyboard(user_id=message.from_user.id)
+
+    cur_state = await state.get_state()
+    if cur_state == "Cart:cart":
+        await Shipping.main.set()
     if kwargs:
-        data = await kwargs['state'].get_data()
+        # data = await kwargs['state'].get_data()
+        data = await state.get_data()
         for msg_id in data['message_id_list']:
             try:
                 await bot.delete_message(chat_id=message.from_user.id, message_id=msg_id)
@@ -165,7 +171,7 @@ async def build_item_cards(callback: types.CallbackQuery, category_id, state, **
             msg = await bot.send_photo(
                 chat_id=callback.message.chat.id,
                 photo=photo,
-                caption=f"{info[0]['description']}\n{'-'*50}\nЦена: {str(item['price'])[:-3]} тенге.",
+                caption=f"<b>{info[0]['title']}</b>\n{info[0]['description']}\n{'-' * 50}\nЦена: {str(item['price'])[:-3]} тенге.",
                 parse_mode="HTML",
                 reply_markup=markup
             )
@@ -213,7 +219,6 @@ async def plus_order_item(callback: types.CallbackQuery, state, **kwargs):
                                         title=info[0]['title'],
                                         price=info[0]['price']
                                         )
-
 
     user_cart = await db.get_user_cart(user_id=user_id)
     sum = 0
@@ -319,9 +324,8 @@ async def del_item_from_cart(callback: types.CallbackQuery, state, **kwargs):
                                         reply_markup=markup2)
 
     await db.delete_item_From_cart(item_id=int(item_id))
-
-    await callback.message.delete()
-
+    if await state.get_state() == "Cart:cart":
+        await callback.message.delete()
 
 
 async def delivery_registration(callback: types.CallbackQuery, **kwargs):
@@ -468,6 +472,7 @@ async def shipping_address(message: types.Message, state: FSMContext):
 async def shipping_pay_method(call: types.CallbackQuery, state: FSMContext):
     """Ловлю от пользователя способ оплаты"""
     await db.update_last_activity(user_id=call.message.from_user.id, button='Доставка сопособ оплаты')
+    data = await state.get_data()
     await Shipping.check.set()
     await call.message.edit_reply_markup(reply_markup="")
     await call.message.delete()
@@ -487,14 +492,21 @@ async def shipping_pay_method(call: types.CallbackQuery, state: FSMContext):
         text += f"{item['title']}\nКол-во порций: {item['item_count']}\nЦена: {item['price']}\n\n"
         summa += item['item_count'] * item['price']
 
-    async with state.proxy() as data:
-        data['items'] = item_list
-        data['pay_method'] = call.data
-        data['final_summa'] = summa
+    text += f"{'-' * 50}\n"
+    text += f"Дата и время доставки: {data['data']} - {data['time']}\n"
+    text += f"Кол-во приборов: {data['number_of_devices']}\n"
+    text += f"Адрес доставки: {data['address']}\n"
+    text += f"Способ оплаты: {'Карта' if call.data == 'pay_method_card' else 'Наличные'}\n"
+    text += f"{'-' * 50}\n"
 
     text += f"Общая сумма заказа: {summa}"
 
     await call.message.answer(text=text, reply_markup=user_inline_approve)
+
+    async with state.proxy() as data:
+        data['items'] = item_list
+        data['pay_method'] = call.data
+        data['final_summa'] = summa
 
 
 @dp.callback_query_handler(text=["approve_order_user", "cancel_order_user"], state=Shipping.check)
@@ -576,3 +588,5 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
 
     await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,
                                           admin_id=str(call.from_user.id), admin_answer=data[0].split("_")[-1])
+
+    await state.finish()

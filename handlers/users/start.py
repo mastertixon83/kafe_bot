@@ -59,11 +59,12 @@ async def bot_start(message: types.Message, state: FSMContext):
             markup = menuUser
 
         await message.answer("Глвное меню", reply_markup=markup)
-
+        await state.finish()
         try:
             await db.update_last_activity(user_id=message.from_user.id, button='Команда старт')
         except Exception as _ex:
             pass
+
 
 @dp.callback_query_handler(text=["ug_female", "ug_male"], state=Dating.user_gender)
 async def user_gender(call: types.CallbackQuery, state: FSMContext):

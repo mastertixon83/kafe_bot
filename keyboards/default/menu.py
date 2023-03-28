@@ -17,11 +17,11 @@ menuUser = ReplyKeyboardMarkup(
             KeyboardButton(text="🍽 Забронировать стол"),
         ],
         [
-            KeyboardButton(text="👍 Отзывы"),
-            KeyboardButton(text="💥 Акции"),
+            KeyboardButton(text="❓ Задайте нам вопрос")
         ],
         [
-            KeyboardButton(text="❓ Задайте нам вопрос")
+            KeyboardButton(text="👍 Отзывы"),
+            KeyboardButton(text="💥 Акции"),
         ],
     ],
     resize_keyboard=True
@@ -44,11 +44,11 @@ menuAdmin = ReplyKeyboardMarkup(
             KeyboardButton(text="🍽 Забронировать стол"),
         ],
         [
-            KeyboardButton(text="👍 Отзывы"),
-            KeyboardButton(text="💥 Акции"),
+            KeyboardButton(text="❓ Задайте нам вопрос")
         ],
         [
-            KeyboardButton(text="❓ Задайте нам вопрос")
+            KeyboardButton(text="👍 Отзывы"),
+            KeyboardButton(text="💥 Акции"),
         ],
         [
             KeyboardButton(text="📩 Сделать рассылку подписчикам")
@@ -119,6 +119,7 @@ menu_admin_config = ReplyKeyboardMarkup(
         [KeyboardButton('Отключить все активные рассылки')],
         [KeyboardButton("Редактировать меню")],
         [KeyboardButton("Редактировать отзывы")],
+        [KeyboardButton("Редактировать акции")],
         [KeyboardButton("⬅ Главное меню")]
     ]
 )
