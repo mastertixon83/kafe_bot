@@ -609,7 +609,6 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
                                     text=text['text'] + f'\nПринял администратор: @{call.from_user.username}')
         await bot.edit_message_reply_markup(chat_id=admin, message_id=msg_id_dict[admin], reply_markup=markup)
 
-    # await call.message.edit_reply_markup(reply_markup=markup)
     data = call.data.split('-')
 
     await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,
