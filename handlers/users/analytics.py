@@ -756,7 +756,7 @@ async def analytics_loyal_program_participants(message: types.Message, state: FS
 @dp.callback_query_handler(text_contains=["user_info"], state=Analytics.main)
 async def show_user_info(call: types.CallbackQuery, state: FSMContext):
     """Показать информацию о пользователе"""
-    # await bot.answer_callback_query(call.id, text="Привет, это сообщение alert!", show_alert=True)
+    # await bot.answer_callback_query(call.id, text="Привет, это alert!", show_alert=True)
     callback_data = call.data.split('-')
     data = await state.get_data()
     user_info = await db.get_user_info(user_id=callback_data[0])
