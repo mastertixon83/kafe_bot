@@ -145,10 +145,10 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
         sheet.cell(row=i, column=18).value = "Забанен" if item[17] == True else ""
         sheet.cell(row=i, column=19).value = item[18]
 
-    book.save("users.xlsx")
+    book.save("temp/users.xlsx")
     book.close()
 
-    with open("users.xlsx", 'rb') as file:
+    with open("temp/users.xlsx", 'rb') as file:
         wb = openpyxl.load_workbook(file)
         ws = wb.active
         output = BytesIO()
@@ -639,10 +639,10 @@ async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext)
                 sheet.cell(row=len(prev_month) + 3, column=9).fill = fill
                 sheet.cell(row=len(prev_month) + 3, column=10).fill = fill
 
-    book.save("shipping.xlsx")
+    book.save("temp/shipping.xlsx")
     book.close()
 
-    with open("shipping.xlsx", 'rb') as file:
+    with open("temp/shipping.xlsx", 'rb') as file:
         wb = openpyxl.load_workbook(file)
         ws = wb.active
         output = BytesIO()

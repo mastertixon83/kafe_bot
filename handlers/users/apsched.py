@@ -9,8 +9,22 @@ from data.config import admins
 from loader import db, scheduler, logger
 from utils.db_api.db_commands import DBCommands
 import time
+import os
 
 db = DBCommands()
+
+
+async def clear_temp_folder(bot, **kwargs):
+    """Очистка папок temp и media/mailings"""
+    folders = ["temp", "media/mailings"]
+    for folder_name in folders:
+        try:
+            for filename in os.listdir(folder_name):
+                file_path = os.path.join(folder_name, filename)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+        except Exception as _ex:
+            logger.debug(_ex)
 
 
 async def send_birthday_cron(bot, **kwargs):

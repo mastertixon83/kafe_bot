@@ -84,7 +84,7 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
 
     admin_inline_send_ls.inline_keyboard[0][0]["url"] = f"https://t.me/{result[0]['username']}"
 
-    with open("temp.json", "r") as file:
+    with open("temp/temp.json", "r") as file:
         msg_id_list = json.load(file)
 
     msg_id_dict = {}
@@ -300,7 +300,7 @@ async def table_reservation_check_data(call, state: FSMContext):
                 {admin:msg.message_id}
             )
 
-        with open("temp.json", "w") as file:
+        with open("temp/temp.json", "w") as file:
             json.dump(admin_msg_id_list, file, indent=4, ensure_ascii=False)
 
         await state.finish()

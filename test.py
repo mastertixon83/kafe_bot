@@ -1,11 +1,17 @@
-test = [
-    {"count": 1, "price": 550, "title": "Долма с бараниной"},
-    {"count": 1, "price": 520, "title": "Долма со свининой и телятиной"},
-    {"count": 1, "price": 430, "title": "Жареная кюрза"},
-    {"count": 6, "price": 690, "title": "Теплый салат с семгой"},
-    {"count": 1, "price": 520, "title": "Теплый салат с телятиной"},
-    {"count": 1, "price": 640, "title": "Цезарь с креветками"}
-]
+import json
+import os
 
-for item in test:
-    print(item['title'])
+ass = {"sdasdasd":"asdasdasdasd"}
+
+with open("temp/temp1.json", "w") as file:
+    json.dump(ass, file, indent=4, ensure_ascii=False)
+folders = ["temp", "media/mailings"]
+for folder_name in folders:
+    try:
+        for filename in os.listdir(folder_name):
+            file_path = os.path.join(folder_name, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+            print(file_path)
+    except Exception as _ex:
+        print(_ex)

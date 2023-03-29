@@ -573,7 +573,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
                 {admin: msg.message_id}
             )
         admin_msg_id_list.append({"text": text})
-        with open("temp.json", "w") as file:
+        with open("temp/temp.json", "w") as file:
             json.dump(admin_msg_id_list, file, indent=4, ensure_ascii=False)
 
         await state.finish()
@@ -599,7 +599,7 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
     else:
         order_status = False
 
-    with open("temp.json", "r") as file:
+    with open("temp/temp.json", "r") as file:
         msg_id_list = json.load(file)
 
     text = msg_id_list[-1]
