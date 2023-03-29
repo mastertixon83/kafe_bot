@@ -14,7 +14,7 @@ create table if not exists users
     username text UNIQUE,
     full_name text,
     gender varchar(1),
-    employment text,
+    age_group text,
     referral text,
     referral_id text unique not null default gen_random_uuid(),
     card_fio text,

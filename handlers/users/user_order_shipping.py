@@ -1,5 +1,5 @@
 # TODO: Добавить в текст эмодзи аппетитных
-# TODO: Добавить гпс для указания адреса через карту
+# TODO: Добавить кнопку гпс для указания адреса через карту
 import json
 import re
 import time
@@ -559,7 +559,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
         markup = InlineKeyboardMarkup()
 
         markup.add(
-            InlineKeyboardButton(text="Взять в работу", callback_data=f"admin_shipping_approve-{order_id}-"),
+            InlineKeyboardButton(text="Взять в работу", callback_data=f"admin_shipping_approve-{order_id}"),
             InlineKeyboardButton(text="Отмена", callback_data=f"admin_shipping_cancel-{order_id}")
         )
         markup.row(
@@ -596,7 +596,7 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
     markup.add(ikb[0][0])
     if call.data.split("_")[-1] == "cancel":
         order_status = True
-    elif call.data.split("_")[-1] == "apprive":
+    else:
         order_status = False
 
     with open("temp.json", "r") as file:
@@ -613,8 +613,11 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
         await bot.edit_message_reply_markup(chat_id=admin, message_id=msg_id_dict[admin], reply_markup=markup)
 
     data = call.data.split('-')
+    admin_id = str(call.from_user.id)
+    admin_answer = data[0].split("_")[-1]
 
     await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,
-                                          admin_id=str(call.from_user.id), admin_answer=data[0].split("_")[-1], order_status=order_status)
+                                          admin_id=admin_id, admin_answer=admin_answer,
+                                          order_status=order_status)
 
     await state.finish()

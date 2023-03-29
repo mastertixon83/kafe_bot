@@ -1,3 +1,4 @@
+#TODO: варианты на кнопках
 from loader import dp, bot
 
 from aiogram.types import Message, ReplyKeyboardRemove, InlineKeyboardMarkup, InlineKeyboardButton

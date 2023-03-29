@@ -1,10 +1,10 @@
 # TODO: Удаление карты лояльности????
 import json
 import re
-import time
-from datetime import datetime, timezone, timedelta
-import csv
+
+from datetime import datetime, timedelta
 import openpyxl
+from openpyxl.styles import PatternFill
 
 from io import BytesIO
 
@@ -13,14 +13,14 @@ from aiogram.dispatcher import FSMContext
 from loader import dp, bot, db, logger
 from aiogram import types
 
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardRemove
-from keyboards.default.menu import menuAdmin, newsletter_kbd, analytics_kbd
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
 from states.analytics import Analytics
 from utils.db_api.db_commands import DBCommands
 
 from aiogram.dispatcher.filters import Text
 from data.config import admins
-import logging
+
 
 db = DBCommands()
 
@@ -552,6 +552,24 @@ async def analytics_shipping(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
 
+def paste_data_to_table(sheet, order):
+    """Вставка данных в таблицу"""
+    for i, order in enumerate(order, start=2):
+        sheet.cell(row=i, column=1).value = order["user_name"]
+        sheet.cell(row=i, column=2).value = order["user_id"]
+        sheet.cell(row=i, column=3).value = order["phone"]
+        sheet.cell(row=i, column=4).value = order["data_reservation"]
+        sheet.cell(row=i, column=5).value = order["time_reservation"]
+        sheet.cell(row=i, column=6).value = order["address"]
+        sheet.cell(row=i, column=7).value = "Карта" if order["pay_method"] == "pay_method_card" else "Наличные"
+        sheet.cell(row=i, column=8).value = order["number_of_devices"]
+        zakaz = json.loads(order["tpc"])
+        order_text = ""
+        for item in zakaz:
+            order_text += f"{item['title']} - кол-во порций {item['count']}\n"
+        sheet.cell(row=i, column=9).value = order_text
+        sheet.cell(row=i, column=10).value = order["final_summa"]
+
 
 @dp.callback_query_handler(text=["a_sh_excel"], state=Analytics.main)
 async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext):
@@ -570,15 +588,6 @@ async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext)
     prev_month = await db.get_approved_shipping(start_date=kwargs['start_date_month'],
                                                 end_date=kwargs['end_date_month'])
 
-    # "start_date": start_date,
-    # "end_date": end_date,
-    # "start_date_week": start_date_week,
-    # "end_date_week": end_date_week,
-    # "start_date_month": start_date_month,
-    # "end_date_month": end_date_month,
-    # "start_date_prev_month": start_date_prev_month,
-    # "end_date_prev_month": end_date_prev_month
-    # !!!TODO: Доделать выгрузку в Excel данных о доставке
     book = openpyxl.Workbook()
     book.remove(book.active)
     book.create_sheet("За сегодня")
@@ -587,20 +596,48 @@ async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext)
     book.create_sheet("За предыдущий месяц")
 
     for sheet in book.worksheets:
+        sheet.cell(row=1, column=1).value = 'Username'
+        sheet.cell(row=1, column=2).value = 'User_id'
+        sheet.cell(row=1, column=3).value = 'Телефон'
+        sheet.cell(row=1, column=4).value = 'Дата'
+        sheet.cell(row=1, column=5).value = 'Время'
+        sheet.cell(row=1, column=6).value = 'Адрес доставки'
+        sheet.cell(row=1, column=7).value = 'Метод оплаты'
+        sheet.cell(row=1, column=8).value = 'Кол-во приборов'
+        sheet.cell(row=1, column=9).value = 'Заказ'
+        sheet.cell(row=1, column=10).value = 'Общая сумма'
         if sheet.title == "За сегодня":
-            sheet.cell(row=1, column=1).value = 'Username'
-            sheet.cell(row=1, column=2).value = 'User_id'
-            sheet.cell(row=1, column=3).value = 'Телефон'
-            sheet.cell(row=1, column=4).value = 'Дата'
-            sheet.cell(row=1, column=5).value = 'Время'
-            sheet.cell(row=1, column=6).value = 'Адрес доставки'
-            sheet.cell(row=1, column=7).value = 'Метод оплаты'
+            paste_data_to_table(sheet=sheet, order=today)
+            if len(today) > 0:
+                sheet.cell(row=len(today) + 3, column=10).value = f"=SUM(J2:J{len(today) + 1})"
+                sheet.cell(row=len(today) + 3, column=9).value = "ИТОГО:"
+                fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
+                sheet.cell(row=len(today) + 3, column=9).fill = fill
+                sheet.cell(row=len(today) + 3, column=10).fill = fill
         elif sheet.title == "За неделю":
-            sheet.cell(row=1, column=1).value = "Не ПИЗДИ!!!"
+            paste_data_to_table(sheet=sheet, order=week)
+            if len(week) > 0:
+                sheet.cell(row=len(week) + 3, column=10).value = f"=SUM(J2:J{len(week) + 1})"
+                sheet.cell(row=len(week) + 3, column=9).value = "ИТОГО:"
+                fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
+                sheet.cell(row=len(week) + 3, column=9).fill = fill
+                sheet.cell(row=len(week) + 3, column=10).fill = fill
         elif sheet.title == "За месяц":
-            sheet.cell(row=1, column=1).value = "Не ПИЗДИ!!!"
+            paste_data_to_table(sheet=sheet, order=month)
+            if len(month) > 0:
+                sheet.cell(row=len(month) + 3, column=10).value = f"=SUM(J2:J{len(month) + 1})"
+                sheet.cell(row=len(month) + 3, column=9).value = "ИТОГО:"
+                fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
+                sheet.cell(row=len(month) + 3, column=9).fill = fill
+                sheet.cell(row=len(month) + 3, column=10).fill = fill
         elif sheet.title == "За предыдущий месяц":
-            sheet.cell(row=1, column=1).value = "Не ПИЗДИ!!!"
+            paste_data_to_table(sheet=sheet, order=prev_month)
+            if len(prev_month) > 0:
+                sheet.cell(row=len(prev_month) + 3, column=10).value = f"=SUM(J2:J{len(prev_month) + 1})"
+                sheet.cell(row=len(prev_month) + 3, column=9).value = "ИТОГО:"
+                fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
+                sheet.cell(row=len(prev_month) + 3, column=9).fill = fill
+                sheet.cell(row=len(prev_month) + 3, column=10).fill = fill
 
     book.save("shipping.xlsx")
     book.close()

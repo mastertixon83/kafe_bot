@@ -17,9 +17,9 @@ class DBCommands:
     DEACTIVATE_REVIEW = "UPDATE review SET status = FALSE WHERE id = $1"
 
     ###  Добавление нового пользователя с рефералом и без ###
-    ADD_NEW_USER_REFERRAL = "INSERT INTO users(user_id, username, full_name, referral, gender, employment) " \
+    ADD_NEW_USER_REFERRAL = "INSERT INTO users(user_id, username, full_name, referral, gender, age_group) " \
                             "VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
-    ADD_NEW_USER = "INSERT INTO users(user_id, username, full_name, gender, employment) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+    ADD_NEW_USER = "INSERT INTO users(user_id, username, full_name, gender, age_group) VALUES ($1, $2, $3, $4, $5) RETURNING id"
     GET_ALL_NB_USERS = "SELECT user_id, administrator FROM users WHERE ban_status=FALSE"
     GET_ALL_USERS = "SELECT * FROM users ORDER BY id"
     UPDATE_LAST_ACTIVITY = "UPDATE users SET last_activity = $2 WHERE user_id = $1"
@@ -149,7 +149,7 @@ class DBCommands:
         await self.pool.fetch(command, int(id))
 
     ###  Пользователи
-    async def add_new_user(self, referral=None, gender="", employment=""):
+    async def add_new_user(self, referral=None, gender="", age_group=""):
         """Добавление нового пользователя с рефералом или без"""
         user = types.User.get_current()
         chat_id = str(user.id)
@@ -157,10 +157,10 @@ class DBCommands:
         full_name = user.full_name
 
         if referral:
-            args = chat_id, username, full_name, referral, gender, employment
+            args = chat_id, username, full_name, referral, gender, age_group
             command = self.ADD_NEW_USER_REFERRAL
         else:
-            args = chat_id, username, full_name, gender, employment
+            args = chat_id, username, full_name, gender, age_group
             command = self.ADD_NEW_USER
 
         try:

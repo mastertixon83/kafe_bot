@@ -28,7 +28,7 @@ async def bot_start(message: types.Message, state: FSMContext):
             text = "Мы рады преветствовать Вас в нашем чат-боте.\n" \
                    "В Вашем профиле не указано имя пользователя.\n" \
                    "Для правильной работы бота это необходимо сделать. \n\n " \
-                   "Войдите в настройки профиля и введите имя пользователя, после этого нажми /start в боте"
+                   "‼️‼️‼️ Для этого зайдите в настройки своего профиля и введите имя пользователя, после этого нажмите /start в боте"
 
             await message.answer(text=text, reply_markup=ReplyKeyboardRemove())
             return
@@ -49,7 +49,7 @@ async def bot_start(message: types.Message, state: FSMContext):
 
         async with state.proxy() as data:
             data['user_id'] = user_id
-            data['args'] = message.get_args()
+            data['args'] = message.get_args() if message.get_args() != "" else ""
             data['msg_id'] = msg.message_id
 
     else:
@@ -80,35 +80,38 @@ async def user_gender(call: types.CallbackQuery, state: FSMContext):
         data['gender'] = gender
 
     text = "Здорово 😊\n\n"
-    text += "Расскажите чем Вы занимаетесь"
+    text += "Укажите к какой возрастной категории Вы относитесь"
     await call.message.edit_text(text=text)
     msg = await call.message.edit_reply_markup(reply_markup=user_work_ikb)
 
 
-@dp.callback_query_handler(text=["uw_student", "uw_busines", "uw_employee", "uw_freelancer"], state=Dating.user_work)
+@dp.callback_query_handler(text=["20-30", "30-40", "40-50", "50-"], state=Dating.user_work)
 async def user_work(call: types.CallbackQuery, state: FSMContext):
     """Ловлю выбор занятости пользователем"""
-    if call.data == "uw_student":
-        employment = "student"
-    elif call.data == "uw_busines":
-        employment = "busines"
-    elif call.data == "uw_employee":
-        employment = "employee"
-    elif call.data == "uw_freelancer":
-        employment = "freelancer"
+    if call.data == "20-30":
+        age_group = "20-30"
+    elif call.data == "30-40":
+        age_group = "30-40"
+    elif call.data == "40-50":
+        age_group = "40-50"
+    elif call.data == "50-":
+        age_group = "50-"
 
     async with state.proxy() as data:
-        data['employment'] = employment
+        data['age_group'] = age_group
 
     data = await state.get_data()
 
-    args = data['args']
+    try:
+        args = data['args']
+    except Exception as _ex:
+        args = ""
     try:
         id_user = await db.add_new_user(referral=args, gender=data['gender'],
-                                        employment=data['employment'])
+                                        age_group=data['age_group'])
     except Exception as _ex:
         print(_ex)
-        id_user = await db.add_new_user(gender=data['gender'], employment=data['employment'])
+        id_user = await db.add_new_user(gender=data['gender'], age_group=data['age_group'])
 
     try:
         await bot.delete_message(chat_id=call.message.from_user.id, message_id=data['msg_id'])

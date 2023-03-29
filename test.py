@@ -1,14 +1,11 @@
-import json
+test = [
+    {"count": 1, "price": 550, "title": "Долма с бараниной"},
+    {"count": 1, "price": 520, "title": "Долма со свининой и телятиной"},
+    {"count": 1, "price": 430, "title": "Жареная кюрза"},
+    {"count": 6, "price": 690, "title": "Теплый салат с семгой"},
+    {"count": 1, "price": 520, "title": "Теплый салат с телятиной"},
+    {"count": 1, "price": 640, "title": "Цезарь с креветками"}
+]
 
-from data import config
-
-with open("temp.json", "r") as file:
-    msg_id_list = json.load(file)
-
-msg_id_dict = {}
-for item in msg_id_list:
-    msg_id_dict.update(item)
-
-
-print(config.admins[0])
-print(msg_id_dict['553603641'])
+for item in test:
+    print(item['title'])

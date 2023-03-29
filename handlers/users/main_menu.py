@@ -1,3 +1,4 @@
+#TODO: Кнопка с геолокацией, проложить маршрут до ресторана
 from typing import Union
 
 from handlers.users.user_order_shipping import build_category_keyboard
@@ -217,7 +218,7 @@ async def send_question_to_admin(message: types.Message, state: FSMContext):
     question_text = message.text.strip()
     markup = InlineKeyboardMarkup()
     markup.add(
-        InlineKeyboardButton(text="Ответить в ЛС", callback_data="", url=f"https://t.me/{message.from_user.username}")
+        InlineKeyboardButton(text="Ответить", callback_data=f"answer_to_user-{message.from_user.id}")
     )
 
     text = f"Пользователь @{message.from_user.username} задает вопрос:\n"
@@ -226,11 +227,33 @@ async def send_question_to_admin(message: types.Message, state: FSMContext):
     for admin in admins:
         await bot.send_message(chat_id=admin, text=text, reply_markup=markup)
     await state.finish()
-    text = "Благодарим Вас за обратную связь 🤗. С Вами скоро свяжется наш администратор."
+    text = "Благодарим Вас за обратную связь 🤗. Вам скоро ответят."
     if str(message.from_user.id) in admins:
         await message.answer(text=text, reply_markup=menuAdmin)
     else:
         await message.answer(text=text, reply_markup=menuUser)
+
+
+@dp.callback_query_handler(text_contains=["answer_to_user"], state="*")
+async def answer_to_user(call: types.CallbackQuery, state: FSMContext):
+    """Ответ пользователю на вопрос"""
+    await Question.admin_answer.set()
+
+    text="Введите ваш ответ"
+    await call.message.answer(text=text)
+
+    async with state.proxy() as data:
+        data['user_id'] = call.data.split('-')[-1]
+
+
+@dp.message_handler(content_types=["text"], state=Question.admin_answer)
+async def send_answer_to_user(message: Message, state: FSMContext):
+    """Ловлю ответ администратора и отправляю его пользователю задавшему вопрос"""
+    data = await state.get_data()
+    answer = message.text.strip()
+    await bot.send_message(chat_id=int(data['user_id']), text=answer)
+    await state.finish()
+    await MainMenu.main.set()
 
 
 @dp.message_handler(Text(contains="Акции"), state="*")

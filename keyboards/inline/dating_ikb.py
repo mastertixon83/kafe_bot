@@ -10,10 +10,10 @@ user_gender_ikb = InlineKeyboardMarkup(
 
 user_work_ikb = InlineKeyboardMarkup(
     inline_keyboard=[
-        [InlineKeyboardButton("🎓 Я студент", callback_data="uw_student")],
-        [InlineKeyboardButton("💰 Я предприниматель", callback_data="uw_busines")],
-        [InlineKeyboardButton("💼 Работаю в найме", callback_data="uw_employee")],
-        [InlineKeyboardButton("💻 Фрилансер", callback_data="uw_freelancer")]
+        [InlineKeyboardButton("20-30", callback_data="20-30")],
+        [InlineKeyboardButton("30-40", callback_data="30-40")],
+        [InlineKeyboardButton("40-50", callback_data="40-50")],
+        [InlineKeyboardButton("50 и старше", callback_data="50-")]
 
     ],
     one_time_keyboard=True
