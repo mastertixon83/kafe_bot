@@ -95,6 +95,7 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
         await bot.edit_message_text(chat_id=int(admin), message_id=msg_id_dict[admin], text=text, reply_markup=admin_inline_send_ls, parse_mode=types.ParseMode.HTML)
 
     if call_data[2] in ['rejected', 'foolrest']:
+        order_status = True
         await bot.send_message(chat_id=call_data[0],
                                text="К сожалению, все столы забронированы.😞 Если что-то измениться, мы свяжемся с Вами позже 🤝")
     elif call_data[2] == 'approve':
@@ -103,11 +104,11 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
         #         [InlineKeyboardButton(text="Отменить заявку", callback_data=f"hall_cancel-user-{call_data[1]}")]
         #     ]
         # )
-
+        order_status = False
         await bot.send_message(chat_id=call_data[0],
                                text=f"Ваша запись подтвердждена администрацией. Ваш столик: {tableNumber}. Ждем вас :)")
     # Обновить статус заявки в БД
-    await db.update_order_hall_status(id=int(call_data[1]), order_status=True, admin_answer=call_data[2],
+    await db.update_order_hall_status(id=int(call_data[1]), order_status=order_status, admin_answer=call_data[2],
                                       admin_id=admin_id, admin_name=f'@{adminUsername}', table_number=tableNumber)
 
 

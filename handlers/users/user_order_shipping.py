@@ -594,16 +594,19 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
     ikb.pop(0)
     markup = InlineKeyboardMarkup()
     markup.add(ikb[0][0])
+    if call.data.split("_")[-1] == "cancel":
+        order_status = True
+    elif call.data.split("_")[-1] == "apprive":
+        order_status = False
 
     with open("temp.json", "r") as file:
         msg_id_list = json.load(file)
 
     text = msg_id_list[-1]
-    logger.debug(text)
     msg_id_dict = {}
     for item in msg_id_list[:-1]:
         msg_id_dict.update(item)
-    text['text']
+
     for admin in admins:
         await bot.edit_message_text(chat_id=admin, message_id=msg_id_dict[admin],
                                     text=text['text'] + f'\nПринял администратор: @{call.from_user.username}')
@@ -612,6 +615,6 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
     data = call.data.split('-')
 
     await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,
-                                          admin_id=str(call.from_user.id), admin_answer=data[0].split("_")[-1])
+                                          admin_id=str(call.from_user.id), admin_answer=data[0].split("_")[-1], order_status=order_status)
 
     await state.finish()

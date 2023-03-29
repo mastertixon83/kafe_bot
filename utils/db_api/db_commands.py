@@ -70,7 +70,7 @@ class DBCommands:
     GET_CART_PRODUCTS_INFO = "SELECT * FROM items_menu WHERE id = any($1::int[]) ORDER BY id"
 
     ### Обновление заявки на доставку администратором
-    UPDATE_SHIPPING_ORDER_STATUS = "UPDATE shipping SET order_status = false, admin_name = $2, admin_id = $3, admin_answer = $4 WHERE id = $1"
+    UPDATE_SHIPPING_ORDER_STATUS = "UPDATE shipping SET order_status = $5, admin_name = $2, admin_id = $3, admin_answer = $4 WHERE id = $1"
 
     ### Персонал
     ADD_PERSONAL_REQUEST = "INSERT INTO personal (personal, table_number, comment) VALUES ($1, $2, $3) RETURNING id"
@@ -296,10 +296,10 @@ class DBCommands:
         except UniqueViolationError:
             pass
 
-    async def update_shipping_order_status(self, id, admin_name, admin_id, admin_answer):
+    async def update_shipping_order_status(self, id, admin_name, admin_id, admin_answer, order_status):
         """Обновление статуса заявки на доставку"""
         command = self.UPDATE_SHIPPING_ORDER_STATUS
-        args = id, admin_name, admin_id, admin_answer
+        args = id, admin_name, admin_id, admin_answer, order_status
         await self.pool.fetch(command, *args)
 
     ### Вызов персонала

@@ -356,7 +356,8 @@ async def get_orders_on_date(message: types.Message, state: FSMContext):
                                                           callback_data=f"aa_hall_cancel-{order['id']}")]
                                 ]
                             )
-                        elif order['admin_answer'] == None or order['admin_answer'] == 'cancel' or order['admin_answer'] == 'rejected':
+                        elif order['admin_answer'] == None or order['admin_answer'] == 'cancel' or order[
+                            'admin_answer'] == 'rejected':
                             markup = InlineKeyboardMarkup(
                                 inline_keyboard=[
                                     [
@@ -483,7 +484,7 @@ async def get_orders_on_date(message: types.Message, state: FSMContext):
     """Лобвлю номер столика от администратора"""
     data = await state.get_data()
 
-    await db.update_order_hall_status(id=int(data['order_id']), order_status=True, admin_answer='approve',
+    await db.update_order_hall_status(id=int(data['order_id']), order_status=False, admin_answer='approve',
                                       admin_id=str(message.from_user.id), admin_name=message.from_user.username,
                                       table_number=int(message.text))
 
@@ -577,7 +578,7 @@ async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext)
     # "end_date_month": end_date_month,
     # "start_date_prev_month": start_date_prev_month,
     # "end_date_prev_month": end_date_prev_month
-    #!!!TODO: Доделать выгрузку в Excel данных о доставке
+    # !!!TODO: Доделать выгрузку в Excel данных о доставке
     book = openpyxl.Workbook()
     book.remove(book.active)
     book.create_sheet("За сегодня")
@@ -587,7 +588,13 @@ async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext)
 
     for sheet in book.worksheets:
         if sheet.title == "За сегодня":
-            sheet.cell(row=1, column=1).value = 'ЗаеБАЛ!!!'
+            sheet.cell(row=1, column=1).value = 'Username'
+            sheet.cell(row=1, column=2).value = 'User_id'
+            sheet.cell(row=1, column=3).value = 'Телефон'
+            sheet.cell(row=1, column=4).value = 'Дата'
+            sheet.cell(row=1, column=5).value = 'Время'
+            sheet.cell(row=1, column=6).value = 'Адрес доставки'
+            sheet.cell(row=1, column=7).value = 'Метод оплаты'
         elif sheet.title == "За неделю":
             sheet.cell(row=1, column=1).value = "Не ПИЗДИ!!!"
         elif sheet.title == "За месяц":
@@ -665,7 +672,7 @@ async def approve_shipping_order_made_today(call: types.CallbackQuery, state: FS
                 [InlineKeyboardButton(text="Отменить", callback_data=f"aa_sh_cancel-{data[1]}")]
             ]
         )
-
+        order_status = False
         await bot.send_message(chat_id=int(user[0]['user_id']),
                                text=f'Ваша заявка на доставку подтверждена администрацией.\n\n{call.message.text}')
 
@@ -677,13 +684,14 @@ async def approve_shipping_order_made_today(call: types.CallbackQuery, state: FS
                 ]
             ]
         )
-
+        order_status = True
         await bot.send_message(chat_id=int(user[0]['user_id']),
                                text=f'Ваша заявка на доставку отклонена администрацией.\n\n{call.message.text}')
 
     await call.message.edit_reply_markup(markup)
     await db.update_shipping_order_status(id=int(data[1]), admin_name=call.from_user.username,
-                                          admin_id=str(call.from_user.id), admin_answer=data[0].split("_")[-1])
+                                          admin_id=str(call.from_user.id), admin_answer=data[0].split("_")[-1],
+                                          order_status=order_status)
 
 
 @dp.message_handler(Text(contains=["Участники программы лояльности"]), state=Analytics.main)
