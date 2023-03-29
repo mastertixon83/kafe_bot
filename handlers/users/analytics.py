@@ -78,7 +78,7 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
         username = user["username"]
         full_name = user["full_name"]
         gender = user["gender"]
-        employment = user["employment"]
+        age_group = user["age_group"]
         referral = user["referral"]
         referral_id = user["referral_id"]
         card_fio = user["card_fio"]
@@ -94,7 +94,7 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
         reason_for_ban = user["reason_for_ban"]
 
         result.append(
-            [created_at, birthday, user_id, username, full_name, gender, employment, card_phone, card_number, card_fio,
+            [created_at, birthday, user_id, username, full_name, gender, age_group, card_phone, card_number, card_fio,
              card_status, prize, balance, referral, referral_id,
              administrator, director, ban_status, reason_for_ban]
         )
@@ -110,7 +110,7 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
     sheet.cell(row=1, column=4).value = "Username"
     sheet.cell(row=1, column=5).value = "Full_name"
     sheet.cell(row=1, column=6).value = "Пол"
-    sheet.cell(row=1, column=7).value = "Вид занятости"
+    sheet.cell(row=1, column=7).value = "Возрастная категория"
     sheet.cell(row=1, column=8).value = "Номер телефона"
     sheet.cell(row=1, column=9).value = "Номер карты"
     sheet.cell(row=1, column=10).value = "Фамилия Имя на карте"

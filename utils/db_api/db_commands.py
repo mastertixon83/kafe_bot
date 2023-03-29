@@ -96,7 +96,7 @@ class DBCommands:
     ### Настройки Администраторы
     GET_ALL_ADMINS = "SELECT * FROM users WHERE administrator = true"
     REMOVE_ADMIN_STATUS_FROM_USER = "UPDATE users SET administrator = FALSE WHERE user_id = $1"
-    ADD_ADMIN_STATUS_FOR_USER = "UPDATE users SET administrator = TRUE WHERE username = $1"
+    ADD_ADMIN_STATUS_FOR_USER = "UPDATE users SET administrator = TRUE WHERE username = $1 RETURNING user_id"
 
     ### Рассылки
     ADD_NEW_TASK = "INSERT INTO task(admin_name, type_mailing, picture, message, status, execution_date, error, keyboard) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id"

@@ -191,7 +191,7 @@ async def show_menu_order_shipping(message: Union[types.Message, types.CallbackQ
         data["chat_id"] = user_id
 
 
-@dp.message_handler(Text(contains="Программа лояльности"), state=None)
+@dp.message_handler(Text(contains="Программа лояльности"), state="*")
 async def reg_loyal_card(message: Message, state: FSMContext):
     """Обработчик нажатия на кнопку Программа лояльности"""
     await db.update_last_activity(user_id=message.from_user.id, button='Программа лояльности')

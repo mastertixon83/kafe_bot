@@ -128,7 +128,10 @@ async def username_for_admin(message: types.Message, state: FSMContext):
     id_msg_list = data['id_msg_list']
 
     try:
-        await db.add_admin_status_for_user(username=username)
+        user_id = await db.add_admin_status_for_user(username=username)
+        await bot.send_message(
+            text="‼️‼️‼️\nВы теперь Администратор, для того чтобы новые права начали действовать, перезапустите бота командой /start",
+            chat_id=user_id[0]['user_id'])
     except Exception as _ex:
         await message.answer(text=f"Пользователя {username} нет в нашей базе данных пользователей",
                              reply_markup=menu_admin_config)

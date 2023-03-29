@@ -46,10 +46,13 @@ async def bot_start(message: types.Message, state: FSMContext):
         text += "Давайте познакомимся поближе\n"
         text += "Кто вы?"
         msg = await message.answer(text=text, reply_markup=user_gender_ikb)
-
+        try:
+            args = message.get_args()
+        except Exception:
+            args = ""
         async with state.proxy() as data:
             data['user_id'] = user_id
-            data['args'] = message.get_args() if message.get_args() != "" else ""
+            data['args'] = args
             data['msg_id'] = msg.message_id
 
     else:
@@ -69,7 +72,7 @@ async def bot_start(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(text=["ug_female", "ug_male"], state=Dating.user_gender)
 async def user_gender(call: types.CallbackQuery, state: FSMContext):
     """Ловлю выбор пола пользователем"""
-    await Dating.user_work.set()
+    await Dating.user_age.set()
 
     if call.data == "ug_female":
         gender = "f"
@@ -85,7 +88,7 @@ async def user_gender(call: types.CallbackQuery, state: FSMContext):
     msg = await call.message.edit_reply_markup(reply_markup=user_work_ikb)
 
 
-@dp.callback_query_handler(text=["20-30", "30-40", "40-50", "50-"], state=Dating.user_work)
+@dp.callback_query_handler(text=["20-30", "30-40", "40-50", "50-"], state=Dating.user_age)
 async def user_work(call: types.CallbackQuery, state: FSMContext):
     """Ловлю выбор занятости пользователем"""
     if call.data == "20-30":
@@ -106,12 +109,18 @@ async def user_work(call: types.CallbackQuery, state: FSMContext):
         args = data['args']
     except Exception as _ex:
         args = ""
-    try:
+    if args == "":
+        id_user = await db.add_new_user(gender=data['gender'], age_group=data['age_group'])
+    else:
         id_user = await db.add_new_user(referral=args, gender=data['gender'],
                                         age_group=data['age_group'])
-    except Exception as _ex:
-        print(_ex)
-        id_user = await db.add_new_user(gender=data['gender'], age_group=data['age_group'])
+
+    # try:
+    #     id_user = await db.add_new_user(referral=args, gender=data['gender'],
+    #                                     age_group=data['age_group'])
+    # except Exception as _ex:
+    #     print(_ex)
+    #     id_user = await db.add_new_user(gender=data['gender'], age_group=data['age_group'])
 
     try:
         await bot.delete_message(chat_id=call.message.from_user.id, message_id=data['msg_id'])
