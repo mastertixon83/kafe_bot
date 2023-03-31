@@ -88,7 +88,7 @@ async def user_gender(call: types.CallbackQuery, state: FSMContext):
     msg = await call.message.edit_reply_markup(reply_markup=user_work_ikb)
 
 
-@dp.callback_query_handler(text=["20-30", "30-40", "40-50", "50-"], state=Dating.user_age)
+@dp.callback_query_handler(text=["20-30", "30-40", "40-50", "50+"], state=Dating.user_age)
 async def user_work(call: types.CallbackQuery, state: FSMContext):
     """Ловлю выбор занятости пользователем"""
     if call.data == "20-30":
@@ -97,8 +97,8 @@ async def user_work(call: types.CallbackQuery, state: FSMContext):
         age_group = "30-40"
     elif call.data == "40-50":
         age_group = "40-50"
-    elif call.data == "50-":
-        age_group = "50-"
+    elif call.data == "50+":
+        age_group = "50+"
 
     async with state.proxy() as data:
         data['age_group'] = age_group
@@ -114,13 +114,6 @@ async def user_work(call: types.CallbackQuery, state: FSMContext):
     else:
         id_user = await db.add_new_user(referral=args, gender=data['gender'],
                                         age_group=data['age_group'])
-
-    # try:
-    #     id_user = await db.add_new_user(referral=args, gender=data['gender'],
-    #                                     age_group=data['age_group'])
-    # except Exception as _ex:
-    #     print(_ex)
-    #     id_user = await db.add_new_user(gender=data['gender'], age_group=data['age_group'])
 
     try:
         await bot.delete_message(chat_id=call.message.from_user.id, message_id=data['msg_id'])

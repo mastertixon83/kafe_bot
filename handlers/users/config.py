@@ -1,4 +1,3 @@
-#TODO Сделать управление акциями
 import os
 from datetime import datetime, timezone
 
@@ -313,9 +312,22 @@ async def username_ban_reason(message: types.Message, state: FSMContext):
 
 
 @dp.message_handler(Text(contains="Отключить все активные рассылки"), state="*")
-async def config_mailings(message: types.Message, state: FSMContext):
+async def config_mailings(message: types.Message):
     """Управление рассылками, включенние/отключение"""
     await db.off_all_tasks()
-    await message.answer(text="Все рассылки отключены")
+    await message.answer(text="Все активные рассылки отключены")
+
+
+@dp.message_handler(Text(contains="Редактировать акции"), state="*")
+async def config_edit_promotions(message: types.Message, state:FSMContext):
+    """Редактировани акций"""
+    #TODO: !!!!!Сделать управление акциями
+    pass
+    """
+        Экспорт в эксель с сортировкой по убыванию
+        Включение акции по id или создать новую из Excel файла
+        Отключение всех активных акций
+        отключение одной акции
+    """
 
 

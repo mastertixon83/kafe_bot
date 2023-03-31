@@ -226,6 +226,7 @@ async def analytics_mailings(message: types.Message, state: FSMContext):
             [InlineKeyboardButton(text='Показать активные рассылки', callback_data="show_active_tasks")]
         ]
     )
+    #TODO: Сделать обработчик кнопки Показать активные рассылки
     msg = await message.answer(text=text, reply_markup=markup)
 
     data = await state.get_data()

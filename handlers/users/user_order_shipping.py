@@ -117,7 +117,10 @@ async def main_menu(callback: types.CallbackQuery, what, state, **kwargs):
     """Обработчик нажатия на кнопку выход, Главное меню"""
     await db.update_last_activity(user_id=callback.message.from_user.id, button='Доставка Главное меню')
     await callback.message.delete()
-    await callback.message.answer(text="Главное меню", reply_markup=menuAdmin)
+    if callback.from_user.id in admins:
+        await callback.message.answer(text="Главное меню", reply_markup=menuAdmin)
+    else:
+        await callback.message.answer(text="Главное меню", reply_markup=menuUser)
     user_id = callback.message.chat.id
     await db.delete_cart(user_id=str(user_id))
     await state.finish()
@@ -162,7 +165,7 @@ async def build_item_cards(callback: types.CallbackQuery, category_id, state, **
     for item in items:
         item_id = item['id']
         info = await db.get_item_info(id=int(item_id))
-
+        #TODO: Пересчет суммы и кол-ва продуктов в зависимости от того что лежит в корзине
         markup = await items_in_category_keyboard(item_id=int(item['id']), count=0, user_id=data['chat_id'])
 
         with open(f"media/menu/{info[0]['photo']}.jpg", "rb") as file:

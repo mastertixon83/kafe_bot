@@ -1,4 +1,4 @@
-#TODO: Настроить админов
+#TODO: !!! Продумать планировщик
 import asyncio
 import datetime
 import os
@@ -42,7 +42,7 @@ async def on_startup(dp):
     # BOT_TOKEN=6040617089:AAFbKfUPqPnW1_UkikhefvayTlrGQoBq6G4
     # BOT_TOKEN=5664820788:AAEfWKPVB8myVcLkpdNKpurc1mY5yogUzuc
     notification_time = config.BIRTHDAY_NOTIFICATION_TIME.split(":")
-    #TODO: сделать задание каждое утро очищать папку temp и media/mailings
+
     scheduler.add_job(apsched.send_birthday_cron, 'cron', hour=str(notification_time[0]),
                       minute=str(notification_time[1]), kwargs={'bot': dp.bot})
 

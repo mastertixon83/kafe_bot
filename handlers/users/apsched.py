@@ -123,3 +123,22 @@ async def send_message_interval(bot, **kwargs):
     picture = kwargs.get('picture')
 
     await bot.send_photo(chat_id=553603641, caption=caption, photo=picture)
+
+
+
+"""
+import json
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
+scheduler = AsyncIOScheduler()
+
+# сохранение задач в json файл
+scheduler_state = scheduler.get_state()
+with open('scheduler.json', 'w') as f:
+    json.dump(scheduler_state, f)
+    
+# загрузка задач из json файла
+with open('scheduler.json', 'r') as f:
+    scheduler_state = json.load(f)
+scheduler.set_state(scheduler_state)
+"""

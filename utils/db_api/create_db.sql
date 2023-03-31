@@ -223,7 +223,6 @@ create table if not exists promotions
     updated_at DATE NOT NULL DEFAULT timezone('Asia/Almaty', CURRENT_TIMESTAMP)::DATE,
     url text,
     status boolean default FALSE
-
 );
 
 DO $$
