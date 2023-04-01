@@ -289,7 +289,8 @@ async def username_ban_reason(message: types.Message, state: FSMContext):
     try:
         await db.update_blacklist_status(id=int(user_id[0]['id']), reason=ban_reason, status=True)
     except Exception as _ex:
-        await message.answer(text=f"Пользователь с username - {username} - в нашей базе данных не найден", reply_markup=cancel_btn)
+        await message.answer(text=f"Пользователь с username - {username} - в нашей базе данных не найден",
+                             reply_markup=cancel_btn)
 
     for id in id_msg_list:
         try:
@@ -318,16 +319,92 @@ async def config_mailings(message: types.Message):
     await message.answer(text="Все активные рассылки отключены")
 
 
-@dp.message_handler(Text(contains="Редактировать акции"), state="*")
-async def config_edit_promotions(message: types.Message, state:FSMContext):
-    """Редактировани акций"""
-    #TODO: !!!!!Сделать управление акциями
-    pass
-    """
-        Экспорт в эксель с сортировкой по убыванию
-        Включение акции по id или создать новую из Excel файла
-        Отключение всех активных акций
-        отключение одной акции
-    """
+async def build_prize_keyboard():
+    """Построениклавиатуры с призами"""
+    prizes = await db.get_all_type_prizes()
+
+    markup = InlineKeyboardMarkup()
+
+    for prize in prizes:
+        markup.row(
+            InlineKeyboardButton(text=f"{prize['title']}", callback_data=f"{prize['id']}"),
+            InlineKeyboardButton(text=f"{'Отключить' if prize['status'] == True else 'Включить'}",
+                                 callback_data=f"{prize['id']}-status-{'FALSE' if prize['status'] == True else 'TRUE'}"),
+            InlineKeyboardButton(text="Удалить", callback_data=f"{prize['id']}-delete_prize")
+        )
+    markup.row(
+        InlineKeyboardButton(text="Добавить приз", callback_data="add_new_prize")
+    )
+    return markup
 
 
+@dp.message_handler(Text(contains="Редактировать призы"), state=ConfigAdmins.config_main)
+async def config_prizes(message: types.Message, state: FSMContext):
+    """Редактирование призов"""
+    markup = await build_prize_keyboard()
+    await message.delete()
+
+    text = "Призы для подарков"
+    msg = await bot.send_message(chat_id=message.from_user.id, text=text, reply_markup=markup)
+
+    async with state.proxy() as data:
+        data['message_id'] = msg.message_id
+        data['id_msg_list'] = [msg.message_id]
+
+
+@dp.callback_query_handler(text=["add_new_prize"], state=ConfigAdmins.config_main)
+async def add_new_prize(call: types.CallbackQuery, state: FSMContext):
+    """Ловлю нажатие на кнопку Добавить новый приз"""
+    await ConfigAdmins.config_admins_prizes_title.set()
+    text = "Введите название приза"
+    msg = await call.message.answer(text=text)
+
+    async with state.proxy() as data:
+        data['msg_id_prize_title'] = msg.message_id
+
+
+@dp.message_handler(content_types=["text"], state=ConfigAdmins.config_admins_prizes_title)
+async def add_new_prize_title(message: types.Message, state: FSMContext):
+    """Ловлю ввод от пользователя название приза"""
+    await ConfigAdmins.config_main.set()
+    title = message.text.strip()
+    await message.delete()
+    data = await state.get_data()
+    await bot.delete_message(chat_id=message.from_user.id, message_id=data['msg_id_prize_title'])
+
+    await db.add_new_prize_type(title=title)
+    markup = await build_prize_keyboard()
+
+    text = "Призы для подарков"
+    await bot.edit_message_text(chat_id=message.from_user.id, message_id=int(data['message_id']), text=text,
+                                reply_markup=markup)
+
+
+@dp.callback_query_handler(text_contains=["delete_prize"], state=ConfigAdmins.config_main)
+async def delete_prize(call: types.CallbackQuery, state: FSMContext):
+    """Удалить приз"""
+    id_prize = call.data.split('-')[0]
+    data = await state.get_data()
+    await db.del_prize_from_db(id=id_prize)
+
+    markup = await build_prize_keyboard()
+    text = "Призы для подарков"
+    await bot.edit_message_text(chat_id=call.from_user.id, message_id=int(data['message_id']), text=text,
+                                reply_markup=markup)
+
+
+@dp.callback_query_handler(text_contains=["status"], state=ConfigAdmins.config_main)
+async def on_off_prize(call: types.CallbackQuery, state: FSMContext):
+    """Включение/Отключение приза"""
+    data = call.data.split('-')
+    id_prize = data[0]
+    status = True if data[2] == 'TRUE' else False
+
+    await db.update_status_prize(id_prize=id_prize, status=status)
+
+    data = await state.get_data()
+
+    markup = await build_prize_keyboard()
+    text = "Призы для подарков"
+    await bot.edit_message_text(chat_id=call.from_user.id, message_id=int(data['message_id']), text=text,
+                                reply_markup=markup)

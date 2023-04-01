@@ -1,3 +1,4 @@
+
 import datetime
 from datetime import timedelta
 
@@ -16,6 +17,7 @@ db = DBCommands()
 
 async def clear_temp_folder():
     """Очистка папок temp и media/mailings"""
+    #TODO: Продумать алгоритм очистки папки mailings
     folders = ["temp", "media/mailings"]
     for folder_name in folders:
         try:

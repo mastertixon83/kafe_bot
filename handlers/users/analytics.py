@@ -1,4 +1,3 @@
-# TODO: Удаление карты лояльности????
 import json
 import re
 
@@ -13,7 +12,7 @@ from aiogram.dispatcher import FSMContext
 from loader import dp, bot, db, logger
 from aiogram import types
 
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto, ReplyKeyboardRemove
 
 from states.analytics import Analytics
 from utils.db_api.db_commands import DBCommands
@@ -21,8 +20,15 @@ from utils.db_api.db_commands import DBCommands
 from aiogram.dispatcher.filters import Text
 from data.config import admins
 
-
 db = DBCommands()
+
+type_mailing_dict = {
+    "standard": "Обычная рассылка",
+    "birthday": "Предложение для именинников",
+    "hall_reservation": "Призыв к бронированию",
+    "shipping": "Закажите доставку",
+    "loyal_card": "Владельцам карт лояльности"
+}
 
 
 def plural_form(n, word):
@@ -226,7 +232,7 @@ async def analytics_mailings(message: types.Message, state: FSMContext):
             [InlineKeyboardButton(text='Показать активные рассылки', callback_data="show_active_tasks")]
         ]
     )
-    #TODO: Сделать обработчик кнопки Показать активные рассылки
+
     msg = await message.answer(text=text, reply_markup=markup)
 
     data = await state.get_data()
@@ -234,6 +240,80 @@ async def analytics_mailings(message: types.Message, state: FSMContext):
     id_msg_list.append(msg.message_id)
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
+
+
+@dp.callback_query_handler(text_contains=["show_active_tasks"], state=Analytics.main)
+async def get_all_active_tasks(call: types.CallbackQuery, state: FSMContext):
+    """Обработка нажатия на кнопку показать активные рассылки"""
+    data = call.data.split("-")
+    if data[0][-3:] == 'off':
+        task_id = data[-1]
+        await db.off_task(task_id=task_id)
+
+    all_active_tasks = await db.get_all_active_tasks()
+
+    markup = InlineKeyboardMarkup()
+
+    for task in all_active_tasks:
+        markup.row(
+            InlineKeyboardButton(text=f"{type_mailing_dict[task['type_mailing']]}",
+                                 callback_data=f"view_task-{task['id']}"),
+            InlineKeyboardButton(text=f"🚫 Отключить", callback_data=f"show_active_tasks_off-{task['id']}"),
+        )
+    if not all_active_tasks:
+        text = "Активных рассылок нет"
+    else:
+        text = "Активные рассылки"
+
+    if data[0][-3:] == 'off':
+        with open('media/telegram.jpg', "rb") as file:
+            photo = types.InputFile(file)
+
+            await bot.edit_message_media(chat_id=call.from_user.id, message_id=call.message.message_id,
+                                         media=InputMediaPhoto(photo), reply_markup=markup)
+
+        await bot.edit_message_caption(chat_id=call.from_user.id, message_id=call.message.message_id, caption=text,
+                                       reply_markup=markup)
+    else:
+        with open('media/telegram.jpg', "rb") as file:
+            photo = types.InputFile(file)
+
+            msg = await bot.send_photo(chat_id=call.from_user.id,
+                                 photo=photo,
+                                 caption=text, reply_markup=markup)
+
+        data = await state.get_data()
+        id_msg_list = data['id_msg_list']
+        id_msg_list.append(msg.message_id)
+        async with state.proxy() as data:
+            data['id_msg_list'] = id_msg_list
+
+
+@dp.callback_query_handler(text_contains=["view_task"], state=Analytics.main)
+async def view_task_info(call: types.CallbackQuery, state: FSMContext):
+    """Обработка нажатия на кнопку показать информацию о задании"""
+    data = call.data.split("-")
+    markup = call.message.reply_markup
+    task_info = await db.get_task_info(task_id=data[-1])
+    text = "Информация по подписке\n\n"
+    text += f"Запланирована на: {datetime.strftime(task_info[0]['execution_date'], '%Y-%m-%d %H:%M')}\n"
+    text += f"Тип рассылки: {type_mailing_dict[task_info[0]['type_mailing']]}\n"
+    keyboard = {
+        'hall_reservation': '🍽 Забронировать стол',
+        'shipping': '🚚 Заказать доставку',
+        'None': 'Никакой'
+    }
+
+    text += f"Кнопка: {keyboard[task_info[0]['keyboard']]}\n"
+    text += f"{'-' * 50}\n"
+    text += f"Текст: \n{task_info[0]['message']}\n"
+    text += f"{'-' * 50}\n"
+    text += f"Аминистратор: @{task_info[0]['admin_name']}\n\n"
+    picture = task_info[0]['picture']
+    await bot.edit_message_media(chat_id=call.from_user.id, message_id=call.message.message_id,
+                                 media=InputMediaPhoto(picture))
+    await bot.edit_message_caption(chat_id=call.from_user.id, message_id=call.message.message_id, caption=text,
+                                   reply_markup=markup)
 
 
 @dp.message_handler(Text(contains=["Статистика вызовова персонала"]), state=Analytics.main)
@@ -552,6 +632,7 @@ async def analytics_shipping(message: types.Message, state: FSMContext):
     id_msg_list.append(msg.message_id)
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
+
 
 def paste_data_to_table(sheet, order):
     """Вставка данных в таблицу"""

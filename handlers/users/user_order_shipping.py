@@ -113,15 +113,15 @@ async def cart(call: types.CallbackQuery, what, state, **kwargs):
         data["sum_id"] = msg.message_id
 
 
-async def main_menu(callback: types.CallbackQuery, what, state, **kwargs):
+async def main_menu(call: types.CallbackQuery, what, state, **kwargs):
     """Обработчик нажатия на кнопку Главное меню"""
-    await db.update_last_activity(user_id=callback.message.from_user.id, button='Доставка Главное меню')
-    await callback.message.delete()
-    if callback.from_user.id in admins:
-        await callback.message.answer(text="Главное меню", reply_markup=menuAdmin)
+    await db.update_last_activity(user_id=call.message.from_user.id, button='Доставка Главное меню')
+    await call.message.delete()
+    if call.from_user.id in admins:
+        await call.message.answer(text="Главное меню", reply_markup=menuAdmin)
     else:
-        await callback.message.answer(text="Главное меню", reply_markup=menuUser)
-    user_id = callback.message.chat.id
+        await call.message.answer(text="Главное меню", reply_markup=menuUser)
+    user_id = call.message.chat.id
     await db.delete_cart(user_id=str(user_id))
     await state.finish()
 
@@ -187,8 +187,13 @@ async def build_item_cards(call: types.CallbackQuery, category_id, state, **kwar
     for item in items:
         item_id = item['id']
         info = await db.get_item_info(id=int(item_id))
-        # TODO: Пересчет суммы и кол-ва продуктов в зависимости от того что лежит в корзине
-        markup = await items_in_category_keyboard(item_id=int(item['id']), count=0, user_id=call.from_user.id)
+
+        try:
+            item_cart_info = await db.get_user_cart_item_info(user_id=call.from_user.id, item_id=item['id'])
+            count = item_cart_info[0]['item_count']
+        except Exception as _ex:
+            count = 0
+        markup = await items_in_category_keyboard(item_id=int(item['id']), count=count, user_id=call.from_user.id)
 
         with open(f"media/menu/{info[0]['photo']}.jpg", "rb") as file:
             photo = types.InputFile(file)
@@ -209,7 +214,12 @@ async def build_item_cards(call: types.CallbackQuery, category_id, state, **kwar
                              callback_data=make_callback_data(level=1,
                                                               what='back_order_shipping'))
     )
-    msg = await call.message.answer(text="Сумма Вашего заказа: 0", reply_markup=markup2)
+
+    user_cart = await db.get_user_cart(user_id=call.from_user.id)
+    sum = 0
+    for item in user_cart:
+        sum += item["price"] * item["item_count"]
+    msg = await call.message.answer(text=f"Сумма Вашего заказа: {sum}", reply_markup=markup2)
 
     async with state.proxy() as data:
         data["sum_id"] = msg.message_id

@@ -1,25 +1,22 @@
-# TODO: У администратора просмотр не использованных кодов
-# TODO: Настройка призов (Вид приза, пицца, кольян и т.д)
-
 # INSERT INTO users (user_id, referral, username, card_status, birthday, card_phone)
-# VALUES ('3', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user1', TRUE, '1983-03-27', '+77770748383'),
-# ('4', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user111', TRUE, '1983-03-27', '+77770748383'),
-# ('5', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user2', TRUE, '1983-03-27', '+77770748383'),
-# ('6', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user3', TRUE, '1983-03-27', '+77770748383'),
-# ('7', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user4', TRUE, '1983-03-27', '+77770748383'),
-# ('8', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user5', TRUE, '1983-03-27', '+77770748383'),
-# ('9', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user6', TRUE, '1983-03-27', '+77770748383'),
-# ('71', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user7', TRUE, '1983-03-27', '+77770748383'),
-# ('81', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user8', TRUE, '1983-03-27', '+77770748383'),
-# ('91', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user9', TRUE, '1983-03-27', '+77770748383'),
-# ('10', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user10', TRUE, '1983-03-27', '+77770748383'),
-# ('11', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user11', TRUE, '1983-03-27', '+77770748383'),
-# ('12', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user12', TRUE, '1983-03-27', '+77770748383'),
-# ('13', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user13', TRUE, '1983-03-27', '+77770748383'),
-# ('14', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user14', TRUE, '1983-03-27', '+77770748383'),
-# ('15', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user15', TRUE, '1983-03-27', '+77770748383'),
-# ('16', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user16', TRUE, '1983-03-27', '+77770748383'),
-# ('17', '04db0904-b7fa-4d7a-b92d-5979129be9b3', 'user17', TRUE, '1983-03-27', '+77770748383')
+# VALUES ('3', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user1', TRUE, '1983-03-27', '+77770748383'),
+# ('4', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user111', TRUE, '1983-03-27', '+77770748383'),
+# ('5', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user2', TRUE, '1983-03-27', '+77770748383'),
+# ('6', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user3', TRUE, '1983-03-27', '+77770748383'),
+# ('7', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user4', TRUE, '1983-03-27', '+77770748383'),
+# ('8', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user5', TRUE, '1983-03-27', '+77770748383'),
+# ('9', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user6', TRUE, '1983-03-27', '+77770748383'),
+# ('71', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user7', TRUE, '1983-03-27', '+77770748383'),
+# ('81', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user8', TRUE, '1983-03-27', '+77770748383'),
+# ('91', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user9', TRUE, '1983-03-27', '+77770748383'),
+# ('10', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user10', TRUE, '1983-03-27', '+77770748383'),
+# ('11', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user11', TRUE, '1983-03-27', '+77770748383'),
+# ('12', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user12', TRUE, '1983-03-27', '+77770748383'),
+# ('13', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user13', TRUE, '1983-03-27', '+77770748383'),
+# ('14', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user14', TRUE, '1983-03-27', '+77770748383'),
+# ('15', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user15', TRUE, '1983-03-27', '+77770748383'),
+# ('16', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user16', TRUE, '1983-03-27', '+77770748383'),
+# ('17', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user17', TRUE, '1983-03-27', '+77770748383')
 
 # DELETE FROM users
 # WHERE username LIKE 'user%';
@@ -156,6 +153,7 @@ async def invite_friend(message: Message, state: FSMContext):
 async def get_active_codes(message: Message):
     """Нажатие на кнопку Мои подарки"""
     await db.update_last_activity(user_id=message.from_user.id, button='Мои подарки')
+    await message.delete()
     user_id = message.from_user.id
     codes = await db.get_active_codes_user(user_id)
 
@@ -219,9 +217,9 @@ async def use_prize_code_waiter_call(message: types.Message, state: FSMContext):
 
 # Нажатие на кнопку получить приз
 @dp.callback_query_handler(text_contains=["get_prize"])
-async def get_user_prize(call):
+async def get_user_prize(call: types.CallbackQuery, state: FSMContext):
     """Ловлю нажатие на кнопку получить приз"""
-    await db.update_last_activity(user_id=call.message.from_user.id, button='Получит приз')
+    await db.update_last_activity(user_id=call.message.from_user.id, button='Получить приз')
     await call.answer(cache_time=60)
     cb_data = call.data.split('-')
     user_id = int(cb_data[1])
@@ -232,8 +230,10 @@ async def get_user_prize(call):
     await bot.edit_message_reply_markup(call.message.chat.id, message_id=call.message.message_id, reply_markup="")
 
     text = "Вот Ваши коды\n"
+    prize = await db.get_active_prize()
+
     while prizes != 0:
-        id_code = await db.generate_prize_code(int(user_id))
+        id_code = await db.generate_prize_code(int(user_id), description=prize[0]['title'])
         info = await db.get_user_info(int(user_id))
 
         count_prize = info[0]['prize'] + 1
@@ -244,7 +244,9 @@ async def get_user_prize(call):
 
     text += f"Используйте их из меню Программа лояльности - Мои Подарки"
 
-    await call.message.answer(text=text, reply_markup=menuUser)
+    markup = menuAdmin if str(call.from_user.id) in admins else menuUser
+
+    await call.message.answer(text=text, reply_markup=markup)
 
 
 # 1 шаг Фамилия Имя

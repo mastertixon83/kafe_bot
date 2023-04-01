@@ -19,6 +19,7 @@ class ConfigAdmins(StatesGroup):
     config_main = State()
     config_admins_list = State()
     config_admins_name = State()
+    config_admins_prizes_title = State()
 
 
 class ConfigBlackList(StatesGroup):

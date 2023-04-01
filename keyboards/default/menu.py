@@ -119,7 +119,7 @@ menu_admin_config = ReplyKeyboardMarkup(
         [KeyboardButton('Отключить все активные рассылки')],
         [KeyboardButton("Редактировать меню")],
         [KeyboardButton("Редактировать отзывы")],
-        [KeyboardButton("Редактировать акции")],
+        [KeyboardButton("Редактировать призы")],
         [KeyboardButton("⬅ Главное меню")]
     ]
 )

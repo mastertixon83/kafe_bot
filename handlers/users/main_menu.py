@@ -259,7 +259,7 @@ async def send_answer_to_user(message: Message, state: FSMContext):
 async def promotions(message: Message):
     """Лювлю нажатие на кнопку Акции"""
     await db.update_last_activity(user_id=message.from_user.id, button='Акции')
-    text = f"https://teletype.in/@andreytikhonov/uJftR9aBA"
+    text = f"https://teletype.in/@andreytikhonov/rOCC9Qw4mmI"
     await message.answer(text=text)
 
 

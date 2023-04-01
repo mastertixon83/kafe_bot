@@ -65,6 +65,7 @@ class DBCommands:
     UPDATE_CART = "UPDATE cart SET item_count = $1, title = $4, price = $5 WHERE item_id = $2 AND user_id = $3 RETURNING id"
     DELETE_ITEM_FROM_CAR = "DELETE FROM cart WHERE item_id = $1"
     GET_USER_CART = "SELECT * FROM cart WHERE user_id = $1"
+    GET_USER_CART_ITEM_INFO = "SELECT * FROM cart WHERE user_id = $1 and item_id = $2"
     DELETE_CART = "DELETE FROM cart WHERE user_id = $1"
     CART_INFO = "SELECT * FROM cart WHERE user_id = $1 ORDER BY title"
     GET_CART_PRODUCTS_INFO = "SELECT * FROM items_menu WHERE id = any($1::int[]) ORDER BY id"
@@ -108,8 +109,16 @@ class DBCommands:
     GET_LOYAL_PROGRAM_PARTICIPANTS = "SELECT * FROM users WHERE card_status = TRUE"
     UPDATE_FOR_BIRTHDAY_TASK_ERROR = "UPDATE task SET error = 'No errors' WHERE id = $1"
 
-        ### Настройки рассылок
+    ### Настройки рассылок
     OFF_ALL_TASK = "UPDATE task set status = 'off' WHERE status = 'waiting'"
+
+    ### Настройки Призы
+    GET_ALL_TYPE_PRIZES = "SELECT * FROM prize ORDER BY title"
+    ADD_NEW_PRIZE_TYPE = "INSERT INTO prize(title) VALUES($1)"
+    DEL_PRIZE_FROM_DB = "DELETE FROM prize WHERE id = $1"
+    UPDATE_STATUS_PRIZE = "UPDATE prize SET status = $1 WHERE id = $2"
+    GET_ACTIVE_PRIZE = "SELECT * FROM prize WHERE status = TRUE"
+
 
     ### Аналитика
     GET_APPROVED_ORDERS_HALL = "SELECT * FROM orders_hall WHERE admin_answer = 'approve' and updated_at >= $1 AND updated_at < $2"
@@ -124,7 +133,8 @@ class DBCommands:
     GET_PERSONAL_REQUEST_TODAY = "SELECT * FROM personal WHERE personal = $1 and created_at >= $2 AND created_at < $3"
 
     GET_TASKS_MAILING = "SELECT * FROM task WHERE type_mailing = $1 and updated_at >= $2 AND updated_at < $3"
-    GET_ALL_ACTIVE_TASKS = "SELECT & FROM task WHERE status = 'waiting'"
+    GET_ALL_ACTIVE_TASKS = "SELECT * FROM task WHERE status = 'waiting'"
+    OFF_TASK = "UPDATE task SET status = 'off' WHERE id = $1"
 
     ### Отзывы
     async def add_new_review(self, text, username):
@@ -208,10 +218,9 @@ class DBCommands:
         command = self.APPROVE_USER_CARD_ADMIN
         await self.pool.fetch(command, str(user_id))
 
-    async def generate_prize_code(self, user_id):
+    async def generate_prize_code(self, user_id, description):
         """Генерация призового кода"""
         user = types.User.get_current()
-        description = "Бесплатная пицца"
 
         args = str(user_id), description
         command = self.GENERATE_PRIZE_CODE
@@ -404,6 +413,13 @@ class DBCommands:
         cart = await self.pool.fetch(command, str(user_id))
         return cart
 
+    async def get_user_cart_item_info(self, user_id, item_id):
+        """Выбор информации пользовательской корзины по элементу заказа"""
+        command = self.GET_USER_CART_ITEM_INFO
+        args = str(user_id), int(item_id)
+        item_cart_info = await self.pool.fetch(command, *args)
+        return item_cart_info
+
     async def delete_cart(self, user_id):
         """Удаление корзины пользователя"""
         command = self.DELETE_CART
@@ -464,7 +480,7 @@ class DBCommands:
     async def get_task_info(self, task_id):
         """Выборка задания по id"""
         command = self.GET_TASK_INFO
-        task_info = await self.pool.fetch(command, task_id)
+        task_info = await self.pool.fetch(command, int(task_id))
         return task_info
 
     async def get_task_birthday(self):
@@ -511,6 +527,34 @@ class DBCommands:
         args = data_obj.day, data_obj.month
         users = await self.pool.fetch(command, *args)
         return users
+
+    async def get_all_type_prizes(self):
+        """Выбо всех призов из БД"""
+        command = self.GET_ALL_TYPE_PRIZES
+        prizes = await self.pool.fetch(command)
+        return prizes
+
+    async def add_new_prize_type(self, title):
+        """Добавление нового типа приза"""
+        command = self.ADD_NEW_PRIZE_TYPE
+        await self.pool.fetch(command, title)
+
+    async def del_prize_from_db(self, id):
+        """Удаление приза из БД"""
+        command = self.DEL_PRIZE_FROM_DB
+        await self.pool.fetch(command, int(id))
+
+    async def update_status_prize(self, id_prize, status):
+        """Включение/Отключение приза"""
+        command = self.UPDATE_STATUS_PRIZE
+        args = status, int(id_prize)
+        await self.pool.fetch(command, * args)
+
+    async def get_active_prize(self):
+        """Выбор активного приза"""
+        command = self.GET_ACTIVE_PRIZE
+        return await self.pool.fetch(command)
+
 
     async def get_approved_orders_hall(self, start_date, end_date):
         """Выбор подтвержденных бронирований за сегодня, неделю, месяц, прошлый месяц"""
@@ -566,3 +610,8 @@ class DBCommands:
         """Выбор всех активных рассылок"""
         command = self.GET_ALL_ACTIVE_TASKS
         return await self.pool.fetch(command)
+
+    async def off_task(self, task_id):
+        """Отключение задания на рассылку"""
+        command = self.OFF_TASK
+        await self.pool.fetch(command, int(task_id))
