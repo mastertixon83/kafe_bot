@@ -54,7 +54,7 @@ class DBCommands:
     GET_ORDER_HALL_DATA = "SELECT * FROM orders_hall WHERE id = $1"
     UPDATE_ORDER_HALL_STATUS = "UPDATE orders_hall SET order_status = $2, admin_answer = $3, admin_id = $4, admin_name = $5, table_number = $6 WHERE id = $1"
     # GET_APPROVED_ORDERS_ON_DATA = "SELECT data_reservation, time_reservation, table_number FROM orders_hall WHERE data_reservation = $1 AND (order_status=true AND admin_answer = 'approved') ORDER BY table_number"
-    GET_APPROVED_ORDERS_ON_DATA = "SELECT * FROM orders_hall WHERE (data_reservation = $1 AND order_status=true AND admin_answer = 'approve') ORDER BY table_number"
+    GET_APPROVED_ORDERS_ON_DATA = "SELECT * FROM orders_hall WHERE (data_reservation = $1 AND order_status=false AND admin_answer = 'approve') ORDER BY table_number"
 
     ### Заявка на доставку
     ADD_NEW_SHIPPING_ORDER = "INSERT INTO shipping (tpc, number_of_devices, address, phone, " \

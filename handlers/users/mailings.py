@@ -247,6 +247,7 @@ async def standard_mailing_date_time(message: types.Message, state: FSMContext):
     message_text = data["message_text"]
     id_msg_list = data["id_msg_list"]
     users = data["users"]
+    keyboard = data["keyboard"]
 
     try:
         # Отключение всех рассылок данного типа, чтобы не размножались
@@ -255,13 +256,14 @@ async def standard_mailing_date_time(message: types.Message, state: FSMContext):
         task_id = await db.add_new_task(admin_name=admin_name, type_mailing=type_mailing, picture=picture,
                                         message=message_text, status="waiting",
                                         execution_date=datetime.strptime(date, "%Y-%m-%d %H:%M:%S"),
-                                        error="No error")
+                                        error="No error", keyboard=keyboard)
         try:
             if users:
                 scheduler.add_job(
                     apsched.send_message_date, 'date', run_date=datetime.strptime(date, "%Y-%m-%d %H:%M:%S"),
                     id=type_mailing,
-                    kwargs={'bot': bot, 'task_id': task_id, 'users': users, 'type_mailing': type_mailing}
+                    kwargs={'bot': bot, 'task_id': task_id, 'users': users, 'type_mailing': type_mailing,
+                            'keyboard': keyboard}
                 )
                 text = f"Рассылка запланирована на {datetime.strptime(date, '%Y-%m-%d %H:%M:%S')}"
             else:

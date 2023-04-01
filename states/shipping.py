@@ -3,6 +3,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 
 class Shipping(StatesGroup):
     main = State()
+    add_to_cart = State()
     data = State()
     time = State()
     number_of_devices = State()

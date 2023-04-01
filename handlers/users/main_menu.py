@@ -14,6 +14,7 @@ from aiogram.dispatcher.filters import Text
 
 from data.config import admins
 from aiogram.dispatcher import FSMContext
+from aiogram import exceptions
 
 from states.analytics import Analytics
 from states.config import ConfigAdmins, MainMenu
@@ -51,12 +52,14 @@ async def cancel(message: types.Message, state=FSMContext):
           or re.search(r"Mailings", current_state)
           or re.search(r"Analytics:main", current_state)):
 
-        if data['id_msg_list']:
+        try:
             for id_msg in data['id_msg_list']:
                 try:
                     await bot.delete_message(chat_id=message.from_user.id, message_id=id_msg)
-                except Exception as ex:
+                except exceptions.MessageToDeleteNotFound:
                     pass
+        except KeyError:
+            pass
 
     await state.finish()
     await db.delete_cart(str(message.chat.id))
@@ -133,7 +136,6 @@ async def menu(message: Message):
     text = f"Меню к Вашим услугам"
     msg = await message.answer(text=text, reply_markup=ReplyKeyboardRemove())
     await bot.delete_message(chat_id=message.chat.id, message_id=msg.message_id)
-    # await MainMenu.main.set()
     markup = await show_menu_buttons(message_id=msg.message_id + 1)
     await bot.send_message(chat_id=message.from_user.id, text=text, reply_markup=markup)
 
@@ -166,29 +168,25 @@ async def table_reservation(message: Union[types.Message, types.CallbackQuery], 
 @dp.callback_query_handler(text=["order_shipping_mailings"], state="*")
 @dp.message_handler(Text(contains="Доставка"), state=None)
 async def show_menu_order_shipping(message: Union[types.Message, types.CallbackQuery], state: FSMContext):
-    """Обработчик нажатия на кнопку Оформить заказ на доставку"""
+    """Обработчик нажатия на кнопку Доставка и кнопку Доставка из рассылки"""
     await Shipping.main.set()
+
     if isinstance(message, types.Message):
-        await db.update_last_activity(user_id=message.from_user.id, button='Оформить доставку')
+        ### Переход с главного меню
+        user_id = message.from_user.id
         await db.delete_cart(str(message.chat.id))
         await message.delete()
         await message.answer('Оформление заказа на доставку', reply_markup=ReplyKeyboardRemove())
-        message_id = message.message_id + 2
         user_id = message.from_user.id
 
     elif isinstance(message, types.CallbackQuery):
+        ### Переход по кнопке из рассылки
         call = message
-        await db.update_last_activity(user_id=call.message.from_user.id, button='Оформить доставку')
-        await db.delete_cart(str(call.message.chat.id))
-        await call.message.edit_text('Оформление заказа на доставку')
-        message_id = call.message.message_id + 2
         user_id = call.message.from_user.id
+        await db.delete_cart(str(call.message.chat.id))
 
+    await db.update_last_activity(user_id=user_id, button='Оформить доставку')
     await build_category_keyboard(message, state)
-
-    async with state.proxy() as data:
-        data["message_id"] = message_id
-        data["chat_id"] = user_id
 
 
 @dp.message_handler(Text(contains="Программа лояльности"), state="*")
@@ -218,7 +216,7 @@ async def send_question_to_admin(message: types.Message, state: FSMContext):
     question_text = message.text.strip()
     markup = InlineKeyboardMarkup()
     markup.add(
-        InlineKeyboardButton(text="Ответить", callback_data=f"answer_to_user-{message.from_user.id}")
+        InlineKeyboardButton(text="Ответить", callback_data=f"answer_to_user-{message.from_user.id}-{message.message_id}")
     )
 
     text = f"Пользователь @{message.from_user.username} задает вопрос:\n"
@@ -243,7 +241,8 @@ async def answer_to_user(call: types.CallbackQuery, state: FSMContext):
     await call.message.answer(text=text)
 
     async with state.proxy() as data:
-        data['user_id'] = call.data.split('-')[-1]
+        data['user_id'] = call.data.split('-')[-2]
+        data['message_id'] = call.data.split('-')[-1]
 
 
 @dp.message_handler(content_types=["text"], state=Question.admin_answer)
@@ -251,7 +250,7 @@ async def send_answer_to_user(message: Message, state: FSMContext):
     """Ловлю ответ администратора и отправляю его пользователю задавшему вопрос"""
     data = await state.get_data()
     answer = message.text.strip()
-    await bot.send_message(chat_id=int(data['user_id']), text=answer)
+    await bot.send_message(chat_id=int(data['user_id']), reply_to_message_id=int(data['message_id']), text=answer)
     await state.finish()
     await MainMenu.main.set()
 

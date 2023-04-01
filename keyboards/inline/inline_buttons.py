@@ -81,7 +81,7 @@ user_inline_approve = InlineKeyboardMarkup(
     inline_keyboard=[
         [
             InlineKeyboardButton("Подтвердить", callback_data="approve_order_user"),
-            InlineKeyboardButton("Отмена", callback_data="cancel_order_user")
+            InlineKeyboardButton("Исправить", callback_data="cancel_order_user")
         ]
     ]
 )

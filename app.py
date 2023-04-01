@@ -46,7 +46,7 @@ async def on_startup(dp):
     scheduler.add_job(apsched.send_birthday_cron, 'cron', hour=str(notification_time[0]),
                       minute=str(notification_time[1]), kwargs={'bot': dp.bot})
 
-    scheduler.add_job(apsched.clear_temp_folder, 'cron', hour="00", minute="00", kwargs={'bot': dp.bot})
+    scheduler.add_job(apsched.clear_temp_folder, 'cron', hour="00", minute="00")
 
 
 if __name__ == '__main__':

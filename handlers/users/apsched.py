@@ -14,7 +14,7 @@ import os
 db = DBCommands()
 
 
-async def clear_temp_folder(bot, **kwargs):
+async def clear_temp_folder():
     """Очистка папок temp и media/mailings"""
     folders = ["temp", "media/mailings"]
     for folder_name in folders:
@@ -27,7 +27,7 @@ async def clear_temp_folder(bot, **kwargs):
             logger.debug(_ex)
 
 
-async def send_birthday_cron(bot, **kwargs):
+async def send_birthday_cron(bot):
     """Рассылка именинникам"""
 
     before_birthday_days = config.BEFORE_BIRTHDAY_DAYS
@@ -47,10 +47,11 @@ async def send_birthday_cron(bot, **kwargs):
 
             try:
                 for user in users:
-                    if user['administrator'] != True:
+                    if not user['administrator']:
                         markup = InlineKeyboardMarkup(
                             inline_keyboard=[
-                                [InlineKeyboardButton(text="Забронировать столик", callback_data="hall_reservation_mailings")]
+                                [InlineKeyboardButton(text="Забронировать столик",
+                                                      callback_data="hall_reservation_mailings")]
                             ]
                         )
                         await bot.send_photo(chat_id=user['user_id'], photo=picture)
@@ -61,7 +62,8 @@ async def send_birthday_cron(bot, **kwargs):
                 pass
     else:
         for admin in admins:
-            await bot.send_message(chat_id=admin, text="‼️‼️‼️‼️‼️\n Не создана рассылка для именинников! Не забуюте создать")
+            await bot.send_message(chat_id=admin,
+                                   text="‼️‼️‼️‼️‼️\n Не создана рассылка для именинников! Не забуюте создать")
 
 
 async def send_message_date(bot, **kwargs):
@@ -73,6 +75,7 @@ async def send_message_date(bot, **kwargs):
     task_info = await db.get_task_info(task_id=int(task_id))
     picture = task_info[0]['picture']
     text = task_info[0]['message']
+    error = "No errors"
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="text",
@@ -82,7 +85,7 @@ async def send_message_date(bot, **kwargs):
     markup['inline_keyboard'][0][0]['text'] = "Заказать доставку" if keyboard == 'shipping' else "Забронировать столик"
 
     for user in users:
-        if user['administrator'] != True:
+        if not user['administrator']:
             try:
                 if type_mailing in ["birthday", "hall_reservation"]:
                     markup['inline_keyboard'][0][0]['callback_data'] = "hall_reservation_mailings"
@@ -98,8 +101,11 @@ async def send_message_date(bot, **kwargs):
                 else:
                     await bot.send_photo(chat_id=int(user['user_id']), photo=picture, caption=text)
                     if keyboard != 'None':
-                        markup['inline_keyboard'][0][0]['callback_data'] = "order_shipping_mailings" if keyboard == "shipping" else "hall_reservation_mailings"
-                        await bot.send_message(chat_id=user['user_id'], text="Успейте забронировать столик, места ограничены", reply_markup=markup)
+                        markup['inline_keyboard'][0][0][
+                            'callback_data'] = "order_shipping_mailings" if keyboard == "shipping" else "hall_reservation_mailings"
+                        await bot.send_message(chat_id=user['user_id'],
+                                               text="Успейте забронировать столик, места ограничены" if keyboard == "hall_reservation_mailings" else "Врямя акции ограничено, поспешите",
+                                               reply_markup=markup)
 
                     time.sleep(2)
                 error = 'No Errors'
@@ -114,16 +120,11 @@ async def send_message_date(bot, **kwargs):
     await db.update_task(status=status, error=error, task_id=int(task_id))
 
 
-async def send_message_cron(bot, **kwargs):
-    await bot.send_message(chat_id=553603641, text='Cron')
-
-
 async def send_message_interval(bot, **kwargs):
     caption = kwargs.get('caption')
     picture = kwargs.get('picture')
 
     await bot.send_photo(chat_id=553603641, caption=caption, photo=picture)
-
 
 
 """

@@ -1,17 +1,18 @@
-import json
-import os
-
-ass = {"sdasdasd":"asdasdasdasd"}
-
-with open("temp/temp1.json", "w") as file:
-    json.dump(ass, file, indent=4, ensure_ascii=False)
-folders = ["temp", "media/mailings"]
-for folder_name in folders:
-    try:
-        for filename in os.listdir(folder_name):
-            file_path = os.path.join(folder_name, filename)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-            print(file_path)
-    except Exception as _ex:
-        print(_ex)
+def is_prime(n):
+   """Проверяет, является ли заданное число простым"""
+   sq = int(n ** 0.5) + 1
+   if n < 2:
+      return False
+   for i in range(2, int(n ** 0.5) + 1):
+      z = n % i
+      if n % i == 0:
+         return False
+   return True
+#
+# a = int(input("Введите число а: "))
+# b = int(input("Введите число b: "))
+a = 1
+b = 20
+primes = [num for num in range(a, b+1) if is_prime(num)]
+print(f"Простые числа между {a} и {b}: ", end="")
+print(*primes, sep=" ")
