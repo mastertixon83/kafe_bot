@@ -473,7 +473,7 @@ class DBCommands:
     async def update_task(self, status, error, task_id):
         """Обновление задания"""
         command = self.UPDATE_TASK
-        args = status, error, task_id
+        args = status, str(error), int(task_id)
         task_id = await self.pool.fetch(command, *args)
         return task_id
 

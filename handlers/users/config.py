@@ -1,3 +1,4 @@
+#TODO: Настройка планировщика
 import os
 from datetime import datetime, timezone
 

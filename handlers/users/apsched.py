@@ -77,7 +77,7 @@ async def send_message_date(bot, **kwargs):
     task_info = await db.get_task_info(task_id=int(task_id))
     picture = task_info[0]['picture']
     text = task_info[0]['message']
-    error = "No errors"
+    err = "No errors"
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="text",
@@ -110,16 +110,16 @@ async def send_message_date(bot, **kwargs):
                                                reply_markup=markup)
 
                     time.sleep(2)
-                error = 'No Errors'
+                err = 'No Errors'
             except Exception as _ex:
                 status = 'Error'
-                error = _ex
+                err = _ex
     if type_mailing != 'birthday':
         status = 'performed'
     else:
         status = 'waiting'
 
-    await db.update_task(status=status, error=error, task_id=int(task_id))
+    await db.update_task(status=status, error=err, task_id=int(task_id))
 
 
 async def send_message_interval(bot, **kwargs):

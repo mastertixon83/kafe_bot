@@ -18,8 +18,7 @@
 # ('16', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user16', TRUE, '1983-03-27', '+77770748383'),
 # ('17', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user17', TRUE, '1983-03-27', '+77770748383')
 
-# DELETE FROM users
-# WHERE username LIKE 'user%';
+# DELETE FROM users WHERE username LIKE 'user%';
 
 import os
 from datetime import datetime
