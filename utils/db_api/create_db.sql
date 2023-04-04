@@ -30,7 +30,8 @@ create table if not exists users
     director boolean default FALSE,
     ban_status boolean default FALSE,
     reason_for_ban text,
-    last_activity text
+    last_activity text,
+    ban_date date
 );
 
 DO $$

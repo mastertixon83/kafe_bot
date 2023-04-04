@@ -14,6 +14,9 @@ db = DBCommands()
 @dp.message_handler(Text(contains=["Редактировать отзывы"]), state='*')
 async def edit_reviews(message: types.Message, state: FSMContext):
     """Ловлю нажатие на кнопку Редактировать отзывы"""
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+
     try:
         reviews = await db.get_approved_reviews()
     except Exception as _ex:
@@ -25,7 +28,7 @@ async def edit_reviews(message: types.Message, state: FSMContext):
         text = f"Отзыв оставил @{item['username']}\n"
         text += f"{item['text']}"
 
-        await message.answer(
+        msg = await message.answer(
             text=text,
             reply_markup=
             InlineKeyboardMarkup(
@@ -34,6 +37,10 @@ async def edit_reviews(message: types.Message, state: FSMContext):
                 ]
             )
         )
+        id_msg_list.append(msg.message_id)
+
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.callback_query_handler(text_contains="edit_review", state="*")

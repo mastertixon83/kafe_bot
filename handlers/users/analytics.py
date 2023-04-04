@@ -857,7 +857,8 @@ async def show_user_info(call: types.CallbackQuery, state: FSMContext):
     text += f"{'-' * 50}\n"
     text += f"Бан Статус: {'<b>Забанен</b>' if user_info[0]['ban_status'] == True else 'Чист'}\n"
     if user_info[0]["ban_status"] == True:
-        text += f"Причина бана: {user_info[0]['reason_for_ban']}"
+        text += f"Причина бана: {user_info[0]['reason_for_ban']}\n"
+        text += f"Дата получения бана: {user_info[0]['ban_date']}"
 
     msg = await call.message.edit_text(text=text)
     await call.message.edit_reply_markup(data["markup"])

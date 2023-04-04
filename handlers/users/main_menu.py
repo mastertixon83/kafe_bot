@@ -1,4 +1,5 @@
 #TODO: Кнопка с геолокацией, проложить маршрут до ресторана
+#TODO: Продумать приминение промокодов на скидку
 from typing import Union
 
 from handlers.users.user_order_shipping import build_category_keyboard
@@ -93,7 +94,7 @@ async def reviews(message: types.Message, state: FSMContext):
 @dp.callback_query_handler(text="review", state="*")
 async def new_review(call: types.CallbackQuery, state: FSMContext):
     """Нажатие на кнопку Оставить озыв"""
-    await call.message.answer("Напишите Ваш отзыв")
+    await call.message.answer("Напишите Ваш отзыв", reply_markup=cancel_btn)
     await Review.send_review.set()
 
 

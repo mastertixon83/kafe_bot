@@ -1,4 +1,3 @@
-
 import datetime
 from datetime import timedelta
 
@@ -17,7 +16,7 @@ db = DBCommands()
 
 async def clear_temp_folder():
     """Очистка папок temp и media/mailings"""
-    #TODO: Продумать алгоритм очистки папки mailings
+    # TODO: Продумать алгоритм очистки папки mailings
     folders = ["temp", "media/mailings"]
     for folder_name in folders:
         try:
@@ -46,16 +45,21 @@ async def send_birthday_cron(bot):
         if users:
             picture = task_info[0]['picture']
             text = task_info[0]['message']
+            keyboard = task_info[0]['keyboard']
 
             try:
                 for user in users:
                     if not user['administrator']:
-                        markup = InlineKeyboardMarkup(
-                            inline_keyboard=[
-                                [InlineKeyboardButton(text="Забронировать столик",
-                                                      callback_data="hall_reservation_mailings")]
-                            ]
-                        )
+                        if keyboard != "None":
+                            markup = InlineKeyboardMarkup(
+                                inline_keyboard=[
+                                    [InlineKeyboardButton(
+                                        text="Забронировать столик" if keyboard == "hall_reservation" else "Заказать доставку",
+                                        callback_data="hall_reservation_mailings" if keyboard == "hall_reservation" else "order_shipping_mailings")]
+                                ]
+                            )
+                        else:
+                            markup = ""
                         await bot.send_photo(chat_id=user['user_id'], photo=picture)
                         await bot.send_message(chat_id=user['user_id'], text=text, reply_markup=markup)
                         time.sleep(2)
@@ -91,23 +95,21 @@ async def send_message_date(bot, **kwargs):
             try:
                 if type_mailing in ["birthday", "hall_reservation"]:
                     markup['inline_keyboard'][0][0]['callback_data'] = "hall_reservation_mailings"
-                    await bot.send_photo(chat_id=user['user_id'], photo=picture)
-                    await bot.send_message(chat_id=user['user_id'], text=text, reply_markup=markup)
+                    await bot.send_photo(chat_id=user['user_id'], photo=picture, text=text, reply_markup=markup)
 
                 elif type_mailing == "shipping":
 
                     markup['inline_keyboard'][0][0]['callback_data'] = "order_shipping_mailings"
-                    await bot.send_photo(chat_id=user['user_id'], photo=picture)
-                    await bot.send_message(chat_id=user['user_id'], text="", reply_markup=markup)
+                    await bot.send_photo(chat_id=user['user_id'], photo=picture, text=text, reply_markup=markup)
 
                 else:
-                    await bot.send_photo(chat_id=int(user['user_id']), photo=picture, caption=text)
                     if keyboard != 'None':
                         markup['inline_keyboard'][0][0][
                             'callback_data'] = "order_shipping_mailings" if keyboard == "shipping" else "hall_reservation_mailings"
-                        await bot.send_message(chat_id=user['user_id'],
-                                               text="Успейте забронировать столик, места ограничены" if keyboard == "hall_reservation_mailings" else "Врямя акции ограничено, поспешите",
-                                               reply_markup=markup)
+                    else:
+                        markup = ""
+
+                    await bot.send_photo(chat_id=int(user['user_id']), photo=picture, caption=text, reply_markup=markup)
 
                     time.sleep(2)
                 err = 'No Errors'
@@ -120,13 +122,6 @@ async def send_message_date(bot, **kwargs):
         status = 'waiting'
 
     await db.update_task(status=status, error=err, task_id=int(task_id))
-
-
-async def send_message_interval(bot, **kwargs):
-    caption = kwargs.get('caption')
-    picture = kwargs.get('picture')
-
-    await bot.send_photo(chat_id=553603641, caption=caption, photo=picture)
 
 
 """

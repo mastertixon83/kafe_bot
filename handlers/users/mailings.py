@@ -26,7 +26,7 @@ db = DBCommands()
     Text(contains="Владельцам карт лояльности") | Text(contains="Конкретным пользователям"),
     state=Mailings.main
 )
-async def standard_mailing(message: types.Message, state: FSMContext):
+async def taking_type_mailing(message: types.Message, state: FSMContext):
     """Ловлю выбор рассылки"""
 
     if "Обычная рассылка" in message.text.strip():
@@ -61,7 +61,7 @@ async def standard_mailing(message: types.Message, state: FSMContext):
         type_mailing = "None"
         users = []
 
-    await Mailings.standard_mailing_picture.set()
+    await Mailings.mailing_picture.set()
 
     data = await state.get_data()
 
@@ -86,7 +86,7 @@ async def standard_mailing(message: types.Message, state: FSMContext):
     await message.delete()
 
 
-@dp.message_handler(lambda message: not message.photo, state=Mailings.standard_mailing_picture)
+@dp.message_handler(lambda message: not message.photo, state=Mailings.mailing_picture)
 async def check_standard_mailing_photo(message: types.Message, state: FSMContext):
     """Проверка на тип сообщения, картинка или нет"""
     await message.delete()
@@ -99,10 +99,10 @@ async def check_standard_mailing_photo(message: types.Message, state: FSMContext
     return await bot.edit_message_text(text=text, chat_id=message.from_user.id, message_id=data['message_id'])
 
 
-@dp.message_handler(content_types=types.ContentType.PHOTO, state=Mailings.standard_mailing_picture)
-async def standard_mailing_picture(message: types.Message, state: FSMContext):
-    """Ловлю изображение для стандартной рассылки"""
-    await Mailings.standard_mailing_text.set()
+@dp.message_handler(content_types=types.ContentType.PHOTO, state=Mailings.mailing_picture)
+async def mailing_picture(message: types.Message, state: FSMContext):
+    """Ловлю изображение для рассылки"""
+    await Mailings.mailing_text.set()
 
     try:
         await message.photo[-1].download(f'media/mailings/standard_{message.photo[-1].file_id}.jpg')
@@ -121,42 +121,61 @@ async def standard_mailing_picture(message: types.Message, state: FSMContext):
 
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
-        data['standard_mailing_picture'] = message.photo[-1].file_id
+        data['mailing_picture'] = message.photo[-1].file_id
 
 
-@dp.message_handler(content_types=["text"], state=Mailings.standard_mailing_text)
-async def standard_mailing_text(message: types.Message, state: FSMContext):
-    """Ловлю текст стандартной рассылки"""
-    await Mailings.standard_sending_button.set()
+@dp.message_handler(content_types=["text"], state=Mailings.mailing_text)
+async def mailing_text(message: types.Message, state: FSMContext):
+    """Ловлю текст рассылки"""
+
+    data = await state.get_data()
+    id_msg_list = []
+    keyboard = ""
+    id_msg_list = data['id_msg_list']
 
     message_text = message.text.strip()
-    data = await state.get_data()
 
-    text = "Выберите какую клавиатуру прикрепить к сообщению"
-    await message.answer(text=text)
-    markup = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text="🍽 Забронировать стол", callback_data="hall_reservation")],
-            [InlineKeyboardButton(text="🚚 Заказать доставку", callback_data="shipping")],
-            [InlineKeyboardButton(text="Никакую", callback_data="None")],
-        ]
-    )
+    if data["type_mailing"] not in ["hall_reservation", "shipping"]:
+        await Mailings.sending_button.set()
+        text = "Выберите какую кнопку прикрепить к сообщению"
+        msg = await message.answer(text=text)
+        id_msg_list.append(msg.message_id)
 
-    msg = await message.answer(text="Выберите клавиатуру", reply_markup=markup)
+        markup = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="🍽 Забронировать стол", callback_data="hall_reservation")],
+                [InlineKeyboardButton(text="🚚 Заказать доставку", callback_data="shipping")],
+                [InlineKeyboardButton(text="Никакую", callback_data="None")],
+            ]
+        )
 
-    id_msg_list = []
-    id_msg_list = data['id_msg_list']
-    id_msg_list.append(msg.message_id)
+        msg = await message.answer(text="Выберите кнопку", reply_markup=markup)
+        id_msg_list.append(msg.message_id)
+    else:
+        await Mailings.sending_method.set()
+
+        data = await state.get_data()
+
+        markup = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="📅 Указать дату", callback_data="delayed_mailing")],
+            [InlineKeyboardButton(text="📤 Отправить немедленно", callback_data="send_immediately")]
+        ])
+
+        msg = await message.answer(text="Выберите действие", reply_markup=markup)
+
+        id_msg_list.append(msg.message_id)
+        keyboard = data["type_mailing"]
 
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
         data['message_text'] = message_text
+        data['keyboard'] = keyboard
 
 
-@dp.callback_query_handler(text=["hall_reservation", "shipping", "None"], state=Mailings.standard_sending_button)
-async def standard_mailing_buttons(call: types.CallbackQuery, state: FSMContext):
+@dp.callback_query_handler(text=["hall_reservation", "shipping", "None"], state=Mailings.sending_button)
+async def mailing_buttons(call: types.CallbackQuery, state: FSMContext):
     """Ловлю выбор какую кнопку прикрепить"""
-    await Mailings.standard_sending_method.set()
+    await Mailings.sending_method.set()
 
     data = await state.get_data()
 
@@ -175,7 +194,7 @@ async def standard_mailing_buttons(call: types.CallbackQuery, state: FSMContext)
 
 
 @dp.callback_query_handler(text=["delayed_mailing", "send_immediately", "save_task"],
-                           state=Mailings.standard_sending_method)
+                           state=Mailings.sending_method)
 async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
     """Ловлю от пользователя способ отправки"""
     await call.answer()
@@ -183,7 +202,7 @@ async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     admin_name = data["admin_name"]
     type_mailing = data["type_mailing"]
-    picture = data["standard_mailing_picture"]
+    picture = data["mailing_picture"]
     message_text = data["message_text"]
     id_msg_list = data["id_msg_list"]
     users = data['users']
@@ -197,7 +216,9 @@ async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
         await db.update_before_adding(type_mailing=type_mailing)
 
         task_id = await db.add_new_task(admin_name=admin_name, type_mailing=type_mailing, picture=picture,
-                                        message=message_text, status="waiting", execution_date=minute_later,
+                                        message=message_text, status="waiting",
+                                        execution_date=datetime(minute_later.year, minute_later.month, minute_later.day,
+                                                                minute_later.hour, minute_later.minute),
                                         error="No errors", keyboard=keyboard)
         if call.data != "save_task":
             try:
@@ -228,13 +249,13 @@ async def mailing_sending_method(call: types.CallbackQuery, state: FSMContext):
 
     elif call.data == "delayed_mailing":
         # Отпраивть в указанную дату
-        await Mailings.standard_sending_data.set()
+        await Mailings.sending_data.set()
         await call.message.delete()
         text = f"Укажите время и дату рассылки в формате ГГГГ-ММ-ДД ЧЧ:ММ \n\nСегодня {datetime.now().strftime('%Y-%m-%d %H:%M')}"
         await call.message.answer(text=text)
 
 
-@dp.message_handler(content_types=["text"], state=Mailings.standard_sending_data)
+@dp.message_handler(content_types=["text"], state=Mailings.sending_data)
 async def standard_mailing_date_time(message: types.Message, state: FSMContext):
     """Ловлю дату и время рассылки"""
     date = message.text.strip() + ":00"
@@ -243,7 +264,7 @@ async def standard_mailing_date_time(message: types.Message, state: FSMContext):
 
     admin_name = data["admin_name"]
     type_mailing = data["type_mailing"]
-    picture = data["standard_mailing_picture"]
+    picture = data["mailing_picture"]
     message_text = data["message_text"]
     id_msg_list = data["id_msg_list"]
     users = data["users"]
@@ -269,6 +290,7 @@ async def standard_mailing_date_time(message: types.Message, state: FSMContext):
             else:
                 text = "Нет пользователей для рассылки"
         except Exception as _ex:
+            logger.error(f"Рассылка не запланирована - Ошибка: {_ex}")
             text = f"Рассылка не запланирована - Ошибка: {_ex}"
             await db.update_task(task_id=int(task_id), status="error", error=_ex)
 
@@ -283,5 +305,5 @@ async def standard_mailing_date_time(message: types.Message, state: FSMContext):
             data["id_msg_list"] = id_msg_list
 
     except Exception as _ex:
-        print(_ex)
+        logger.error(f"{_ex}")
         await message.answer(text="Я Вас не понимаю. Введите корректные данные в формате ГГГГ-ММ-ДД ЧЧ:ММ")

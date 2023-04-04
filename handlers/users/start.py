@@ -65,12 +65,13 @@ async def bot_start(message: types.Message, state: FSMContext):
         try:
             await db.update_last_activity(user_id=message.from_user.id, button='Команда старт')
         except Exception as _ex:
-            pass
+            logger.error(_ex)
 
 
 @dp.callback_query_handler(text=["ug_female", "ug_male"], state=Dating.user_gender)
 async def user_gender(call: types.CallbackQuery, state: FSMContext):
     """Ловлю выбор пола пользователем"""
+
     await Dating.user_age.set()
 
     if call.data == "ug_female":
@@ -117,7 +118,7 @@ async def user_work(call: types.CallbackQuery, state: FSMContext):
     try:
         await bot.delete_message(chat_id=call.message.from_user.id, message_id=data['msg_id'])
     except Exception as _ex:
-        pass
+        logger.error(_ex)
 
     text = "Отлично! Для получения скидки 10% остался лишь один шаг. Перейдите в Программу лояльности и оформите карту лояльности 💳"
     if id in admins:

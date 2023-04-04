@@ -1,4 +1,4 @@
-#TODO: Настройка планировщика
+# TODO: Настройка планировщика
 import os
 from datetime import datetime, timezone
 
@@ -83,7 +83,7 @@ async def config_username_for_admin(message: types.Message, state=FSMContext):
 async def remove_admin_status(call: types.CallbackQuery, state: FSMContext):
     """Ловлю нажатие на инлайн кнопку удаление администратора"""
     user_id = call.data.split("-")[-1]
-    data = await state.get_data()
+
     try:
         await db.remove_admin_status_from_user(id=user_id)
     except Exception as _ex:
@@ -99,7 +99,7 @@ async def remove_admin_status(call: types.CallbackQuery, state: FSMContext):
 
     markup = await build_admins_keyboard(users=administrators, action='admins')
 
-    msg = await call.message.edit_reply_markup(reply_markup=markup)
+    await call.message.edit_reply_markup(reply_markup=markup)
 
 
 @dp.callback_query_handler(text_contains=["new_admin"], state=ConfigAdmins.config_admins_list)
@@ -133,8 +133,9 @@ async def username_for_admin(message: types.Message, state: FSMContext):
             text="‼️‼️‼️\nВы теперь Администратор, для того чтобы новые права начали действовать, перезапустите бота командой /start",
             chat_id=user_id[0]['user_id'])
     except Exception as _ex:
-        await message.answer(text=f"Пользователя {username} нет в нашей базе данных пользователей",
-                             reply_markup=menu_admin_config)
+        msg = await message.answer(text=f"Пользователя {username} нет в нашей базе данных пользователей",
+                                   reply_markup=menu_admin_config)
+        id_msg_list.append(msg.message_id)
         await state.finish()
         await ConfigAdmins.config_main.set()
 
@@ -199,7 +200,7 @@ async def show_user_info(call: types.CallbackQuery, state: FSMContext):
         count = await db.get_all_invited_users(referral=info[0]['referral_id'])
         text += f"Привел клиентов: {len(count)}"
     except Exception as _ex:
-        pass
+        logger.error(_ex)
 
     await bot.answer_callback_query(call.id, text=text, show_alert=True)
 
@@ -209,11 +210,11 @@ async def unban_user(call: types.CallbackQuery, state: FSMContext):
     """Ловлю нажатие на инлайн кнопку удаления статуса Забанен"""
     user_id = call.data.split("-")[-2]
     data = await state.get_data()
-
+    ban_date = datetime.now()
     try:
-        tmp = await db.update_blacklist_status(id=int(user_id), reason="-", status=False)
+        await db.update_blacklist_status(id=int(user_id), reason="-", ban_date=ban_date, status=False)
     except Exception as _ex:
-        print(_ex)
+        logger.error(_ex)
 
     violators = await db.get_black_list()
 
@@ -244,6 +245,7 @@ async def ban_user(call: types.CallbackQuery, state: FSMContext):
     await bot.delete_message(chat_id=call.message.chat.id, message_id=data['id_msg_list'][-1])
 
     id_msg_list = data['id_msg_list']
+    del id_msg_list[-1]
     msg = await call.message.answer(text=text)
 
     id_msg_list.append(msg.message_id)
@@ -286,9 +288,10 @@ async def username_ban_reason(message: types.Message, state: FSMContext):
     username = data['username']
 
     user_id = await db.get_user_id(username=username)
-
+    ban_date = datetime.now().date()
+    logger.debug(ban_date)
     try:
-        await db.update_blacklist_status(id=int(user_id[0]['id']), reason=ban_reason, status=True)
+        await db.update_blacklist_status(id=int(user_id[0]['id']), reason=ban_reason, ban_date=ban_date, status=True)
     except Exception as _ex:
         await message.answer(text=f"Пользователь с username - {username} - в нашей базе данных не найден",
                              reply_markup=cancel_btn)
@@ -297,7 +300,7 @@ async def username_ban_reason(message: types.Message, state: FSMContext):
         try:
             await bot.delete_message(chat_id=message.chat.id, message_id=id)
         except Exception as _ex:
-            pass
+            logger.error(_ex)
 
     text = "Здесь Вы можете добавити/удалить нарушителя"
     msg = await message.answer(text=text, reply_markup=cancel_btn)

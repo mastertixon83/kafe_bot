@@ -26,7 +26,7 @@ class DBCommands:
     GET_USER_BY_USERNAME = "SELECT * FROM users WHERE username = $1"
 
     ### Удаление пользователя в черный список
-    UPDATE_BLACKLIST_STATUS = "UPDATE users SET ban_status = $3, reason_for_ban = $2 WHERE id = $1"
+    UPDATE_BLACKLIST_STATUS = "UPDATE users SET ban_status = $3, reason_for_ban = $2, ban_date = $4 WHERE id = $1"
     GET_USER_ID = "SELECT id FROM users WHERE username = $1"
 
     ### Программа лояльности оформление карты и выбор подтвержденных пользователей $$$
@@ -179,10 +179,10 @@ class DBCommands:
         except UniqueViolationError:
             pass
 
-    async def update_blacklist_status(self, id, reason, status):
+    async def update_blacklist_status(self, id, reason, status, ban_date):
         """Добавление пользователя в черный список"""
         command = self.UPDATE_BLACKLIST_STATUS
-        await self.pool.fetch(command, id, reason, status)
+        await self.pool.fetch(command, id, reason, status, ban_date)
 
     async def get_user_id(self, username):
         """Вывод id пользователя по его username"""
