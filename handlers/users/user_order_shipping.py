@@ -117,7 +117,7 @@ async def main_menu(call: types.CallbackQuery, what, state, **kwargs):
     """Обработчик нажатия на кнопку Главное меню"""
     await db.update_last_activity(user_id=call.message.from_user.id, button='Доставка Главное меню')
     await call.message.delete()
-    if call.from_user.id in admins:
+    if str(call.from_user.id) in admins:
         await call.message.answer(text="Главное меню", reply_markup=menuAdmin)
     else:
         await call.message.answer(text="Главное меню", reply_markup=menuUser)

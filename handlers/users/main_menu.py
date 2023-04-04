@@ -1,10 +1,10 @@
-#TODO: Кнопка с геолокацией, проложить маршрут до ресторана
-#TODO: Продумать приминение промокодов на скидку
+# TODO: Продумать приминение промокодов на скидку
 from typing import Union
 
 from handlers.users.user_order_shipping import build_category_keyboard
-from loader import dp, bot
+from loader import dp, bot, logger
 import re
+import data.config
 from datetime import datetime
 
 from aiogram import types
@@ -24,6 +24,40 @@ from states.question import Question
 from states.restoran import TableReservation
 from states.reviews import Review
 from states.shipping import Shipping
+
+from geopy.geocoders import Nominatim
+import googlemaps
+
+
+# Location
+@dp.message_handler(content_types=[types.ContentType.LOCATION], state="*")
+async def test_location(message: types.Message, state: FSMContext):
+    # Получаем координаты местоположения из объекта message
+    try:
+        await message.delete()
+        s_latitude = message.location.latitude
+        s_longitude = message.location.longitude
+        e_latitude = data.config.END_LATITUDE
+        e_longitude = data.config.END_LONGITUDE
+        geolocator = Nominatim(user_agent='testmapkafebot')
+        gmaps = googlemaps.Client(key=data.config.GOOGLE_TOKEN)
+
+        # Определяю координаты начальной и конечной точек
+        start_location = (s_latitude, s_longitude)
+        end_location = (e_latitude, e_longitude)
+
+        # Получаю маршрут между двумя точками с помощью Google Maps API
+        directions_result = gmaps.directions(start_location, end_location, mode="driving")
+
+        # Получаю список координат маршрута
+        route = directions_result[0]['overview_polyline']['points']
+        decoded_route = googlemaps.convert.decode_polyline(route)
+
+        # Отправляю сообщение с картой, на которой отмечены точки начала и конца маршрута,
+        # а также линия, обозначающая маршрут
+        await bot.send_location(message.chat.id, e_latitude, e_longitude)
+    except Exception as _ex:
+        logger.error(_ex)
 
 
 # Отмена действия
@@ -48,10 +82,12 @@ async def cancel(message: types.Message, state=FSMContext):
             await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id - 1)
 
     elif (re.search(r"ConfigAdmins:config_admins_", current_state)
-          or re.search(r"ConfigBlackList:config_blacklist", current_state)
-          or re.search(r"ConfigAdmins:config_main", current_state)
-          or re.search(r"Mailings", current_state)
-          or re.search(r"Analytics:main", current_state)):
+            or re.search(r"ConfigBlackList:config_blacklist", current_state)
+            or re.search(r"ConfigAdmins:config_main", current_state)
+            or re.search(r"Mailings", current_state)
+            or re.search(r"Analytics:main", current_state)
+            or re.search(r"TableReservation:data", current_state)
+            or re.search(r"Question:ask_questions", current_state)):
 
         try:
             for id_msg in data['id_msg_list']:
@@ -104,7 +140,7 @@ async def review_text(message: types.Message, state: FSMContext):
     await state.finish()
 
     text = "Благодарим Вас за обратную связь 🤗\n"
-    text +="Ваш отзыв скоро появится на нашей стене"
+    text += "Ваш отзыв скоро появится на нашей стене"
     await message.answer(text=text)
     review_text = message.text.strip()
     username = message.from_user.username
@@ -147,7 +183,12 @@ async def ansver_menu(message: Message):
     await db.update_last_activity(user_id=message.from_user.id, button='Вызов персонала')
     text = f"Меню вызова персонала ниже"
     await MainMenu.main.set()
-    await message.answer(text=text, reply_markup=menuPersonal)
+    msg = await message.answer(text=text, reply_markup=menuPersonal)
+
+    id_msg_list = []
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.callback_query_handler(text=["hall_reservation_mailings"], state="*")
@@ -160,10 +201,15 @@ async def table_reservation(message: Union[types.Message, types.CallbackQuery], 
     date = datetime.now().strftime('%d.%m.%Y')
     text = f"<b>Шаг [1/5]</b>\n\n Введите дату в формате ДД.ММ.ГГГГ, сегодня {date}"
     if isinstance(message, types.Message):
-        await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
+        msg = await message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
     elif isinstance(message, types.CallbackQuery):
         call = message
-        await call.message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
+        msg = await call.message.answer(text, reply_markup=cancel_btn, parse_mode=types.ParseMode.HTML)
+
+    id_msg_list = []
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.callback_query_handler(text=["order_shipping_mailings"], state="*")
@@ -200,15 +246,23 @@ async def reg_loyal_card(message: Message, state: FSMContext):
         text = "Оформите карту скидок!!!"
     else:
         text = "Меню программы лояльности"
-    await message.delete()
-    await message.answer(text, reply_markup=menuLoyality, parse_mode=types.ParseMode.HTML)
+    msg = await message.answer(text, reply_markup=menuLoyality, parse_mode=types.ParseMode.HTML)
+    id_msg_list = []
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.message_handler(Text(contains="Задайте нам вопрос"), state="*")
 async def ask_question(message: Message, state: FSMContext):
     """Задайте нам вопрос"""
     await Question.ask_questions.set()
-    await message.answer(text="Задайте Ваш вопрос", reply_markup=cancel_btn)
+    msg = await message.answer(text="Задайте Ваш вопрос", reply_markup=cancel_btn)
+
+    id_msg_list = []
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.message_handler(content_types=["text"], state=Question.ask_questions)
@@ -217,7 +271,8 @@ async def send_question_to_admin(message: types.Message, state: FSMContext):
     question_text = message.text.strip()
     markup = InlineKeyboardMarkup()
     markup.add(
-        InlineKeyboardButton(text="Ответить", callback_data=f"answer_to_user-{message.from_user.id}-{message.message_id}")
+        InlineKeyboardButton(text="Ответить",
+                             callback_data=f"answer_to_user-{message.from_user.id}-{message.message_id}")
     )
 
     text = f"Пользователь @{message.from_user.username} задает вопрос:\n"
@@ -238,7 +293,7 @@ async def answer_to_user(call: types.CallbackQuery, state: FSMContext):
     """Ответ пользователю на вопрос"""
     await Question.admin_answer.set()
 
-    text="Введите ваш ответ"
+    text = "Введите ваш ответ"
     await call.message.answer(text=text)
 
     async with state.proxy() as data:
@@ -265,11 +320,16 @@ async def promotions(message: Message):
 
 
 @dp.message_handler(Text(contains="Сделать рассылку подписчикам"), state="*")
-async def newsletter(message: Message):
+async def newsletter(message: Message, state: FSMContext):
     """Лювлю нажатие на кнопку Сделать рассылку пользователям"""
     text = "Меню рассылки"
     await Mailings.main.set()
-    await message.answer(text=text, reply_markup=newsletter_kbd)
+    msg = await message.answer(text=text, reply_markup=newsletter_kbd)
+
+    id_msg_list = []
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.message_handler(Text(contains=["Настройки"]), state="*")
@@ -277,9 +337,12 @@ async def admin_config(message: Message, state: FSMContext):
     """Ловлю нажатие на кнопку Настройки"""
     text = "Меню настроек"
     await ConfigAdmins.config_main.set()
+    msg = await message.answer(text=text, reply_markup=menu_admin_config)
+
+    id_msg_list = []
+    id_msg_list.append(msg.message_id)
     async with state.proxy() as data:
-        data['id_msg_list'] = []
-    await message.answer(text=text, reply_markup=menu_admin_config)
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.message_handler(Text(contains=["Аналитика"]), state="*")
@@ -288,6 +351,8 @@ async def analytics(message: Message, state: FSMContext):
     await message.delete()
     text = "Аналитика"
     await Analytics.main.set()
+    msg = await message.answer(text=text, reply_markup=analytics_kbd)
+    id_msg_list = []
+    id_msg_list.append(msg.message_id)
     async with state.proxy() as data:
-        data['id_msg_list'] = []
-    await message.answer(text=text, reply_markup=analytics_kbd)
+        data['id_msg_list'] = id_msg_list

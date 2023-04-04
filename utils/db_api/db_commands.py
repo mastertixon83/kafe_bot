@@ -108,6 +108,7 @@ class DBCommands:
     GET_BIRTHDAY_USERS = "SELECT * FROM users WHERE EXTRACT(DAY FROM birthday) = $1 AND EXTRACT(MONTH FROM birthday) = $2;"
     GET_LOYAL_PROGRAM_PARTICIPANTS = "SELECT * FROM users WHERE card_status = TRUE"
     UPDATE_FOR_BIRTHDAY_TASK_ERROR = "UPDATE task SET error = 'No errors' WHERE id = $1"
+    GET_ALL_ACTIVE_TASKS = "SELECT * FROM task WHERE status = 'waiting'"
 
     ### Настройки рассылок
     OFF_ALL_TASK = "UPDATE task set status = 'off' WHERE status = 'waiting'"
@@ -508,6 +509,11 @@ class DBCommands:
         """Обновление времени отправки для рассылки именинников"""
         command = self.UPDATE_FOR_BIRTHDAY_TASK_ERROR
         await self.pool.fetch(command, task_id)
+
+    async def get_all_active_tasks(self):
+        """Выбор всех активных рассылок"""
+        command = self.GET_ALL_ACTIVE_TASKS
+        return await self.pool.fetch(command)
 
     async def update_last_activity(self, user_id, button):
         """Обновоение даты и времени последней активности пользователя"""

@@ -1,8 +1,10 @@
 import json
+import os
 import re
 
 from datetime import datetime, timedelta
 import openpyxl
+from openpyxl.utils.cell import get_column_letter
 from openpyxl.styles import PatternFill
 
 from io import BytesIO
@@ -18,7 +20,6 @@ from states.analytics import Analytics
 from utils.db_api.db_commands import DBCommands
 
 from aiogram.dispatcher.filters import Text
-from data.config import admins
 
 db = DBCommands()
 
@@ -96,11 +97,11 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
         balance = user["balance"]
         administrator = "Администратор" if user["administrator"] == True else None
         director = "Директор" if user["director"] == True else None
-        ban_status = "Забанен" if user["ban_status"] == True else None
+        ban_status = "Забанен" if user["ban_status"] == True else "Чист"
         reason_for_ban = user["reason_for_ban"]
 
         result.append(
-            [created_at, birthday, user_id, username, full_name, gender, age_group, card_phone, card_number, card_fio,
+            [username, full_name, created_at, birthday, user_id,  gender, age_group, card_phone, card_number, card_fio,
              card_status, prize, balance, referral, referral_id,
              administrator, director, ban_status, reason_for_ban]
         )
@@ -110,11 +111,11 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
     book.create_sheet("Пользователи")
     sheet = book['Пользователи']
 
-    sheet.cell(row=1, column=1).value = "Дата регистрации"
-    sheet.cell(row=1, column=2).value = "День рождения"
-    sheet.cell(row=1, column=3).value = "User_id"
-    sheet.cell(row=1, column=4).value = "Username"
-    sheet.cell(row=1, column=5).value = "Full_name"
+    sheet.cell(row=1, column=1).value = "Username"
+    sheet.cell(row=1, column=2).value = "Полное имя"
+    sheet.cell(row=1, column=3).value = "Дата регистрации"
+    sheet.cell(row=1, column=4).value = "День рождения"
+    sheet.cell(row=1, column=5).value = "User_id"
     sheet.cell(row=1, column=6).value = "Пол"
     sheet.cell(row=1, column=7).value = "Возрастная категория"
     sheet.cell(row=1, column=8).value = "Номер телефона"
@@ -130,7 +131,22 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
     sheet.cell(row=1, column=18).value = "Статус бана"
     sheet.cell(row=1, column=19).value = "Причина бана"
 
+    fill_color = PatternFill(start_color='808080', end_color='808080', fill_type='solid')
+    cell_range = sheet['A1':'S1']
+    for row in cell_range:
+        for cell in row:
+            cell.fill = fill_color
+
+    cell_range2 = tuple(sheet[get_column_letter(col) + '1'] for col in range(1, 20))
+    for col_idx, column in enumerate(cell_range2, 1):
+        column_letter = get_column_letter(col_idx)
+        cells = list(sheet[column_letter])
+        max_length = max(len(str(cell.value)) for cell in cells)
+        adjusted_width = (max_length + 2) * 1.05
+        sheet.column_dimensions[column_letter].width = adjusted_width
+
     for i, item in enumerate(result, start=2):
+
         sheet.cell(row=i, column=1).value = item[0]
         sheet.cell(row=i, column=2).value = item[1]
         sheet.cell(row=i, column=3).value = item[2]
@@ -148,9 +164,11 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
         sheet.cell(row=i, column=15).value = item[14]
         sheet.cell(row=i, column=16).value = item[15]
         sheet.cell(row=i, column=17).value = item[16]
-        sheet.cell(row=i, column=18).value = "Забанен" if item[17] == True else ""
+        sheet.cell(row=i, column=18).value = item[17]
         sheet.cell(row=i, column=19).value = item[18]
 
+    if not os.path.exists('temp'):
+        os.mkdir('temp')
     book.save("temp/users.xlsx")
     book.close()
 
@@ -164,7 +182,13 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
         # Отправляем файл в сообщении
         xls_file = types.InputFile(output, filename="users.xlsx")
 
-        await bot.send_document(chat_id=call.message.chat.id, document=xls_file, caption="Выгрузка-Пользователи")
+        msg = await bot.send_document(chat_id=call.message.chat.id, document=xls_file, caption="Выгрузка-Пользователи")
+
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.message_handler(Text(contains=["Пользователи"]), state=Analytics.main)
@@ -688,6 +712,21 @@ async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext)
         sheet.cell(row=1, column=8).value = 'Кол-во приборов'
         sheet.cell(row=1, column=9).value = 'Заказ'
         sheet.cell(row=1, column=10).value = 'Общая сумма'
+
+        fill_color = PatternFill(start_color='808080', end_color='808080', fill_type='solid')
+        cell_range = sheet['A1':'J1']
+        for row in cell_range:
+            for cell in row:
+                cell.fill = fill_color
+
+        cell_range2 = tuple(sheet[get_column_letter(col) + '1'] for col in range(1, 11))
+        for col_idx, column in enumerate(cell_range2, 1):
+            column_letter = get_column_letter(col_idx)
+            cells = list(sheet[column_letter])
+            max_length = max(len(str(cell.value)) for cell in cells)
+            adjusted_width = (max_length + 2) * 1.2
+            sheet.column_dimensions[column_letter].width = adjusted_width
+
         if sheet.title == "За сегодня":
             paste_data_to_table(sheet=sheet, order=today)
             if len(today) > 0:
@@ -720,6 +759,11 @@ async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext)
                 fill = PatternFill(start_color='FF0000', end_color='FF0000', fill_type='solid')
                 sheet.cell(row=len(prev_month) + 3, column=9).fill = fill
                 sheet.cell(row=len(prev_month) + 3, column=10).fill = fill
+                sheet.cell(row=len(prev_month) + 3, column=10).fill = fill
+
+
+    if not os.path.exists('temp'):
+        os.mkdir('temp')
 
     book.save("temp/shipping.xlsx")
     book.close()
@@ -734,7 +778,13 @@ async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext)
         # Отправляем файл в сообщении
         xls_file = types.InputFile(output, filename="shipping.xlsx")
 
-        await bot.send_document(chat_id=call.message.chat.id, document=xls_file, caption="Выгрузка-Доставка")
+        msg = await bot.send_document(chat_id=call.message.chat.id, document=xls_file, caption="Выгрузка-Доставка")
+
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
 
 
 @dp.callback_query_handler(text=["a_sh_order"], state=Analytics.main)

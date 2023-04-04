@@ -4,23 +4,24 @@ menuUser = ReplyKeyboardMarkup(
     keyboard=[
         [
             KeyboardButton(text="🏚 О ресторане"),
+            KeyboardButton(text="📍 Как до нас добраться", request_location=True)
         ],
         [
-            KeyboardButton(text="🚚 Доставка"),
+            KeyboardButton(text="🔔 Вызов персонала"),
             KeyboardButton(text="📋 Меню")
         ],
         [
             KeyboardButton(text="💳 Программа лояльности"),
         ],
         [
-            KeyboardButton(text="🔔 Вызов персонала"),
+            KeyboardButton(text="🚚 Доставка"),
             KeyboardButton(text="🍽 Забронировать стол"),
         ],
         [
-            KeyboardButton(text="❓ Задайте нам вопрос")
+            KeyboardButton(text="💬 Задайте нам вопрос")
         ],
         [
-            KeyboardButton(text="👍 Отзывы"),
+            KeyboardButton(text="📝 Отзывы"),
             KeyboardButton(text="💥 Акции"),
         ],
     ],
@@ -29,25 +30,26 @@ menuUser = ReplyKeyboardMarkup(
 
 menuAdmin = ReplyKeyboardMarkup(
     keyboard=[
-[
+        [
             KeyboardButton(text="🏚 О ресторане"),
+            KeyboardButton(text="📍 Как до нас добраться", request_location=True)
         ],
         [
-            KeyboardButton(text="🚚 Доставка"),
+            KeyboardButton(text="🔔 Вызов персонала"),
             KeyboardButton(text="📋 Меню")
         ],
         [
             KeyboardButton(text="💳 Программа лояльности"),
         ],
         [
-            KeyboardButton(text="🔔 Вызов персонала"),
+            KeyboardButton(text="🚚 Доставка"),
             KeyboardButton(text="🍽 Забронировать стол"),
         ],
         [
-            KeyboardButton(text="❓ Задайте нам вопрос")
+            KeyboardButton(text="💬 Задайте нам вопрос")
         ],
         [
-            KeyboardButton(text="👍 Отзывы"),
+            KeyboardButton(text="📝 Отзывы"),
             KeyboardButton(text="💥 Акции"),
         ],
         [

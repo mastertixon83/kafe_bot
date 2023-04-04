@@ -103,9 +103,9 @@ async def check_standard_mailing_photo(message: types.Message, state: FSMContext
 async def mailing_picture(message: types.Message, state: FSMContext):
     """Ловлю изображение для рассылки"""
     await Mailings.mailing_text.set()
-
+    data = await state.get_data()
     try:
-        await message.photo[-1].download(f'media/mailings/standard_{message.photo[-1].file_id}.jpg')
+        await message.photo[-1].download(f"media/mailings/{data['type_mailing']}_{message.photo[-1].file_id}.jpg")
     except Exception as _ex:
         os.mkdir("media/mailings")
         await message.photo[-1].download(f'media/mailings/standard_{message.photo[-1].file_id}.jpg')

@@ -50,7 +50,7 @@ async def on_startup(dp):
     if not task_info:
         for admin in config.admins:
             await bot.send_message(chat_id=admin,
-                                   text="‼️‼️‼️‼️‼️\n Не создана рассылка для именинников! Не забуюте создать")
+                                   text="‼️‼️‼️‼️‼️\n Не создана рассылка для именинников. Не забуюте создать!")
 
     scheduler.add_job(apsched.clear_temp_folder, 'cron', hour="00", minute="00", id="clear_temp_job", name="Clear temporary folder")
 

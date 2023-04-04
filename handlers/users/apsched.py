@@ -16,14 +16,25 @@ db = DBCommands()
 
 async def clear_temp_folder():
     """Очистка папок temp и media/mailings"""
-    # TODO: Продумать алгоритм очистки папки mailings
     folders = ["temp", "media/mailings"]
     for folder_name in folders:
         try:
-            for filename in os.listdir(folder_name):
-                file_path = os.path.join(folder_name, filename)
-                if os.path.isfile(file_path):
-                    os.remove(file_path)
+            if folder_name == "media/mailings":
+                acive_tasks = await db.get_all_active_tasks()
+                file_list = []
+                for task in acive_tasks:
+                    file_list.append(f"{task['type_mailing']}_{task['picture']}.jpg")
+                for filename in os.listdir(folder_name):
+                    file_path = os.path.join(folder_name, filename)
+                    if os.path.isfile(file_path):
+                        if filename not in file_list:
+                            os.remove(file_path)
+
+            else:
+                for filename in os.listdir(folder_name):
+                    file_path = os.path.join(folder_name, filename)
+                    if os.path.isfile(file_path):
+                        os.remove(file_path)
         except Exception as _ex:
             logger.debug(_ex)
 
@@ -60,12 +71,11 @@ async def send_birthday_cron(bot):
                             )
                         else:
                             markup = ""
-                        await bot.send_photo(chat_id=user['user_id'], photo=picture)
-                        await bot.send_message(chat_id=user['user_id'], text=text, reply_markup=markup)
+                        await bot.send_photo(chat_id=user['user_id'], photo=picture, caption=text, reply_markup=markup)
                         time.sleep(2)
 
             except Exception as _ex:
-                pass
+                logger.error(_ex)
     else:
         for admin in admins:
             await bot.send_message(chat_id=admin,
@@ -95,12 +105,12 @@ async def send_message_date(bot, **kwargs):
             try:
                 if type_mailing in ["birthday", "hall_reservation"]:
                     markup['inline_keyboard'][0][0]['callback_data'] = "hall_reservation_mailings"
-                    await bot.send_photo(chat_id=user['user_id'], photo=picture, text=text, reply_markup=markup)
+                    await bot.send_photo(chat_id=user['user_id'], photo=picture, caption=text, reply_markup=markup)
 
                 elif type_mailing == "shipping":
 
                     markup['inline_keyboard'][0][0]['callback_data'] = "order_shipping_mailings"
-                    await bot.send_photo(chat_id=user['user_id'], photo=picture, text=text, reply_markup=markup)
+                    await bot.send_photo(chat_id=user['user_id'], photo=picture, caption=text, reply_markup=markup)
 
                 else:
                     if keyboard != 'None':
@@ -116,6 +126,7 @@ async def send_message_date(bot, **kwargs):
             except Exception as _ex:
                 status = 'Error'
                 err = _ex
+                logger.error(_ex)
     if type_mailing != 'birthday':
         status = 'performed'
     else:
