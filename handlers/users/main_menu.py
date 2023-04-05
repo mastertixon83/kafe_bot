@@ -179,7 +179,7 @@ async def menu(message: Message):
 
 @dp.message_handler(Text(contains=["Вызов персонала"]), state="*")
 async def ansver_menu(message: Message, state: FSMContext):
-    """Обработчик нажатия на кнопку вызов персонала """
+    """Обработчик нажатия на кнопку вызов персонала"""
     await db.update_last_activity(user_id=message.from_user.id, button='Вызов персонала')
     text = f"Меню вызова персонала ниже"
     await MainMenu.main.set()
