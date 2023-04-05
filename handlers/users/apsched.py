@@ -85,13 +85,42 @@ async def send_birthday_cron(bot):
 async def send_message_date(bot, **kwargs):
     """Отправка рассылки на дату"""
     task_id = kwargs.get('task_id')
-    users = kwargs.get('users')
     type_mailing = kwargs.get('type_mailing')
     keyboard = kwargs.get('keyboard')
+
     task_info = await db.get_task_info(task_id=int(task_id))
     picture = task_info[0]['picture']
     text = task_info[0]['message']
     err = "No errors"
+
+
+    if type_mailing == "standard":
+        users = await db.get_all_nb_users()
+
+    elif type_mailing == "birthday":
+        before_birthday_days = config.BEFORE_BIRTHDAY_DAYS
+        delta = timedelta(days=int(before_birthday_days))
+        current_data = datetime.datetime.now().date()
+        target_data = current_data + delta
+        users = await db.get_birthday_users(target_data=target_data)
+
+    elif type_mailing == "hall_reservation":
+        users = await db.get_all_nb_users()
+
+    elif type_mailing == "shipping":
+        users = await db.get_all_nb_users()
+
+    elif type_mailing == "loyal_card":
+        users = await db.get_loyal_program_participants()
+
+    else:
+        users = []
+
+    if not users:
+        return
+
+    id_user_list = [{'user_id': user['user_id'].strip(), 'administrator': user['administrator']} for user in users]
+
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="text",
@@ -100,28 +129,19 @@ async def send_message_date(bot, **kwargs):
     )
     markup['inline_keyboard'][0][0]['text'] = "Заказать доставку" if keyboard == 'shipping' else "Забронировать столик"
 
-    for user in users:
+    for user in id_user_list:
         if not user['administrator']:
             try:
-                if type_mailing in ["birthday", "hall_reservation"]:
-                    markup['inline_keyboard'][0][0]['callback_data'] = "hall_reservation_mailings"
-                    await bot.send_photo(chat_id=user['user_id'], photo=picture, caption=text, reply_markup=markup)
-
-                elif type_mailing == "shipping":
-
-                    markup['inline_keyboard'][0][0]['callback_data'] = "order_shipping_mailings"
-                    await bot.send_photo(chat_id=user['user_id'], photo=picture, caption=text, reply_markup=markup)
-
+                if keyboard != 'None':
+                    markup['inline_keyboard'][0][0][
+                        'callback_data'] = "order_shipping_mailings" if keyboard == "shipping" else "hall_reservation_mailings"
                 else:
-                    if keyboard != 'None':
-                        markup['inline_keyboard'][0][0][
-                            'callback_data'] = "order_shipping_mailings" if keyboard == "shipping" else "hall_reservation_mailings"
-                    else:
-                        markup = ""
+                    markup = ""
 
-                    await bot.send_photo(chat_id=int(user['user_id']), photo=picture, caption=text, reply_markup=markup)
+                await bot.send_photo(chat_id=int(user['user_id']), photo=picture, caption=text, reply_markup=markup)
 
-                    time.sleep(2)
+
+                time.sleep(2)
                 err = 'No Errors'
             except Exception as _ex:
                 status = 'Error'

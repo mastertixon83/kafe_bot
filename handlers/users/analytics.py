@@ -11,8 +11,10 @@ from io import BytesIO
 
 from aiogram.dispatcher import FSMContext
 
-from loader import dp, bot, db, logger
+from data import config
+from loader import dp, bot, db, logger, scheduler
 from aiogram import types
+from handlers.users import apsched
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto, ReplyKeyboardRemove
 
@@ -22,6 +24,7 @@ from utils.db_api.db_commands import DBCommands
 from aiogram.dispatcher.filters import Text
 
 db = DBCommands()
+chat_states = {}
 
 type_mailing_dict = {
     "standard": "Обычная рассылка",
@@ -72,7 +75,42 @@ def data_preparation():
         "end_date_prev_month": end_date_prev_month
     }
 
+def get_button_index(markup, callback_data):
+    """получаю индекс нажатой кнопки"""
+    button_index = None
+    for i, row in enumerate(markup['inline_keyboard']):
+        for j, button in enumerate(row):
+            if button['callback_data'] == callback_data:
+                button_index = (i, j)
+                break
+        if button_index:
+            break
+    return button_index
 
+
+def rebuild_button(markup, button_index):
+    # обновляем текст кнопок
+    for i, row in enumerate(markup['inline_keyboard']):
+        for j, button in enumerate(row):
+            if (i, j) == button_index:
+                # если это нажатая кнопка, то ставим галочку ✅
+                markup['inline_keyboard'][i][j]['text'] = "✅ " + button['text']
+            else:
+                # если это другая кнопка, то убираем галочку ✅, если она есть
+                if '✅' in button['text']:
+                    markup['inline_keyboard'][i][j]['text'] = button['text'][2:]
+    return markup
+
+def get_current_button_index(chat_id):
+    # получю текущий индекс нажатой кнопки из состояния чата
+    return chat_states.get(chat_id, None)
+
+
+def set_current_button_index(chat_id, button_index):
+    # сохраню текущий индекс нажатой кнопки в состоянии чата
+    chat_states[chat_id] = button_index
+
+#####################################################################################
 @dp.callback_query_handler(text=["excel_users"], state=Analytics.main)
 async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
     """Выгрузка пользователей в Excel файл"""
@@ -216,6 +254,7 @@ async def analytics_users(message: types.Message, state: FSMContext):
 async def analytics_mailings(message: types.Message, state: FSMContext):
     """Ловлю нажатие на кнопку Формы рассылок-анкет"""
     await message.delete()
+    chat_states = {}
     total = 0
     type_mailing_list = ["standard", "birthday", "hall_reservation", "shipping", "loyal_card"]
     type_mailing_dict = {
@@ -253,6 +292,7 @@ async def analytics_mailings(message: types.Message, state: FSMContext):
 
     markup = InlineKeyboardMarkup(
         inline_keyboard=[
+            [InlineKeyboardButton(text='Показать не выполненные рассылки', callback_data="show_uncompleted_tasks")],
             [InlineKeyboardButton(text='Показать активные рассылки', callback_data="show_active_tasks")]
         ]
     )
@@ -266,10 +306,105 @@ async def analytics_mailings(message: types.Message, state: FSMContext):
         data['id_msg_list'] = id_msg_list
 
 
+@dp.callback_query_handler(text_contains=["show_uncompleted_tasks"], state=Analytics.main)
+async def get_uncompleted_tasks(call: types.CallbackQuery, state: FSMContext):
+    """Обработка нажатия на кнопку показать невыполненные рассылки"""
+    await call.answer()
+    current_date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    current_date = datetime.strptime(current_date_str, "%Y-%m-%d %H:%M")
+    data = await state.get_data()
+    id_msg_list = data['id_msg_list']
+    chat_id = call.message.chat.id
+
+    uncomleted_tasks = await db.get_all_uncompleted_tasks(current_date)
+    if uncomleted_tasks:
+        for task in uncomleted_tasks:
+            text = f"Рассылка запланирована на {task['execution_date']}\n"
+            text += f"{'-'*50}\n"
+            text += f"{task['message']}\n"
+            text += f"{'-' * 50}\n"
+            text += "Что делать?"
+            markup = InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(text="Отправить немедленно", callback_data=f"send_immediately-{task['id']}")],
+                    [InlineKeyboardButton(text="Отключить", callback_data=f"off_task-{task['id']}")]
+                ]
+            )
+
+            try:
+                with open(f"media/mailings/{task['type_mailing']}_{task['picture']}.jpg", "rb") as file:
+                    picture = types.InputFile(file)
+                    msg = await bot.send_photo(chat_id=chat_id, photo=picture, caption=text, reply_markup=markup)
+
+            except Exception as _ex:
+                with open(f"media/telegram.jpg", "rb") as file:
+                    picture = types.InputFile(file)
+                    msg = await bot.send_photo(chat_id=chat_id, photo=picture, caption=text, reply_markup=markup)
+                logger.error(_ex)
+
+                id_msg_list.append(msg.message_id)
+    else:
+        msg = await bot.send_message(chat_id=chat_id, text="Не отправленных рассылок нет")
+        id_msg_list.append(msg.message_id)
+
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
+
+
+@dp.callback_query_handler(text_contains=["send_immediately"], state=Analytics.main)
+async def send_task(call: types.CallbackQuery, state: FSMContext):
+    """Отправить сообщение немедленно"""
+    await call.answer()
+    date = datetime.now()
+    minute_later = date + timedelta(seconds=5)
+    data = call.data.split('-')
+    task_info = await db.get_task_info(int(data[-1]))
+
+    type_mailing = task_info[0]['type_mailing']
+    task_id = task_info[0]['id']
+    keyboard = task_info[0]['keyboard']
+
+    chat_id = call.message.chat.id
+    message_id = call.message.message_id
+
+    await bot.delete_message(chat_id=chat_id, message_id=message_id)
+
+    scheduler.add_job(
+        apsched.send_message_date, 'date', run_date=minute_later, id=type_mailing,
+        kwargs={'bot': bot, 'task_id': task_id, 'type_mailing': type_mailing,
+                'keyboard': keyboard}
+    )
+    text = f"Рассылка запланирована на {minute_later.strftime('%Y-%m-%d %H:%M:%S')}"
+    msg = await bot.send_message(chat_id=chat_id, text=text)
+    data = await state.get_data()
+
+    id_msg_list = data['id_msg_list']
+    id_msg_list.append(msg.message_id)
+    async with state.proxy() as data:
+        data['id_msg_list'] = id_msg_list
+
+
+@dp.callback_query_handler(text_contains=["off_task"], state=Analytics.main)
+async def off_task(call: types.CallbackQuery, state: FSMContext):
+    """Отключить задание"""
+    await call.answer()
+    data = call.data.split("-")
+    chat_id = call.message.chat.id
+    message_id = call.message.message_id
+    task_id = data[-1]
+
+    await bot.delete_message(chat_id=chat_id, message_id=message_id)
+
+    await db.update_task(status="off", error="No errors", task_id=int(task_id))
+
+
 @dp.callback_query_handler(text_contains=["show_active_tasks"], state=Analytics.main)
 async def get_all_active_tasks(call: types.CallbackQuery, state: FSMContext):
     """Обработка нажатия на кнопку показать активные рассылки"""
     data = call.data.split("-")
+    callback_data = call.data
+    chat_id = call.message.chat.id
+
     if data[0][-3:] == 'off':
         task_id = data[-1]
         await db.off_task(task_id=task_id)
@@ -286,11 +421,22 @@ async def get_all_active_tasks(call: types.CallbackQuery, state: FSMContext):
         )
     if not all_active_tasks:
         text = "Активных рассылок нет"
+        # сохраняю информацию о том, какая кнопка была нажата последней
+        chat_states = {}
     else:
         text = "Активные рассылки"
 
     if data[0][-3:] == 'off':
         with open('media/telegram.jpg', "rb") as file:
+            # Получаю индекс с нажатой кнопки
+            button_index = get_button_index(markup=markup, callback_data=callback_data)
+
+            # проверяю, была ли уже нажата какая-то кнопка в этом чате
+            current_button_index = get_current_button_index(chat_id)
+
+            # сохраняю информацию о том, какая кнопка была нажата последней
+            set_current_button_index(chat_id=chat_id, button_index=button_index)
+
             photo = types.InputFile(file)
 
             await bot.edit_message_media(chat_id=call.from_user.id, message_id=call.message.message_id,
@@ -317,7 +463,25 @@ async def get_all_active_tasks(call: types.CallbackQuery, state: FSMContext):
 async def view_task_info(call: types.CallbackQuery, state: FSMContext):
     """Обработка нажатия на кнопку показать информацию о задании"""
     data = call.data.split("-")
+
+    callback_data = call.data
     markup = call.message.reply_markup
+    chat_id = call.message.chat.id
+
+    # Получаю индекс с нажатой кнопки
+    button_index = get_button_index(markup=markup, callback_data=callback_data)
+
+    # проверяю, была ли уже нажата какая-то кнопка в этом чате
+    current_button_index = get_current_button_index(chat_id)
+
+    if current_button_index == button_index:
+        return
+    else:
+        # сохраняю информацию о том, какая кнопка была нажата последней
+        set_current_button_index(chat_id=chat_id, button_index=button_index)
+
+    markup = rebuild_button(markup=markup, button_index=button_index)
+
     task_info = await db.get_task_info(task_id=data[-1])
     text = "Информация по подписке\n\n"
     text += f"Запланирована на: {datetime.strftime(task_info[0]['execution_date'], '%Y-%m-%d %H:%M')}\n"

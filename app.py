@@ -15,6 +15,7 @@ from utils.notify_admins import on_startup_notify, on_shutdown_notify
 from utils.set_bot_commands import set_default_commands
 from utils.db_api.sql import create_db
 from utils.db_api.db_commands import DBCommands
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 db = DBCommands()
 
@@ -53,6 +54,21 @@ async def on_startup(dp):
                                    text="‼️‼️‼️‼️‼️\n Не создана рассылка для именинников. Не забуюте создать!")
 
     scheduler.add_job(apsched.clear_temp_folder, 'cron', hour="00", minute="00", id="clear_temp_job", name="Clear temporary folder")
+
+    # Проверка просроченых рассылок и отправка
+    all_active_tasks = await db.get_all_active_tasks()
+    date = datetime.datetime.now()
+
+    count_overdue_tasks = 0
+    for task in all_active_tasks:
+        if task['execution_date'] < date:
+            count_overdue_tasks += 1
+
+    if count_overdue_tasks > 0:
+        text = f"‼️‼️‼️\nИмеются не отправленные рассылки {count_overdue_tasks}.\n"
+        text += "Подробнее можете посмотреть в меню Аналитика-Рассылки-Не отправленные"
+        for admin in config.admins:
+            await bot.send_message(text=text, chat_id=admin)
 
 
 if __name__ == '__main__':
