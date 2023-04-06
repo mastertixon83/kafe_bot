@@ -63,7 +63,7 @@ class DBCommands:
     ### Корзина
     ADD_CART = "INSERT INTO cart (item_id, item_count, user_id, title, price) VALUES ($1, $2, $3, $4, $5) RETURNING id"
     UPDATE_CART = "UPDATE cart SET item_count = $1, title = $4, price = $5 WHERE item_id = $2 AND user_id = $3 RETURNING id"
-    DELETE_ITEM_FROM_CAR = "DELETE FROM cart WHERE item_id = $1"
+    DELETE_ITEM_FROM_CART = "DELETE FROM cart WHERE item_id = $1"
     GET_USER_CART = "SELECT * FROM cart WHERE user_id = $1"
     GET_USER_CART_ITEM_INFO = "SELECT * FROM cart WHERE user_id = $1 and item_id = $2"
     DELETE_CART = "DELETE FROM cart WHERE user_id = $1"
@@ -77,7 +77,7 @@ class DBCommands:
     ADD_PERSONAL_REQUEST = "INSERT INTO personal (personal, table_number, comment) VALUES ($1, $2, $3) RETURNING id"
 
     ### Настройки
-        ### Редактирование меню
+    ### Редактирование меню
     GET_ALL_CATEGORIES = "SELECT * FROM category_menu ORDER BY position"
     GET_ALL_ITEMS_IN_CATEGORY = "SELECT * FROM items_menu WHERE category_id = $1"
 
@@ -119,7 +119,6 @@ class DBCommands:
     DEL_PRIZE_FROM_DB = "DELETE FROM prize WHERE id = $1"
     UPDATE_STATUS_PRIZE = "UPDATE prize SET status = $1 WHERE id = $2"
     GET_ACTIVE_PRIZE = "SELECT * FROM prize WHERE status = TRUE"
-
 
     ### Аналитика
     GET_APPROVED_ORDERS_HALL = "SELECT * FROM orders_hall WHERE admin_answer = 'approve' and updated_at >= $1 AND updated_at < $2"
@@ -405,7 +404,7 @@ class DBCommands:
 
     async def delete_item_From_cart(self, item_id):
         """Удаление блюда из корзины при счетчике = 0"""
-        command = self.DELETE_ITEM_FROM_CAR
+        command = self.DELETE_ITEM_FROM_CART
         await self.pool.fetch(command, item_id)
 
     async def get_user_cart(self, user_id):
@@ -554,13 +553,12 @@ class DBCommands:
         """Включение/Отключение приза"""
         command = self.UPDATE_STATUS_PRIZE
         args = status, int(id_prize)
-        await self.pool.fetch(command, * args)
+        await self.pool.fetch(command, *args)
 
     async def get_active_prize(self):
         """Выбор активного приза"""
         command = self.GET_ACTIVE_PRIZE
         return await self.pool.fetch(command)
-
 
     async def get_approved_orders_hall(self, start_date, end_date):
         """Выбор подтвержденных бронирований за сегодня, неделю, месяц, прошлый месяц"""
