@@ -43,7 +43,6 @@ async def navigate(call: types.CallbackQuery, callback_data: dict, state: FSMCon
     action = callback_data.get('action')
     what = callback_data.get('what')
     st = state
-
     levels = {
         "-1": main_menu,
         "0": what_to_edit,
@@ -112,7 +111,8 @@ async def category_position(message: types.Message, state: FSMContext):
     await MainMenu.main.set()
     markup = await categories_keyboard(what='category')
 
-    await bot.edit_message_text(text="Какую категорию будем изменять?", chat_id=message.chat.id, message_id=data['message_id'])
+    await bot.edit_message_text(text="Какую категорию будем изменять?", chat_id=message.chat.id,
+                                message_id=data['message_id'])
     await bot.edit_message_reply_markup(chat_id=message.chat.id, message_id=data['message_id'], reply_markup=markup)
 
 
@@ -140,14 +140,14 @@ async def list_items_in_category(callback: types.CallbackQuery, category_id, act
 
             markup = InlineKeyboardMarkup()
             markup.row(
-                        InlineKeyboardButton(
-                                            text="Назад",
-                                            callback_data=make_callback_data(level=1,
-                                                                            category_id=category_id,
-                                                                            what='items'
-                                                                            )
-                                            )
-                        )
+                InlineKeyboardButton(
+                    text="Назад",
+                    callback_data=make_callback_data(level=1,
+                                                     category_id=category_id,
+                                                     what='items'
+                                                     )
+                )
+            )
             await callback.message.edit_text(f"В категории {info[0]['title']} еще не добвлено блюд",
                                              reply_markup=markup)
         else:
@@ -356,7 +356,8 @@ async def edit_menu_item_description(message: types.Message, state: FSMContext):
     markup = await items_in_category_keyboard(int(category_id))
     text = f"Выбрана категория <b>{info[0]['title']}</b> \nКакое блюдо будем редактировать?"
     await message.delete()
-    await bot.edit_message_text(text=text, chat_id=message.from_user.id, message_id=data['message_id'], reply_markup=markup)
+    await bot.edit_message_text(text=text, chat_id=message.from_user.id, message_id=data['message_id'],
+                                reply_markup=markup)
 
     await MainMenu.main.set()
 

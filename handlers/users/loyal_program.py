@@ -87,11 +87,12 @@ def card_generate(user_id, user_fio, card_number):
     return data
 
 
-# async def sum_approved_users(user_id):
 async def sum_approved_users(user_id):
-    """Генерация реферальных ссылок"""
+    """Подсчет друзей офрмивших карту лояльности"""
     info = await db.get_user_info(user_id)
     referral_id = info[0]['referral_id']
+
+    # Выбор приведенных друзей по реферальной ссылке
     all_invited_users = await db.get_all_invited_users(referral_id)
 
     users_activated_card = []
@@ -214,14 +215,15 @@ async def use_prize_code_waiter_call(message: types.Message, state: FSMContext):
     await message.answer(text=text, reply_markup=menuUser, parse_mode=types.ParseMode.HTML)
 
 
-# Нажатие на кнопку получить приз
 @dp.callback_query_handler(text_contains=["get_prize"])
 async def get_user_prize(call: types.CallbackQuery, state: FSMContext):
     """Ловлю нажатие на кнопку получить приз"""
     await db.update_last_activity(user_id=call.message.from_user.id, button='Получить приз')
-    await call.answer(cache_time=60)
+    await call.answer()
+
     cb_data = call.data.split('-')
     user_id = int(cb_data[1])
+    user_info = await db.get_user_info(user_id=user_id)
 
     info, referral_id, approved_users, all_invited_users = await sum_approved_users(user_id=user_id)
     prizes = approved_users // 5 - info[0]["prize"]

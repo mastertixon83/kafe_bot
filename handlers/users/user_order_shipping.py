@@ -133,6 +133,7 @@ async def delete_messaged(data, message):
         except Exception as _ex:
             pass
 
+
 async def build_category_keyboard(message: Union[types.Message, types.CallbackQuery], state, **kwargs):
     """Построение главной клавиатуры доставки
     (категории, оформление заказа, назад, корзина)
@@ -147,7 +148,7 @@ async def build_category_keyboard(message: Union[types.Message, types.CallbackQu
         await message.answer("Что будете заказывать?", reply_markup=markup)
 
     elif isinstance(message, types.CallbackQuery):
-        #Если перешли с инлайн кнопок Оформить заказ на доставку с рассылки, кнопка назад
+        # Если перешли с инлайн кнопок Оформить заказ на доставку с рассылки, кнопка назад
         call = message
         chat_id = call.message.chat.id
         message_id = call.message.message_id
@@ -170,6 +171,7 @@ async def build_category_keyboard(message: Union[types.Message, types.CallbackQu
             msg = await call.message.answer(text=text, reply_markup=ReplyKeyboardRemove())
             await bot.delete_message(chat_id=call.from_user.id, message_id=msg.message_id)
             await call.message.answer(text=text, reply_markup=markup)
+
 
 async def build_item_cards(call: types.CallbackQuery, category_id, state, **kwargs):
     """Построение карточек блюд, после выбора категориии"""
@@ -604,6 +606,7 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
                 {admin: msg.message_id}
             )
         admin_msg_id_list.append({"text": text})
+        # TODO: Переделать на хронение в переменной этого модуля
         with open("temp/temp.json", "w") as file:
             json.dump(admin_msg_id_list, file, indent=4, ensure_ascii=False)
 
@@ -629,7 +632,7 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
         order_status = True
     else:
         order_status = False
-
+    # TODO: Переделать на хронение в переменной этого модуля
     with open("temp/temp.json", "r") as file:
         msg_id_list = json.load(file)
 

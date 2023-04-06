@@ -83,7 +83,7 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
     # text += f"Ваш столик: {tableNumber}"
 
     admin_inline_send_ls.inline_keyboard[0][0]["url"] = f"https://t.me/{result[0]['username']}"
-
+    # TODO: Переделать на хронение в переменной этого модуля
     with open("temp/temp.json", "r") as file:
         msg_id_list = json.load(file)
 
@@ -92,7 +92,8 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
         msg_id_dict.update(item)
 
     for admin in admins:
-        await bot.edit_message_text(chat_id=int(admin), message_id=msg_id_dict[admin], text=text, reply_markup=admin_inline_send_ls, parse_mode=types.ParseMode.HTML)
+        await bot.edit_message_text(chat_id=int(admin), message_id=msg_id_dict[admin], text=text,
+                                    reply_markup=admin_inline_send_ls, parse_mode=types.ParseMode.HTML)
 
     if call_data[2] in ['rejected', 'foolrest']:
         order_status = True
@@ -197,7 +198,8 @@ async def table_reservation_count_man(message: types.Message, state: FSMContext)
         async with state.proxy() as data:
             data["count_mans"] = count_mans
 
-        await bot.send_message(chat_id=message.from_user.id, text="<b>ШАГ [4/5]</b> ⬇️ Отправьте номер телефона",
+        await bot.send_message(chat_id=message.from_user.id,
+                               text="<b>ШАГ [4/5]</b>Отправьте номер телефона\n‼️Воспольуйтесь кнопкой ниже  ⬇️ ",
                                reply_markup=send_phone_cancel,
                                parse_mode=types.ParseMode.HTML)
     else:
@@ -297,9 +299,9 @@ async def table_reservation_check_data(call, state: FSMContext):
         for admin in admins:
             msg = await bot.send_message(chat_id=admin, text=text, reply_markup=admin_inline_staff)
             admin_msg_id_list.append(
-                {admin:msg.message_id}
+                {admin: msg.message_id}
             )
-
+        # TODO: Переделать на хронение в переменной этого модуля
         with open("temp/temp.json", "w") as file:
             json.dump(admin_msg_id_list, file, indent=4, ensure_ascii=False)
 

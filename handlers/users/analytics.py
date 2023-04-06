@@ -75,6 +75,7 @@ def data_preparation():
         "end_date_prev_month": end_date_prev_month
     }
 
+
 def get_button_index(markup, callback_data):
     """получаю индекс нажатой кнопки"""
     button_index = None
@@ -101,6 +102,7 @@ def rebuild_button(markup, button_index):
                     markup['inline_keyboard'][i][j]['text'] = button['text'][2:]
     return markup
 
+
 def get_current_button_index(chat_id):
     # получю текущий индекс нажатой кнопки из состояния чата
     return chat_states.get(chat_id, None)
@@ -109,6 +111,7 @@ def get_current_button_index(chat_id):
 def set_current_button_index(chat_id, button_index):
     # сохраню текущий индекс нажатой кнопки в состоянии чата
     chat_states[chat_id] = button_index
+
 
 #####################################################################################
 @dp.callback_query_handler(text=["excel_users"], state=Analytics.main)
@@ -139,7 +142,7 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
         reason_for_ban = user["reason_for_ban"]
 
         result.append(
-            [username, full_name, created_at, birthday, user_id,  gender, age_group, card_phone, card_number, card_fio,
+            [username, full_name, created_at, birthday, user_id, gender, age_group, card_phone, card_number, card_fio,
              card_status, prize, balance, referral, referral_id,
              administrator, director, ban_status, reason_for_ban]
         )
@@ -184,7 +187,6 @@ async def download_users_to_excel(call: types.CallbackQuery, state: FSMContext):
         sheet.column_dimensions[column_letter].width = adjusted_width
 
     for i, item in enumerate(result, start=2):
-
         sheet.cell(row=i, column=1).value = item[0]
         sheet.cell(row=i, column=2).value = item[1]
         sheet.cell(row=i, column=3).value = item[2]
@@ -320,7 +322,7 @@ async def get_uncompleted_tasks(call: types.CallbackQuery, state: FSMContext):
     if uncomleted_tasks:
         for task in uncomleted_tasks:
             text = f"Рассылка запланирована на {task['execution_date']}\n"
-            text += f"{'-'*50}\n"
+            text += f"{'-' * 50}\n"
             text += f"{task['message']}\n"
             text += f"{'-' * 50}\n"
             text += "Что делать?"
@@ -449,8 +451,8 @@ async def get_all_active_tasks(call: types.CallbackQuery, state: FSMContext):
             photo = types.InputFile(file)
 
             msg = await bot.send_photo(chat_id=call.from_user.id,
-                                 photo=photo,
-                                 caption=text, reply_markup=markup)
+                                       photo=photo,
+                                       caption=text, reply_markup=markup)
 
         data = await state.get_data()
         id_msg_list = data['id_msg_list']
@@ -924,7 +926,6 @@ async def export_shipping_to_excel(call: types.CallbackQuery, state: FSMContext)
                 sheet.cell(row=len(prev_month) + 3, column=9).fill = fill
                 sheet.cell(row=len(prev_month) + 3, column=10).fill = fill
                 sheet.cell(row=len(prev_month) + 3, column=10).fill = fill
-
 
     if not os.path.exists('temp'):
         os.mkdir('temp')

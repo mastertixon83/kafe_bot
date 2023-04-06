@@ -66,11 +66,11 @@ async def taking_type_mailing(message: types.Message, state: FSMContext):
 
     id_msg_list.append(msg.message_id)
 
-
     async with state.proxy() as data:
         data['id_msg_list'] = id_msg_list
         data['admin_name'] = message.from_user.username
         data['type_mailing'] = type_mailing
+        data['message_id'] = msg.message_id
 
     await message.delete()
 

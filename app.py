@@ -1,4 +1,4 @@
-#TODO: !!! Продумать планировщик
+# TODO: !!! Продумать планировщик
 import asyncio
 import datetime
 import os
@@ -36,7 +36,8 @@ async def on_startup(dp):
     config.admins.clear()
     config.admins.append(main_admin)
     for admin in administrators:
-        config.admins.append(admin['user_id'])
+        if admin['user_id'] not in config.admins:
+            config.admins.append(admin['user_id'])
 
     await on_startup_notify(dp)
     scheduler.start()
@@ -53,7 +54,8 @@ async def on_startup(dp):
             await bot.send_message(chat_id=admin,
                                    text="‼️‼️‼️‼️‼️\n Не создана рассылка для именинников. Не забуюте создать!")
 
-    scheduler.add_job(apsched.clear_temp_folder, 'cron', hour="00", minute="00", id="clear_temp_job", name="Clear temporary folder")
+    scheduler.add_job(apsched.clear_temp_folder, 'cron', hour="00", minute="00", id="clear_temp_job",
+                      name="Clear temporary folder")
 
     # Проверка просроченых рассылок и отправка
     all_active_tasks = await db.get_all_active_tasks()
