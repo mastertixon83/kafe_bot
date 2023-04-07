@@ -140,8 +140,13 @@ async def review_text(message: types.Message, state: FSMContext):
     await state.finish()
 
     text = "Благодарим Вас за обратную связь 🤗\n"
-    text += "Ваш отзыв скоро появится на нашей стене"
-    await message.answer(text=text)
+    text += "Ваш отзыв скоро появится на стене"
+    if message.from_user.id in admins:
+        markup = menuAdmin
+    else:
+        markup = menuUser
+
+    await message.answer(text=text, reply_markup=markup)
     review_text = message.text.strip()
     username = message.from_user.username
 
@@ -164,6 +169,7 @@ async def approve_review(call: types.CallbackQuery, state: FSMContext):
     data = call.data.split('-')
     await db.update_status_review(id=int(data[-1]))
     await call.answer()
+    await call.message.delete()
 
 
 @dp.message_handler(Text(contains=["Меню"]), state="*")

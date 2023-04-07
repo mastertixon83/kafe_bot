@@ -1,5 +1,5 @@
-#TODO: Написать инструкцию по пользованию ботом
-#TODO: !!!Сделать логирование
+# TODO: Написать инструкцию по пользованию ботом
+# TODO: !!!Сделать логирование
 
 from keyboards.inline.dating_ikb import user_gender_ikb, user_work_ikb
 from loader import dp, bot, db, logger
@@ -79,13 +79,13 @@ async def user_gender(call: types.CallbackQuery, state: FSMContext):
     elif call.data == "ug_male":
         gender = "m"
 
-    async with state.proxy() as data:
-        data['gender'] = gender
-
     text = "Здорово 😊\n\n"
     text += "Укажите к какой возрастной категории Вы относитесь"
-    await call.message.edit_text(text=text)
-    msg = await call.message.edit_reply_markup(reply_markup=user_work_ikb)
+
+    await call.message.edit_reply_markup(reply_markup=user_work_ikb)
+
+    async with state.proxy() as data:
+        data['gender'] = gender
 
 
 @dp.callback_query_handler(text=["20-30", "30-40", "40-50", "50+"], state=Dating.user_age)
@@ -114,11 +114,6 @@ async def user_work(call: types.CallbackQuery, state: FSMContext):
     else:
         id_user = await db.add_new_user(referral=args, gender=data['gender'],
                                         age_group=data['age_group'])
-
-    try:
-        await bot.delete_message(chat_id=call.message.from_user.id, message_id=data['msg_id'])
-    except Exception as _ex:
-        logger.error(_ex)
 
     text = "Отлично! Для получения скидки 10% остался лишь один шаг. Перейдите в меню программы лояльности и оформите карту 💳"
     if id in admins:
