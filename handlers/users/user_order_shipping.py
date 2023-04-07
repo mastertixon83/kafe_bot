@@ -22,6 +22,7 @@ from states.shipping import Cart
 from utils.db_api.db_commands import DBCommands
 
 db = DBCommands()
+temp = []
 
 
 ###Ловлю нажатие любой инлайн кнопки
@@ -602,14 +603,10 @@ async def shipping_user_check_data(call: types.CallbackQuery, state: FSMContext)
         admin_msg_id_list = []
         for admin in admins:
             msg = await bot.send_message(chat_id=admin, text=text, parse_mode="HTML", reply_markup=markup)
-            admin_msg_id_list.append(
+            temp.append(
                 {admin: msg.message_id}
             )
-        admin_msg_id_list.append({"text": text})
-        # TODO: Переделать на хронение в переменной этого модуля
-        with open("temp/temp.json", "w") as file:
-            json.dump(admin_msg_id_list, file, indent=4, ensure_ascii=False)
-
+        temp.append({"text": text})
         await state.finish()
 
     elif call.data == "cancel_order_user":
@@ -632,13 +629,10 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
         order_status = True
     else:
         order_status = False
-    # TODO: Переделать на хронение в переменной этого модуля
-    with open("temp/temp.json", "r") as file:
-        msg_id_list = json.load(file)
 
-    text = msg_id_list[-1]
+    text = temp[-1]
     msg_id_dict = {}
-    for item in msg_id_list[:-1]:
+    for item in temp[:-1]:
         msg_id_dict.update(item)
 
     for admin in admins:
@@ -655,3 +649,4 @@ async def shipping_admin_check_order(call: types.CallbackQuery, state: FSMContex
                                           order_status=order_status)
 
     await state.finish()
+    temp.clear()

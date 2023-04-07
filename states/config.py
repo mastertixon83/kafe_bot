@@ -4,6 +4,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 class MainMenu(StatesGroup):
     """Класс состояний для управления редактированием меню"""
     main = State()
+    loyal_program = State()
     what_to_edit = State()
     category_title = State()
     category_url = State()

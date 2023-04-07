@@ -25,14 +25,16 @@ class DBCommands:
     UPDATE_LAST_ACTIVITY = "UPDATE users SET last_activity = $2 WHERE user_id = $1"
     GET_USER_BY_USERNAME = "SELECT * FROM users WHERE username = $1"
 
-    ### Удаление пользователя в черный список
+    ### Добавление пользователя в черный список
     UPDATE_BLACKLIST_STATUS = "UPDATE users SET ban_status = $3, reason_for_ban = $2, ban_date = $4 WHERE id = $1"
     GET_USER_ID = "SELECT id FROM users WHERE username = $1"
 
     ### Программа лояльности оформление карты и выбор подтвержденных пользователей $$$
     GET_USER_INFO = "SELECT * FROM users WHERE user_id = $1"
     GET_BLACK_LIST = "SELECT * FROM users WHERE ban_status = TRUE"
-    GET_ALL_INVITED = "SELECT * FROM users WHERE referral = $1"
+
+    GET_ALL_INVITED = "SELECT * FROM users WHERE referral = $1"  # приглашенные друзья
+
     UPDATE_USER_DATA_CARD = "UPDATE users SET card_fio = $2, card_phone = $3, birthday = $4 " \
                             " WHERE user_id = $1"
     APPROVE_USER_CARD_ADMIN = "UPDATE users SET card_status = TRUE WHERE user_id = $1"

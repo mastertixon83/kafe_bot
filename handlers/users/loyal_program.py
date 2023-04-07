@@ -1,24 +1,27 @@
-# INSERT INTO users (user_id, referral, username, card_status, birthday, card_phone)
-# VALUES ('3', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user1', TRUE, '1983-03-27', '+77770748383'),
-# ('4', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user111', TRUE, '1983-03-27', '+77770748383'),
-# ('5', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user2', TRUE, '1983-03-27', '+77770748383'),
-# ('6', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user3', TRUE, '1983-03-27', '+77770748383'),
-# ('7', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user4', TRUE, '1983-03-27', '+77770748383'),
-# ('8', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user5', TRUE, '1983-03-27', '+77770748383'),
-# ('9', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user6', TRUE, '1983-03-27', '+77770748383'),
-# ('71', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user7', TRUE, '1983-03-27', '+77770748383'),
-# ('81', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user8', TRUE, '1983-03-27', '+77770748383'),
-# ('91', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user9', TRUE, '1983-03-27', '+77770748383'),
-# ('10', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user10', TRUE, '1983-03-27', '+77770748383'),
-# ('11', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user11', TRUE, '1983-03-27', '+77770748383'),
-# ('12', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user12', TRUE, '1983-03-27', '+77770748383'),
-# ('13', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user13', TRUE, '1983-03-27', '+77770748383'),
-# ('14', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user14', TRUE, '1983-03-27', '+77770748383'),
-# ('15', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user15', TRUE, '1983-03-27', '+77770748383'),
-# ('16', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user16', TRUE, '1983-03-27', '+77770748383'),
-# ('17', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user17', TRUE, '1983-03-27', '+77770748383')
+"""
+INSERT INTO users (user_id, referral, username, card_status, birthday, card_phone)
+VALUES ('3', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user1', TRUE, '1983-03-27', '+77770748383'),
+('4', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user111', TRUE, '1983-03-27', '+77770748383'),
+('5', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user2', TRUE, '1983-03-27', '+77770748383'),
+('6', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user3', TRUE, '1983-03-27', '+77770748383'),
+('7', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user4', TRUE, '1983-03-27', '+77770748383'),
+('8', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user5', TRUE, '1983-03-27', '+77770748383'),
+('9', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user6', TRUE, '1983-03-27', '+77770748383'),
+('71', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user7', TRUE, '1983-03-27', '+77770748383'),
+('81', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user8', TRUE, '1983-03-27', '+77770748383'),
+('91', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user9', TRUE, '1983-03-27', '+77770748383'),
+('10', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user10', TRUE, '1983-03-27', '+77770748383'),
+('11', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user11', TRUE, '1983-03-27', '+77770748383'),
+('12', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user12', TRUE, '1983-03-27', '+77770748383'),
+('13', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user13', TRUE, '1983-03-27', '+77770748383'),
+('14', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user14', TRUE, '1983-03-27', '+77770748383'),
+('15', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user15', TRUE, '1983-03-27', '+77770748383'),
+('16', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user16', TRUE, '1983-03-27', '+77770748383'),
+('17', 'ce32b414-28b1-422a-a7ca-456f5685c6de', 'user17', TRUE, '1983-03-27', '+77770748383')
 
-# DELETE FROM users WHERE username LIKE 'user%';
+DELETE FROM users WHERE username LIKE 'user%';
+
+"""
 
 import os
 from datetime import datetime
@@ -87,39 +90,34 @@ def card_generate(user_id, user_fio, card_number):
     return data
 
 
-async def sum_approved_users(user_id):
-    """Подсчет друзей офрмивших карту лояльности"""
-    info = await db.get_user_info(user_id)
-    referral_id = info[0]['referral_id']
+def sum_prizes(all_invited_friends, referral_id):
+    """Подсчет полученых и не полученных призов пользователем"""
+    count_friends_activated_card = 0
+    for item in all_invited_friends:
+        if item['card_status'] == True:
+            count_friends_activated_card += 1
 
-    # Выбор приведенных друзей по реферальной ссылке
-    all_invited_users = await db.get_all_invited_users(referral_id)
-
-    users_activated_card = []
-    approved_users = 0
-    for user in all_invited_users:
-        if user['card_status'] == True:
-            users_activated_card.append("@" + user['username'] + " - Подтвержден")
-            approved_users += 1
-        else:
-            users_activated_card.append("@" + user['username'] + " - Не подтвержден")
-
-    return info, referral_id, approved_users, all_invited_users
+    return count_friends_activated_card
 
 
-@dp.message_handler(Text(contains="Пригласить друга"), state=MainMenu.main)
+@dp.message_handler(Text(contains="Пригласить друга"), state=MainMenu.loyal_program)
 async def invite_friend(message: Message, state: FSMContext):
     """Нажатие на кнопку пригласить друга"""
     await db.update_last_activity(user_id=message.from_user.id, button='Прогласить друга')
-    user_id = message.from_user.id
 
-    info, referral_id, approved_users, all_invited_users = await sum_approved_users(user_id=user_id)
+    user_id = message.from_user.id
+    user_info = await db.get_user_info(user_id=user_id)
+    all_invited_friends = await db.get_all_invited_users(referral=user_info[0]['referral_id'])
+
+    count_friends_activated_card = sum_prizes(all_invited_friends=all_invited_friends,
+                                              referral_id=user_info[0]['referral_id'])
 
     text = "Получите любую пиццу на выбор бесплатно в нашем ресторане \n\n Для этого нужно пригласить всего лишь 5 друзей \n\n✅ Используйте любую из ссылок ниже, чтобы пригласить друзей в бота. Чтобы приглашение было Вам засчитано, " \
            "приглашенный Вами человек должен оформить карту лояльности находясь в заведении!"
 
     await message.answer(text, reply_markup=cancel_btn)
-    prizes = approved_users // 5 - info[0]["prize"]
+
+    prizes = count_friends_activated_card // 5 - user_info[0]["prize"]
 
     # Получите информацию о боте
     bot_info = await bot.get_me()
@@ -127,25 +125,26 @@ async def invite_friend(message: Message, state: FSMContext):
     # Получите username бота
     bot_username = bot_info.username
 
-    text = f"Получено подарков за приглашения: {info[0]['prize']}/{prizes + info[0]['prize']}\n\n" \
-           f"Вы пригласили {str(len(all_invited_users))} человека в бота\n" \
-           f"Подтверждённых приглашений (Оформили карту лояльности): {str(approved_users)}\n\n" \
+    text = f"Получено подарков за приглашения: {user_info[0]['prize']}/{prizes + user_info[0]['prize']}\n\n" \
+           f"Вы пригласили {str(len(all_invited_friends))} человека в бота\n" \
+           f"Подтверждённых приглашений (Оформили карту лояльности): {str(count_friends_activated_card)}\n\n" \
            "Внутренняя ссылка: эту ссылку Вы можете скидывать своим друзьям или выкладывать в чаты внутри экосистемы " \
            "Telegram:\n\n" \
-           f"https://t.me/{bot_username}?start={referral_id}\n\n" \
+           f"https://t.me/{bot_username}?start={user_info[0]['referral_id']}\n\n" \
            "Внешняя ссылка: эту ссылку Вы можете скидывать своим друзьям во всех других соц. сетях, мессенджерах, " \
            "прикреплять в stories в Instagram и т.д.:\n\n" \
-           f"https://tx.me/{bot_username}?start={referral_id}\n\n"
+           f"https://tx.me/{bot_username}?start={user_info[0]['referral_id']}\n\n"
 
     if prizes != 0:
         get_prize_inline.inline_keyboard[0][0]["callback_data"] = f"get_prize-{user_id}"
-        await message.answer(text, reply_markup=get_prize_inline)
+        await message.answer(text=text, reply_markup=get_prize_inline)
     else:
         if str(message.from_user.id) in admins:
             markup = menuAdmin
         else:
             markup = menuUser
         await message.answer(text, reply_markup=markup)
+
     await state.finish()
 
 
@@ -224,9 +223,13 @@ async def get_user_prize(call: types.CallbackQuery, state: FSMContext):
     cb_data = call.data.split('-')
     user_id = int(cb_data[1])
     user_info = await db.get_user_info(user_id=user_id)
+    all_invited_friends = await db.get_all_invited_users(referral=user_info[0]['referral_id'])
 
-    info, referral_id, approved_users, all_invited_users = await sum_approved_users(user_id=user_id)
-    prizes = approved_users // 5 - info[0]["prize"]
+    invited_friends = await db.get_all_invited_users(referral=user_info[0]['referral_id'])
+    count_friends_activated_card = sum_prizes(all_invited_friends=all_invited_friends,
+                                              referral_id=user_info[0]['referral_id'])
+
+    prizes = count_friends_activated_card // 5 - user_info[0]["prize"]
 
     await bot.edit_message_reply_markup(call.message.chat.id, message_id=call.message.message_id, reply_markup="")
 

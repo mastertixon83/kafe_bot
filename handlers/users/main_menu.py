@@ -82,12 +82,12 @@ async def cancel(message: types.Message, state=FSMContext):
             await bot.delete_message(chat_id=message.from_user.id, message_id=message.message_id - 1)
 
     elif (re.search(r"ConfigAdmins:config_admins_", current_state)
-            or re.search(r"ConfigBlackList:config_blacklist", current_state)
-            or re.search(r"ConfigAdmins:config_main", current_state)
-            or re.search(r"Mailings", current_state)
-            or re.search(r"Analytics:main", current_state)
-            or re.search(r"TableReservation:data", current_state)
-            or re.search(r"Question:ask_questions", current_state)):
+          or re.search(r"ConfigBlackList:config_blacklist", current_state)
+          or re.search(r"ConfigAdmins:config_main", current_state)
+          or re.search(r"Mailings", current_state)
+          or re.search(r"Analytics:main", current_state)
+          or re.search(r"TableReservation:data", current_state)
+          or re.search(r"Question:ask_questions", current_state)):
 
         try:
             for id_msg in data['id_msg_list']:
@@ -241,7 +241,7 @@ async def reg_loyal_card(message: Message, state: FSMContext):
     """Обработчик нажатия на кнопку Программа лояльности"""
     await db.update_last_activity(user_id=message.from_user.id, button='Программа лояльности')
     info = await db.get_user_info(message.from_user.id)
-    await MainMenu.main.set()
+    await MainMenu.loyal_program.set()
     if info[0]['card_status'] != True:
         text = "Оформите карту скидок!!!"
     else:

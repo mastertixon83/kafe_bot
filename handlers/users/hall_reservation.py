@@ -84,9 +84,6 @@ async def table_reservation_admin_butons(call, call_data, adminUsername, admin_i
     # text += f"Ваш столик: {tableNumber}"
 
     admin_inline_send_ls.inline_keyboard[0][0]["url"] = f"https://t.me/{result[0]['username']}"
-    # TODO: Переделать на хронение в переменной этого модуля
-    # with open("temp/temp.json", "r") as file:
-    #     msg_id_list = json.load(file)
 
     msg_id_dict = {}
     for item in temp:
@@ -297,16 +294,12 @@ async def table_reservation_check_data(call, state: FSMContext):
                                                comment=data['comment'])
 
         admin_inline_staff = await build_tables_ikb_on_data(data=data, order_id=order_id)
-        admin_msg_id_list = []
+
         for admin in admins:
             msg = await bot.send_message(chat_id=admin, text=text, reply_markup=admin_inline_staff)
             temp.append(
                 {admin: msg.message_id}
             )
-        # TODO: Переделать на хронение в переменной этого модуля
-        # with open("temp/temp.json", "w") as file:
-        #     json.dump(admin_msg_id_list, file, indent=4, ensure_ascii=False)
-
         await state.finish()
 
     elif call.data == "cancel_order_user":
